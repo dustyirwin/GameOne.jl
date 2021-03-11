@@ -1,3 +1,4 @@
+
 struct Screen
     window
     renderer
@@ -22,12 +23,13 @@ mutable struct Rect <: Geom
     w::Int
     h::Int
 end
+
 Rect(x::Tuple, y::Tuple) = Rect(x[1], x[2], y[1], y[2])
 
 import Base:+
 +(r::Rect, t::Tuple{T,T}) where T <: Number = Rect(Int(r.x+t[1]), Int(r.y+t[2]), r.h, r.w)
 
-mutable struct Line <: Geom  
+mutable struct Line <: Geom
     x1::Int
     y1::Int
     x2::Int
@@ -55,7 +57,7 @@ function Base.setproperty!(s::Geom, p::Symbol, x)
     end
 end
 
-function Base.getproperty(s::Geom, p::Symbol) 
+function Base.getproperty(s::Geom, p::Symbol)
     if hasfield(typeof(s), p)
         getfield(s, p)
     else
@@ -149,6 +151,7 @@ function draw(s::Screen, r::Rect, c::Colorant=colorant"black"; fill=false)
         sdl_colors(c)...,
     )
     sr = convert(SDL2.Rect, r)
+
     if !fill
         SDL2.RenderDrawRect(s.renderer, Ref(sr))
     else

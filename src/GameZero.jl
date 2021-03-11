@@ -1,11 +1,14 @@
 module GameZero
+
 using Colors
 using Random
 
-export Actor, Game, game, draw, schduler, schedule_once, schedule_interval, schedule_unique, unschedule,
-        collide, angle, distance, play_music, play_sound, line, clear, rungame
-export Keys, MouseButtons, KeyMods
+export Actor, ActorImage, ActorText, Game, game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
+        collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
+        getEventType, getTextInputEventChar, getTextEditEventString
+export Keys, Keymods, MouseButtons
 export Line, Rect, Circle
+
 
 using SimpleDirectMediaLayer
 const SDL2 = SimpleDirectMediaLayer
@@ -18,11 +21,11 @@ include("resources.jl")
 include("screen.jl")
 include("actor.jl")
 
-#Magic variables
-const HEIGHTSYMBOL = :HEIGHT
-const WIDTHSYMBOL = :WIDTH
-const BACKSYMBOL = :BACKGROUND
 
+#Magic variables
+const HEIGHTSYMBOL = :SCREEN_HEIGHT
+const WIDTHSYMBOL = :SCREEN_WIDTH
+const BACKSYMBOL = :BACKGROUND
 
 
 mutable struct Game
@@ -30,16 +33,14 @@ mutable struct Game
     location::String
     game_module::Module
     keyboard::Keyboard
-    render_function::Function 
-    update_function::Function 
-    onkey_function::Function 
-    onmousedown_function::Function 
-    onmouseup_function::Function 
-    onmousemove_function::Function 
+    render_function::Function
+    update_function::Function
+    onkey_function::Function
+    onmousedown_function::Function
+    onmouseup_function::Function
+    onmousemove_function::Function
     Game() = new()
 end
-
-
 
 
 # const EVENT_HANDLER_FN = Dict(
@@ -53,14 +54,11 @@ end
 
 
 const timer = WallTimer()
-
 const game = Ref{Game}()
 const playing = Ref{Bool}(false)
 const paused = Ref{Bool}(false)
 
-function __init__()
-
-end
+function __init__() end
 
 function initscreen(gm::Module, name::String)
     h = getifdefined(gm, HEIGHTSYMBOL, 400)
@@ -78,17 +76,20 @@ mainloop(g::Ref{Game}) = mainloop(g[])
 
 function mainloop(g::Game)
     start!(timer)
+
     while (true)
       #Don't run if game is paused by system (resizing, lost focus, etc)
       while window_paused[] != 0
           _ = pollEvent!()
-          sleep(0.5)
+          sleep(0.25)
       end
 
       # Handle Events
         errorMsg = ""
+
         try
             hadEvents = true
+            e_time = 0
             while hadEvents
                 e, hadEvents = pollEvent!()
                 t = getEventType(e)
@@ -98,7 +99,6 @@ function mainloop(g::Game)
             rethrow()
         end
 
-      # Render
       #if (debug && debugText) renderFPS(renderer,last_10_frame_times) end
         SDL2.RenderClear(g.screen.renderer)
         Base.invokelatest(g.render_function, g)
@@ -108,7 +108,7 @@ function mainloop(g::Game)
       # Don't let the game proceed at fewer than this frames per second. If an
       # update takes too long, allow the game to actually slow, rather than
       # having too big of frames.
-        min_fps = 20.0
+        min_fps = 30.0
         max_fps = 60.0
         dt = min(dt/1e9, 1.0 / min_fps)
         start!(timer)
@@ -122,6 +122,7 @@ end
 
 function handleEvents!(g::Game, e, t)
     global playing, paused
+
     if (t == SDL2.KEYDOWN || t == SDL2.KEYUP)
         handleKeyPress(g::Game, e, t)
     elseif (t == SDL2.MOUSEBUTTONUP || t == SDL2.MOUSEBUTTONDOWN)
@@ -159,7 +160,6 @@ function handleMouseClick(g::Game, e, t)
     end
 end
 
-
 function handleMousePan(g::Game, e, t)
     x = getMouseMoveX(e)
     y = getMouseMoveY(e)
@@ -172,8 +172,8 @@ getKeyRepeat(e) = bitcat(UInt8, e[14:-1:14])
 getKeyMod(e) = bitcat(UInt16, e[26:-1:25])
 
 getMouseButtonClick(e) = bitcat(UInt8, e[17:-1:17])
-getMouseClickX(e) =  bitcat(Int32, e[24:-1:21])
-getMouseClickY(e) = bitcat(Int32, e[28:-1:25])
+getMouseClickX(e) = bitcat(Int32, e[23:-1:20])
+getMouseClickY(e) = bitcat(Int32, e[27:-1:24])
 
 getMouseMoveX(e) = bitcat(Int32, e[24:-1:21])
 getMouseMoveY(e) = bitcat(Int32, e[28:-1:25])
@@ -189,7 +189,7 @@ function rungame(jlf::String)
             @error e exception = (e, catch_backtrace())
         end
     finally
-        GameZero.quitSDL(game[])
+        GZ2.quitSDL(game[])
     end
 end
 
@@ -209,23 +209,23 @@ function initgame(jlf::String)
     g.location = dirname(jlf)
     g.keyboard = Keyboard()
 
-
-    Base.include_string(game_module, "using GameZero")
-    Base.include_string(game_module, "import GameZero.draw")
+    Base.include_string(game_module, "using GZ2")
+    Base.include_string(game_module, "import GZ2.draw")
     Base.include_string(game_module, "using Colors")
     Base.include(game_module, jlf)
 
     g.update_function = getfn(game_module, :update, 2)
     g.render_function = getfn(game_module, :draw, 1)
-    g.onkey_function = getfn(game_module, :on_key_down, 3)
+    g.onkey_function = getfn(game_module, :on_key_down, 4)
     g.onmouseup_function = getfn(game_module, :on_mouse_up, 3)
     g.onmousedown_function = getfn(game_module, :on_mouse_down, 3)
     g.onmousemove_function = getfn(game_module, :on_mouse_move, 2)
-    g.screen = initscreen(game_module, "GameZero::"*name)
+    g.screen = initscreen(game_module, "GZ2::"*name)
     clear(g.screen)
     return g
-end 
+end
 
+game_include(jlf::String) = Base.include(game[].game_module, jlf)
 
 function getfn(m::Module, s::Symbol, maxargs=3)
     if isdefined(m, s)
@@ -312,6 +312,5 @@ function main()
     jlf = ARGS[1]
     rungame(jlf)
 end
-
 
 end # module

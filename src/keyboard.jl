@@ -169,10 +169,7 @@ export Keymod
     ALT = 768
     META = 3072
 end
-
 end
-
-
 
 using .MouseButtons
 using .Keys
@@ -186,16 +183,20 @@ Keyboard() = Keyboard(Array{Any, 1}())
 
 function Base.getproperty(k::Keyboard, s::Symbol)
     s = Symbol(uppercase(string(s)))
-    if isdefined(GameZero.Keys, s)
-        return UInt32(getfield(GameZero.Keys, s)) in getfield(k, :pressed)
+
+    if isdefined(GZ2.Keys, s)
+        UInt32(getfield(GZ2.Keys, s)) in getfield(k, :pressed)
     end
-    if isdefined(GameZero.Keymods, s)
-        return UInt32(getfield(GameZero.Keymods, s)) in getfield(k, :pressed)
+
+    if isdefined(GZ2.Keymods, s)
+        UInt32(getfield(GZ2.Keymods, s)) in getfield(k, :pressed)
     end
-    return false
+
+    false
 end
 
 Base.push!(k::Keyboard, item) = push!(getfield(k, :pressed), item)
+
 function Base.delete!(k::Keyboard, item)
     a = getfield(k, :pressed)
     deleteat!(a, a.==item)

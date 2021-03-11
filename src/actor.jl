@@ -1,48 +1,73 @@
 
 mutable struct Actor
-    image::String
-    surface::Ptr{SDL2.Surface}
-    position::Rect
-    scale::Vector{Float64}
+    label::String
+    surfaces::Vector{Ptr{SDL2.Surface}}
+    textures::Vector{Ptr{SDL2.Texture}}
+    position::SDL2.Rect
+    scale::Vector{Float32}
+    rotate_center::Union{Vector{Int32},Ptr{Nothing}}
     angle::Float64
     alpha::UInt8
     data::Dict{Symbol, Any}
 end
 
-"""
-`Actor(image::String)`
+function draw(a::Actor)
+    if isempty(a.textures)
+        SDL2.SetHint(SDL2.HINT_RENDER_SCALE_QUALITY, "best")
 
-Creates an Actor with the image given, which must be located in the `image` subdirectory.
-"""
-function Actor(image::String; kv...)
-    sf=image_surface(image)
-    w, h = size(sf)
-    a = Actor(image, sf, Rect(0, 0, Int(w), Int(h)), [1.0, 1.0], 0, 255, Dict{Symbol,Any}())
+        for (i, sf) in enumerate(a.surfaces)
+            tx = SDL2.CreateTextureFromSurface(game[].screen.renderer, sf)
+            if tx == SDL2.C_NULL
+                @warn "Failed to create texture $i for $(a.label)! Fall back to CPU?"
+            end
+            push!(a.textures, tx)
+        end
 
-    for (k, v) in kv
-        setproperty!(a, k, v)
+        for sf in a.surfaces
+            SDL2.FreeSurface(sf)
+        end
     end
-    return a
+
+    if a.alpha < 255
+        SDL2.SetTextureBlendMode(a.textures[begin], SDL2.BLENDMODE_BLEND)
+        SDL2.SetTextureAlphaMod(a.textures[begin], a.alpha)
+    end
+
+    flip = if a.w < 0 && a.h < 0
+        SDL2.FLIP_HORIZONTAL | SDL2.FLIP_VERTICAL
+    elseif a.h < 0
+        SDL2.FLIP_VERTICAL
+    elseif a.w < 0
+        SDL2.FLIP_HORIZONTAL
+    else
+        SDL2.FLIP_NONE
+    end
+
+    SDL2.RenderCopyEx(
+        game[].screen.renderer,
+        a.textures[begin],
+        C_NULL,
+        Ref(SDL2.Rect(Int32[ a.x, a.y, ceil(a.w * a.scale[1]), ceil(a.h * a.scale[2]) ]...)),
+        a.angle,
+        a.rotate_center,
+        flip,
+    )
 end
 
-
 function Base.setproperty!(s::Actor, p::Symbol, x)
-    if p == :image
-        sf = image_surface(x)
-        setfield!(s, :surface, sf)
-    elseif hasfield(Actor, p)
+    if hasfield(Actor, p)
         setfield!(s, p, convert(fieldtype(Actor, p), x))
     else
         position = getfield(s, :position)
         v = getproperty(position, p)
-        if v != nothing
+        if v !== nothing
             setproperty!(position, p, x)
+
         else
             getfield(s, :data)[p] = x
         end
     end
 end
-
 
 function Base.getproperty(s::Actor, p::Symbol)
     if hasfield(Actor, p)
@@ -50,69 +75,28 @@ function Base.getproperty(s::Actor, p::Symbol)
     else
         position = getfield(s, :position)
         v = getproperty(position, p)
-        if v != nothing
+        if v !== nothing
             return v
         else
             data = getfield(s, :data)
             if haskey(data, p)
                 return data[p]
-            else 
-                @warn "Unknown data $p requested from Actor($(s.image))"
+            else
+                @warn "Unknown data $p requested from Actor($(s.label))"
                 return nothing
             end
         end
     end
 end
 
-"""
-`draw(a::Actor)`
-
-Draws the Actor on-screen at its current position.
-"""
-function draw(a::Actor)
-    texture = SDL2.CreateTextureFromSurface(game[].screen.renderer, a.surface)
-    r=a.position
-    w′=floor(r.w * a.scale[1])
-    h′=floor(r.h * a.scale[2])
-
-    if (a.alpha < 255)
-        SDL2.SetTextureBlendMode(texture, SDL2.BLENDMODE_BLEND)
-        SDL2.SetTextureAlphaMod(texture, a.alpha)
-    end
-    
-    SDL2.RenderCopyEx(
-        game[].screen.renderer, 
-        texture, 
-        C_NULL,
-        Ref(SDL2.Rect(r.x, r.y, w′, h′)),
-        a.angle,
-        C_NULL,
-        UInt32(0) 
-    )
-    SDL2.DestroyTexture(texture)
-end
-
-"""
-`angle(a1::Actor, a2::Actor)`
-
-Angle between the horizontal and the line between two actors. Value returned is in degrees.
-"""
+"""Angle to the horizontal, of the line between two actors, in degrees"""
 function Base.angle(a::Actor, target::Actor)
     angle(a, a.pos...)
 end
 
-"""
-`angle(a::Actor, xy::Tuple{Number, Number})`
-
-Angle between the horizontal of the line between an actor and a point in space. Value returned is in degrees.
-"""
 Base.angle(a::Actor, txy::Tuple) = angle(a, txy[1], txy[2])
 
-"""
-`angle(a::Actor, x::Number, y::Number)`
-
-Angle between the horizontal of the line between an actor and a point in space. Value returned is in degrees.
-"""
+"""Angle to the horizontal, of the line between an actor and a point in space, in degrees"""
 function Base.angle(a::Actor, tx, ty)
     myx, myy = a.pos
     dx = tx - myx
@@ -120,20 +104,12 @@ function Base.angle(a::Actor, tx, ty)
     return deg2rad(atan(dy/dx))
 end
 
-"""
-`distance(a1::Actor, a2::Actor)`
-
-Distance in pixels between two actors.
-"""
+"""Distance in pixels between two actors"""
 function distance(a::Actor, target::Actor)
     distance(a, target.pos...)
 end
 
-"""
-`distance(a::Actor, x::Number, y::Number)`
-
-Distance in pixels between an actor and a point in space
-"""
+"""Distance in pixels between an actor and a point in space"""
 function distance(a::Actor, tx, ty)
     myx, myy = a.pos
     dx = tx - myx
@@ -150,15 +126,6 @@ function Base.size(s::Ptr{SDL2.Surface})
     return (ss.w, ss.h)
 end
 
-
-"""
-```
-collide(a, x::Integer, y::Integer)
-collide(a, xy::Tuple{Integer, Integer})
-```
-
-Checks if a (a game object) is colliding with a point.
-"""
 function collide(a, x::Integer, y::Integer)
     a=rect(a)
     return a.x <= x < (a.x + a.w) &&
@@ -167,19 +134,14 @@ end
 
 collide(a, pos::Tuple) = collide(a, pos[1], pos[2])
 
-"""
-`collide(a, b)`
+function collide(c, d)
+    a=rect(c)
+    b=rect(d)
 
-Checks if a and b (both game objects) are colliding.
-"""
-function collide(a, b)
-    a=rect(a)
-    b=rect(b)
     return a.x < b.x + b.w &&
         a.y < b.y + b.h &&
         a.x + a.w > b.x &&
         a.y + a.h > b.y
-
 end
 
 rect(a::Actor) = a.position
