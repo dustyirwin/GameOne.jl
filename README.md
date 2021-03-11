@@ -2,7 +2,6 @@
 
 [![version](https://juliahub.com/docs/GameZero/version.svg)](https://juliahub.com/ui/Packages/GameZero/tTDGf)
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliahub.com/docs/GameZero/tTDGf/)
-[![Build Status](https://travis-ci.org/aviks/GameZero.jl.svg?branch=master)](https://travis-ci.com/aviks/GameZero.jl)
 
 __This is a heavily modified fork of the zero overhead game development framework for beginners. As such, its use, features and performance may vary significantly from aviks/GameZero.jl__
 
