@@ -184,12 +184,12 @@ Keyboard() = Keyboard(Array{Any, 1}())
 function Base.getproperty(k::Keyboard, s::Symbol)
     s = Symbol(uppercase(string(s)))
 
-    if isdefined(GZ2.Keys, s)
-        UInt32(getfield(GZ2.Keys, s)) in getfield(k, :pressed)
+    if isdefined(GameZero.Keys, s)
+        UInt32(getfield(GameZero.Keys, s)) in getfield(k, :pressed)
     end
 
-    if isdefined(GZ2.Keymods, s)
-        UInt32(getfield(GZ2.Keymods, s)) in getfield(k, :pressed)
+    if isdefined(GameZero.Keymods, s)
+        UInt32(getfield(GameZero.Keymods, s)) in getfield(k, :pressed)
     end
 
     false

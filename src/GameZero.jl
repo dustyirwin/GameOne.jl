@@ -189,7 +189,7 @@ function rungame(jlf::String)
             @error e exception = (e, catch_backtrace())
         end
     finally
-        GZ2.quitSDL(game[])
+        GameZero.quitSDL(game[])
     end
 end
 
@@ -209,8 +209,8 @@ function initgame(jlf::String)
     g.location = dirname(jlf)
     g.keyboard = Keyboard()
 
-    Base.include_string(game_module, "using GZ2")
-    Base.include_string(game_module, "import GZ2.draw")
+    Base.include_string(game_module, "using GameZero")
+    Base.include_string(game_module, "import GameZero.draw")
     Base.include_string(game_module, "using Colors")
     Base.include(game_module, jlf)
 
@@ -220,7 +220,7 @@ function initgame(jlf::String)
     g.onmouseup_function = getfn(game_module, :on_mouse_up, 3)
     g.onmousedown_function = getfn(game_module, :on_mouse_down, 3)
     g.onmousemove_function = getfn(game_module, :on_mouse_move, 2)
-    g.screen = initscreen(game_module, "GZ2::"*name)
+    g.screen = initscreen(game_module, "GameZero::"*name)
     clear(g.screen)
     return g
 end
