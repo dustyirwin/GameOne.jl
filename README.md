@@ -3,7 +3,11 @@
 [![version](https://juliahub.com/docs/GameZero/version.svg)](https://juliahub.com/ui/Packages/GameZero/tTDGf)
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliahub.com/docs/GameZero/tTDGf/)
 
-__This is a heavily modified fork of the zero overhead game development framework for beginners. As such, its use, features and performance may vary significantly from aviks/GameZero.jl__
+__This is a WIP heavily modified fork of the zero overhead game development framework for beginners. As such, its use, features and performance may vary significantly from aviks/GameZero.jl__
+
+## Known Issues
+- Incomplete text input API
+
 
 ## Overview
 The aim of this package is to remove accidental complexity from the game development process. We therefore always choose simplicity and consistency over features. The users of this package will include young programmers learning their first language, maybe moving on from Scratch. While we aim to support reasonably sophisticated 2D games, our first priority will remain learners, and their teachers.
