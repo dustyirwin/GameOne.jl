@@ -31,15 +31,15 @@ end
 
 # ╔═╡ dbac3a3a-86b2-11eb-3ab6-b372402be5ed
 # Height of the game window
-HEIGHT = 400
+const HEIGHT = 400
 
 # ╔═╡ 3ca2ae5a-86b3-11eb-05a8-65b38937b812
 # Width of the game window
-WIDTH = 400
+const WIDTH = 400
 
 # ╔═╡ 3fba3626-86b3-11eb-0083-c3b4e3b8f030
 # Background color of the game window
-BACKGROUND = colorant"purple"
+const BACKGROUND = colorant"purple"
 
 # ╔═╡ 183b510c-86ba-11eb-034a-875bf309b781
 alien_imgs = ["images/alien.png", "images/alien_hurt.png"]
@@ -83,7 +83,7 @@ a = ImageActor("alien", alien_imgs)
 
 # ╔═╡ fd103f2e-86b6-11eb-3c6d-7f88f3307577
 # Start playing background music -- audio not working on linux!
-play_music("radetzky_ogg")
+#play_music("radetzky_ogg")
 
 # ╔═╡ 0e6bcb1c-86b7-11eb-381f-e318bfcaf749
 function draw(g::Game)
@@ -106,19 +106,31 @@ end
 # If the "space" key is pressed, change the displayed image to the "hurt" variant.
 # Also schedule an event to change it back to normal after one second.
 function on_key_down(g, k)
-	global a
+	global a, dx, dy
 
 	if k == Keys.SPACE
-		@show k
-        shift_surface()
+		@show "$k :)"
+        a = shift_surface()
         schedule_once(shift_surface, 1)
-    end
+
+	elseif k == Keys.DOWN
+        @show dy = 2
+
+	elseif k == Keys.UP
+        @show dy = -2
+
+	elseif k == Keys.LEFT
+        @show dx = -2
+
+	elseif k == Keys.RIGHT
+        @show dx = 2
+	end
 end
 
 # ╔═╡ a56bcd38-86b6-11eb-2c04-c579bab3fb95
 md"""
 ## That's it!
-If all cells resolved successfully, we should be able to execute `GameZero.run("path/to/this_notebook.jl")` to start this game.
+If all cells resolved successfully, we should be able to execute `rungame("path/to/this_notebook.jl")` to start this game.
 """
 
 # ╔═╡ 13c71904-86b7-11eb-1555-2b946684a23b
@@ -137,19 +149,6 @@ function update(g::Game)
         dy = -dy
         #play_sound("sounds/eep.wav")
     end
-
-    if g.keyboard.DOWN
-        dy = 2
-
-	elseif g.keyboard.UP
-        dy = -2
-
-	elseif g.keyboard.LEFT
-        dx = -2
-
-	elseif g.keyboard.RIGHT
-        dx = 2
-	end
 end
 
 # ╔═╡ 778c9b2a-86b3-11eb-2bde-17da75aa588f

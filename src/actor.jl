@@ -17,9 +17,11 @@ function draw(a::Actor)
 
         for (i, sf) in enumerate(a.surfaces)
             tx = SDL2.CreateTextureFromSurface(game[].screen.renderer, sf)
+
             if tx == SDL2.C_NULL
                 @warn "Failed to create texture $i for $(a.label)! Fall back to CPU?"
             end
+
             push!(a.textures, tx)
         end
 
@@ -35,10 +37,13 @@ function draw(a::Actor)
 
     flip = if a.w < 0 && a.h < 0
         SDL2.FLIP_HORIZONTAL | SDL2.FLIP_VERTICAL
+
     elseif a.h < 0
         SDL2.FLIP_VERTICAL
+
     elseif a.w < 0
         SDL2.FLIP_HORIZONTAL
+
     else
         SDL2.FLIP_NONE
     end
@@ -60,6 +65,7 @@ function Base.setproperty!(s::Actor, p::Symbol, x)
     else
         position = getfield(s, :position)
         v = getproperty(position, p)
+
         if v !== nothing
             setproperty!(position, p, x)
 
@@ -72,13 +78,16 @@ end
 function Base.getproperty(s::Actor, p::Symbol)
     if hasfield(Actor, p)
         getfield(s, p)
+
     else
         position = getfield(s, :position)
         v = getproperty(position, p)
+
         if v !== nothing
             return v
         else
             data = getfield(s, :data)
+
             if haskey(data, p)
                 return data[p]
             else
@@ -114,7 +123,7 @@ function distance(a::Actor, tx, ty)
     myx, myy = a.pos
     dx = tx - myx
     dy = ty - myy
-    return sqrt(dx * dx + dy * dy)
+    sqrt(dx * dx + dy * dy)
 end
 
 atan2(y, x) = pi - pi/2 * (1 + sign(x)) * (1 - sign(y^2)) - pi/4 * (2 + sign(x)) * sign(y) -
@@ -123,13 +132,12 @@ atan2(y, x) = pi - pi/2 * (1 + sign(x)) * (1 - sign(y^2)) - pi/4 * (2 + sign(x))
 
 function Base.size(s::Ptr{SDL2.Surface})
     ss = unsafe_load(s)
-    return (ss.w, ss.h)
+    (ss.w, ss.h)
 end
 
 function collide(a, x::Integer, y::Integer)
     a=rect(a)
-    return a.x <= x < (a.x + a.w) &&
-        a.y <= y < (a.y + a.h)
+    a.x <= x < (a.x + a.w) && a.y <= y < (a.y + a.h)
 end
 
 collide(a, pos::Tuple) = collide(a, pos[1], pos[2])
@@ -138,10 +146,10 @@ function collide(c, d)
     a=rect(c)
     b=rect(d)
 
-    return a.x < b.x + b.w &&
-        a.y < b.y + b.h &&
-        a.x + a.w > b.x &&
-        a.y + a.h > b.y
+    a.x < b.x + b.w &&
+    a.y < b.y + b.h &&
+    a.x + a.w > b.x &&
+    a.y + a.h > b.y
 end
 
 rect(a::Actor) = a.position
