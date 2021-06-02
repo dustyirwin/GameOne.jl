@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.21
+# v0.14.5
 
 using Markdown
 using InteractiveUtils
@@ -9,9 +9,10 @@ begin
 	using Pkg
 
 	Pkg.activate(mktempdir())
-	Pkg.add(["Colors", "PlutoUI", "Images", "ImageIO", "SimpleDirectMediaLayer",
-		"ShiftedArrays"])
+	Pkg.add(["Colors" "PlutoUI" "Images" "ImageIO" "SimpleDirectMediaLayer" "ShiftedArrays"])
 	Pkg.add(url="https://github.com/dustyirwin/GameZero.jl")
+	Pkg.add(url="https://github.com/Pocket-titan/DarkMode")
+	
 
 	using Colors
 	using Images
@@ -20,6 +21,8 @@ begin
 	using GameZero
 	using ShiftedArrays
 	using SimpleDirectMediaLayer
+	
+	import DarkMode
 
 	const SDL2 = SimpleDirectMediaLayer
 
@@ -77,23 +80,29 @@ function ImageActor(img_name::String, img_fns; x=0, y=0, sfs=[], kv...)
 	a
 end
 
-# ╔═╡ 85f8f0be-86b3-11eb-0915-8168ea743a8d
-# Create an `Image` actor object with an image
-a = ImageActor("alien", alien_imgs)
-
 # ╔═╡ fd103f2e-86b6-11eb-3c6d-7f88f3307577
 # Start playing background music -- audio not working on linux!
 #play_music("radetzky_ogg")
+
+# ╔═╡ 1fb97c3e-86b7-11eb-0e87-e1ce13846d21
+md"""The update function is called every frame. Within the function, we
+change the position of the actor by the velocity if the actor hits the edges, we invert the velocity, and play a sound if the up/down/left/right keys are pressed, we change the velocity to move the actor in the direction of the keypress
+"""
 
 # ╔═╡ 0e6bcb1c-86b7-11eb-381f-e318bfcaf749
 function draw(g::Game)
     draw(a)
 end
 
-# ╔═╡ 1fb97c3e-86b7-11eb-0e87-e1ce13846d21
-md"""The update function is called every frame. Within the function, we
-change the position of the actor by the velocity if the actor hits the edges, we invert the velocity, and play a sound if the up/down/left/right keys are pressed, we change the velocity to move the actor in the direction of the keypress
+# ╔═╡ a56bcd38-86b6-11eb-2c04-c579bab3fb95
+md"""
+## That's it!
+If all cells resolved successfully, we should be able to execute `rungame("path/to/this_notebook.jl")` to start this game.
 """
+
+# ╔═╡ 85f8f0be-86b3-11eb-0915-8168ea743a8d
+# Create an `Image` actor object with an image
+a = ImageActor("alien", alien_imgs)
 
 # ╔═╡ 1224bbba-86bc-11eb-3f60-fbd14b6442a8
 function shift_surface()
@@ -127,11 +136,12 @@ function on_key_down(g, k)
 	end
 end
 
-# ╔═╡ a56bcd38-86b6-11eb-2c04-c579bab3fb95
-md"""
-## That's it!
-If all cells resolved successfully, we should be able to execute `rungame("path/to/this_notebook.jl")` to start this game.
-"""
+# ╔═╡ 778c9b2a-86b3-11eb-2bde-17da75aa588f
+# Global to store velocities of the actor
+begin
+	dx = 2
+	dy = 2
+end
 
 # ╔═╡ 13c71904-86b7-11eb-1555-2b946684a23b
 function update(g::Game)
@@ -149,13 +159,6 @@ function update(g::Game)
         dy = -dy
         #play_sound("sounds/eep.wav")
     end
-end
-
-# ╔═╡ 778c9b2a-86b3-11eb-2bde-17da75aa588f
-# Global to store velocities of the actor
-begin
-	dx = 2
-	dy = 2
 end
 
 # ╔═╡ Cell order:
