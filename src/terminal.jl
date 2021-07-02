@@ -1,3 +1,4 @@
+using GameOne.Game
 
 function start_terminal(g::Game, gs::Dict, AN::Module)
     done = false

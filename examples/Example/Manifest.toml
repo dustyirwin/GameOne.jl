@@ -213,7 +213,7 @@ version = "2.10.4+0"
 
 [[GameOne]]
 deps = ["Colors", "ImageIO", "Images", "ShiftedArrays", "SimpleDirectMediaLayer"]
-git-tree-sha1 = "fb04e266ac32e5b156ad6e9cddf6aa039d2179fa"
+git-tree-sha1 = "09649f3bc6c853a4f996b3a90b430bce443d0446"
 repo-rev = "dev-text-api"
 repo-url = "https://github.com/dustyirwin/GameOne.jl"
 uuid = "b831c3d0-16f1-4eaa-ad23-1d0424ad4597"
