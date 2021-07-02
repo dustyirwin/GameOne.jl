@@ -1,8 +1,6 @@
 
 using Images
 
-SDL_OpenAudioDevice()
-
 # Height of the game window
 HEIGHT = 400
 # Width of the game window

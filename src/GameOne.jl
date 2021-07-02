@@ -5,7 +5,7 @@ using Random
 
 export Image, Game, game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
         collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
-        getEventType, getTextInputEventChar, getTextEditEventString, OpenAudioDevice
+        getEventType, getTextInputEventChar, getTextEditEventString
 export Keys, Keymods, MouseButtons
 export Line, Rect, Circle
 
@@ -273,7 +273,7 @@ function initSDL()
     mix_init_flags = SDL2.MIX_INIT_FLAC|SDL2.MIX_INIT_MP3|SDL2.MIX_INIT_OGG
     inited = SDL2.Mix_Init(Int32(mix_init_flags))
     if inited & mix_init_flags != mix_init_flags
-        @warn "Failed to initialise audio mixer properly. All sounds may not play correctly\n$(getSDLError())"
+        @warn "Failed to initialise audio mixer properly. Sounds may not play correctly\n$(getSDLError())"
     end
 
     device = SDL2.Mix_OpenAudio(Int32(22050), UInt16(SDL2.MIX_DEFAULT_FORMAT), Int32(2), Int32(1024) )
