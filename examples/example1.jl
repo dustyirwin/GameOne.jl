@@ -11,7 +11,7 @@ dx = 2
 dy = 2
 
 # Create an `Actor` object with an image
-a=Image("alien.png", load("examples/imgs/alien.png"))
+a=GameOne.Image("alien.png", load("examples/imgs/alien.png"))
 
 # Start playing background music
 play_music("music/radetzky_ogg")
