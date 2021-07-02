@@ -23,10 +23,12 @@ function draw(g::Game)
     draw(a)
 end
 
+
 # The update function is called every frame. Within the function, we
 # * change the position of the actor by the velocity
 # * if the actor hits the edges, we invert the velocity, and play a sound
 # * if the up/down/left/right keys are pressed, we change the velocity to move the actor in the direction of the keypress
+
 function update(g::Game)
     global dx, dy
     a.position.x += dx
