@@ -52,21 +52,17 @@ function update(g::Game)
         dx = -2
     elseif g.keyboard.RIGHT
         dx = 2
-    elseif g.keyboard.BACKQUOTE
-        start_terminal(g)
     end
-
 end
 
 # If the "space" key is pressed, change the displayed image to the "hurt" variant.
 # Also schedule an event to change it back to normal after one second.
 
-#function on_key_down(g, k)
-#    if k == Keys.SPACE
-#        alien_hurt()
-#        schedule_once(alien_normal, 1)
-#    end
-#end
+function on_key_down(g, k)
+    if k == Keys.BACKQUOTE
+        start_terminal(g)
+    end
+end
 
 # We define functions to change the image for the actor. These functions are called from the keydown and scheduled events.
 #alien_hurt() = a.image = "imgs/alien_hurt.png"
