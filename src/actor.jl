@@ -1,4 +1,5 @@
 
+
 mutable struct Actor
     label::String
     surfaces::Vector{Ptr{SDL2.Surface}}
@@ -8,7 +9,7 @@ mutable struct Actor
     rotate_center::Union{Vector{Int32},Ptr{Nothing}}
     angle::Float64
     alpha::UInt8
-    data::Dict{Symbol, Any}
+    data::Dict{Symbol,Any}
 end
 
 

@@ -213,11 +213,17 @@ version = "2.10.4+0"
 
 [[GameOne]]
 deps = ["Colors", "GameOne", "ImageIO", "Images", "ShiftedArrays", "SimpleDirectMediaLayer"]
-git-tree-sha1 = "b83088827870300d1752dc487012702916824002"
+git-tree-sha1 = "09f9eda51e749e814bd0acf9154b7168bfcc25c0"
 repo-rev = "dev-text-api"
 repo-url = "https://github.com/dustyirwin/GameOne.jl"
 uuid = "b831c3d0-16f1-4eaa-ad23-1d0424ad4597"
 version = "0.0.0"
+
+[[GameZero]]
+deps = ["Colors", "Random", "SimpleDirectMediaLayer"]
+git-tree-sha1 = "687daee1522d6457e297da5f4d19802da593ae27"
+uuid = "9da27670-f782-11e9-1da1-f53579315bfe"
+version = "0.1.3"
 
 [[Gettext_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "XML2_jll"]

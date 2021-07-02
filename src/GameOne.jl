@@ -3,7 +3,7 @@ module GameOne
 using Colors
 using Random
 
-export Actor, ActorImage, ActorText, Game, game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
+export Image, Game, game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
         collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
         getEventType, getTextInputEventChar, getTextEditEventString
 export Keys, Keymods, MouseButtons
