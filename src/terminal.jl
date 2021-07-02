@@ -6,7 +6,7 @@ using GameOne
 using SimpleDirectMediaLayer
 SDL2 = SimpleDirectMediaLayer
 
-function start_terminal(g::Game, gs::Dict, AN::Module)
+function start_terminal(g::GameOne.Game, gs::Dict, AN::Module)
     done = false
     comp = ">"
 
