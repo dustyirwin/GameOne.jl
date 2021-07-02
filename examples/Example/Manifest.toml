@@ -211,6 +211,14 @@ git-tree-sha1 = "87eb71354d8ec1a96d4a7636bd57a7347dde3ef9"
 uuid = "d7e528f0-a631-5988-bf34-fe36492bcfd7"
 version = "2.10.4+0"
 
+[[GameOne]]
+deps = ["Colors", "GameOne", "ImageIO", "Images", "ShiftedArrays", "SimpleDirectMediaLayer"]
+git-tree-sha1 = "b83088827870300d1752dc487012702916824002"
+repo-rev = "dev-text-api"
+repo-url = "https://github.com/dustyirwin/GameOne.jl"
+uuid = "b831c3d0-16f1-4eaa-ad23-1d0424ad4597"
+version = "0.0.0"
+
 [[Gettext_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "XML2_jll"]
 git-tree-sha1 = "9b02998aba7bf074d14de89f9d37ca24a1a0b046"
