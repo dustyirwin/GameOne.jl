@@ -1,12 +1,5 @@
-module Terminal
 
-export start_terminal
-
-using GameOne
-using SimpleDirectMediaLayer
-SDL2 = SimpleDirectMediaLayer
-
-function start_terminal(g::GameOne.Game, gs::Dict, AN::Module)
+function start_terminal(g::Game, gs::Dict, AN::Module)
     done = false
     comp = ">"
 
@@ -61,8 +54,6 @@ function start_terminal(g::GameOne.Game, gs::Dict, AN::Module)
     AN.update_text_actor!(gs[:terminal_text], comp)
 
 end # func
-
-end # module
 
 """
 SDL2 Structs:
