@@ -11,6 +11,50 @@ mutable struct Actor
     data::Dict{Symbol, Any}
 end
 
+
+function Image(img_name::String, img; x=0, y=0, kv...)
+    @show img_name
+    img = ARGB.(transpose(img))
+    w, h = Int32.(size(img))
+    sf = SDL2.CreateRGBSurfaceWithFormatFrom(
+        img,
+        w,
+        h,
+        Int32(32),
+        Int32(4w),
+        SDL2.PIXELFORMAT_ARGB32,
+    )
+
+    r = SDL2.Rect(x, y, w, h)
+    a = Actor(
+        img_name,
+        [sf],
+        [],
+        r,
+        [1,1],
+        C_NULL,
+        0,
+        255,
+        Dict(
+            :img=>img,
+            :label=>img_name,
+            :sz=>[w,h],
+            :fade=>false,
+            :fade_out=>true,
+            :spin=>false,
+            :spin_cw=>true,
+            :shake=>false,
+            :mouse_offset=>Int32[0,0],
+        )
+    )
+
+    for (k, v) in kv
+        setproperty!(a, k, v)
+    end
+    return a
+end
+
+
 function draw(a::Actor)
     if isempty(a.textures)
         SDL2.SetHint(SDL2.HINT_RENDER_SCALE_QUALITY, "best")
