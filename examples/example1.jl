@@ -16,7 +16,7 @@ dy = 2
 a=Image("alien.png", load("examples/imgs/alien.png"))
 
 # Start playing background music
-play_music("music/radetzky.mp3")
+play_music("examples/music/radetzky.mp3")
 
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
@@ -34,12 +34,12 @@ function update(g::Game)
 
     if a.x > 400-a.w || a.x < 2
         dx = -dx
-        play_sound("sounds/eep.wav")
+        play_sound("examples/sounds/eep.wav")
     end
 
     if a.y > 400-a.h || a.y < 2
         dy = -dy
-        play_sound("sounds/eep.wav")
+        play_sound("examples/sounds/eep.wav")
     end
 
     if g.keyboard.DOWN
