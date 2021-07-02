@@ -131,7 +131,7 @@ atan2(y, x) = pi - pi/2 * (1 + sign(x)) * (1 - sign(y^2)) - pi/4 * (2 + sign(x))
 
 
 function Base.size(s::Ptr{SDL2.Surface})
-    ss = unsafe_load(s)
+    ss = SDL2.unsafe_load(s)
     (ss.w, ss.h)
 end
 
