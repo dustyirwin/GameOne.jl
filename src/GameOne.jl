@@ -20,7 +20,6 @@ include("event.jl")
 include("resources.jl")
 include("screen.jl")
 include("actor.jl")
-include("terminal.jl")
 
 
 #Magic variables
@@ -283,6 +282,66 @@ function initSDL()
         SDL2.Mix_CloseAudio()
     end
 end
+
+
+function start_terminal(g::Game, gs::Dict, AN::Module)
+    done = false
+    comp = ">"
+
+    SDL2.StartTextInput()
+
+    while !done
+        event, success = GameOne.pollEvent!()
+        
+        if success
+            
+            if getEventType(event) == SDL2.TEXTINPUT
+                
+                @show SDL2.GetClipboardText()
+                #comp *= String(Char(i) for i in clip)
+                
+                char = getTextInputEventChar(event)
+                
+                comp *= char
+                comp = comp == ">`" ? ">" : comp
+                @show "TextInputEvent! comp: $comp"
+
+            elseif getEventType(event) == SDL2.TEXTEDITING
+                
+                #=
+                Update the composition text.
+                Update the cursor position.
+                Update the selection length (if any).
+                =#
+                
+                #cursor = getTextEditEventCursorPosition(event) #.edit.start)
+                #selection_len = getTextEditEventCursorPosition(event) #.edit.length)
+                
+                @show "TextEditingEvent! Exiting..."
+                done = true
+            end
+        end
+        
+        SDL2.Redraw()
+    end
+
+    SDL2.StopTextInput()
+    
+    @show ex = Meta.parse(comp[2:end])
+    @show res = eval(M, ex)
+
+    comp = 
+    """
+    >$(comp[2:end])
+    $res
+    """
+    
+    AN.update_text_actor!(gs[:terminal_text], comp)
+
+end # func
+
+
+
 
 function quitSDL(g::Game)
     # Need to close the callback before quitting SDL to prevent it from hanging
