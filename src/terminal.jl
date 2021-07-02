@@ -1,5 +1,5 @@
 
-function start_terminal(g::Game, gs::Dict, AN::Module)
+function start_terminal(g::Game, comp::String)
     done = false
     comp = ">"
 
@@ -51,8 +51,7 @@ function start_terminal(g::Game, gs::Dict, AN::Module)
     $res
     """
     
-    AN.update_text_actor!(gs[:terminal_text], comp)
-
+    println(comp)
 end # func
 
 """

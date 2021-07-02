@@ -284,9 +284,9 @@ function initSDL()
 end
 
 
-function start_terminal(g::Game, gs::Dict, AN::Module)
+function start_terminal(g::Game, a::Actor, comp="")
     done = false
-    comp = ">"
+    comp == "" ? ">" : ">$comp"
 
     SDL2.StartTextInput()
 
@@ -330,13 +330,10 @@ function start_terminal(g::Game, gs::Dict, AN::Module)
     @show ex = Meta.parse(comp[2:end])
     @show res = eval(M, ex)
 
-    comp = 
     """
     >$(comp[2:end])
     $res
-    """
-    
-    AN.update_text_actor!(gs[:terminal_text], comp)
+    """ |> println
 
 end # func
 
