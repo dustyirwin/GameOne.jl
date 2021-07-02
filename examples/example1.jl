@@ -1,4 +1,8 @@
 
+using Images
+
+SDL_OpenAudioDevice()
+
 # Height of the game window
 HEIGHT = 400
 # Width of the game window
@@ -11,10 +15,10 @@ dx = 2
 dy = 2
 
 # Create an `Actor` object with an image
-a=GameOne.Image("alien.png", load("examples/imgs/alien.png"))
+a=Image("alien.png", load("examples/imgs/alien.png"))
 
 # Start playing background music
-play_music("music/radetzky_ogg")
+play_music("music/radetzky.mp3")
 
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
@@ -32,12 +36,12 @@ function update(g::Game)
 
     if a.x > 400-a.w || a.x < 2
         dx = -dx
-        play_sound("sounds/eep")
+        play_sound("sounds/eep.wav")
     end
 
     if a.y > 400-a.h || a.y < 2
         dy = -dy
-        play_sound("sounds/eep")
+        play_sound("sounds/eep.wav")
     end
 
     if g.keyboard.DOWN
@@ -50,18 +54,18 @@ function update(g::Game)
         dx = 2
     end
 
-
 end
 
 # If the "space" key is pressed, change the displayed image to the "hurt" variant.
 # Also schedule an event to change it back to normal after one second.
-function on_key_down(g, k)
-    if k == Keys.SPACE
-        alien_hurt()
-        schedule_once(alien_normal, 1)
-    end
-end
+
+#function on_key_down(g, k)
+#    if k == Keys.SPACE
+#        alien_hurt()
+#        schedule_once(alien_normal, 1)
+#    end
+#end
 
 # We define functions to change the image for the actor. These functions are called from the keydown and scheduled events.
-alien_hurt() = a.image = "imgs/alien_hurt.png"
-alien_normal() = a.image = "imgs/alien.png"
+#alien_hurt() = a.image = "imgs/alien_hurt.png"
+#alien_normal() = a.image = "imgs/alien.png"
