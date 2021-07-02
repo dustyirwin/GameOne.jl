@@ -53,7 +53,7 @@ function update(g::Game)
     elseif g.keyboard.RIGHT
         dx = 2
     elseif g.keyboard.BACKQUOTE
-        start_terminal(g, )
+        start_terminal(g)
     end
 
 end

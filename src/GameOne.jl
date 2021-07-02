@@ -284,7 +284,7 @@ function initSDL()
 end
 
 
-function start_terminal(g::Game, a::Actor, comp="")
+function start_terminal(g::Game, comp="")
     done = false
     comp == "" ? ">" : ">$comp"
 
