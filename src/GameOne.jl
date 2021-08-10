@@ -11,7 +11,7 @@ export Line, Rect, Circle
 
 
 using SimpleDirectMediaLayer
-const SDL2 = SimpleDirectMediaLayer
+const SDL2 = SimpleDirectMediaLayer.LibSDL2
 
 include("keyboard.jl")
 include("timer.jl")
@@ -26,7 +26,6 @@ include("actor.jl")
 const HEIGHTSYMBOL = :SCREEN_HEIGHT
 const WIDTHSYMBOL = :SCREEN_WIDTH
 const BACKSYMBOL = :BACKGROUND
-
 
 mutable struct Game
     screen::Screen
