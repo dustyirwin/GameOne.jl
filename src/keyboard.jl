@@ -9,9 +9,11 @@ export MouseButton
 end
 end
 
+
+
 module Keys
 import SimpleDirectMediaLayer
-const SDL2 = SimpleDirectMediaLayer
+const SDL2 = SimpleDirectMediaLayer.LibSDL2
 export Key
 @enum Key::UInt32 begin
     UNKNOWN = SDL2.SDLK_UNKNOWN;
