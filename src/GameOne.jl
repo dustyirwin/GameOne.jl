@@ -11,7 +11,7 @@ export Line, Rect, Circle
 
 
 using SimpleDirectMediaLayer
-const SDL2 = SimpleDirectMediaLayer
+const SDL2 = SimpleDirectMediaLayer.LibSDL2
 
 include("keyboard.jl")
 include("timer.jl")
