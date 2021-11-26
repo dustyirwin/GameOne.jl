@@ -262,8 +262,8 @@ function getSDLError()
 end
 
 function initSDL()
-    SDL2.GL_SetAttribute(SDL2.GL_MULTISAMPLEBUFFERS, 4)
-    SDL2.GL_SetAttribute(SDL2.GL_MULTISAMPLESAMPLES, 4)
+    SDL2.SDL_GL_SetAttribute(SDL2.GL_MULTISAMPLEBUFFERS, 4)
+    SDL2.SDL_GL_SetAttribute(SDL2.GL_MULTISAMPLESAMPLES, 4)
     r = SDL2.Init(UInt32(SDL2.INIT_VIDEO | SDL2.INIT_AUDIO))
     if r != 0
         error("Uanble to initialise SDL: $(getSDLError())")
@@ -288,21 +288,21 @@ function quitSDL(g::Game)
     # https://github.com/n0name/2D_Engine/issues/3
     @debug "Quitting the game"
     clear!(scheduler[])
-    SDL2.DelEventWatch(window_event_watcher_cfunc[], g.screen.window);
-    SDL2.DestroyRenderer(g.screen.renderer)
-    SDL2.DestroyWindow(g.screen.window)
+    SDL2.SDL_DelEventWatch(window_event_watcher_cfunc[], g.screen.window);
+    SDL2.SDL_DestroyRenderer(g.screen.renderer)
+    SDL2.SDL_DestroyWindow(g.screen.window)
     #Run all finalisers
     GC.gc();GC.gc();
     quitSDL()
 end
 
 function quitSDL()
-    SDL2.Mix_HaltMusic()
-    SDL2.Mix_HaltChannel(Int32(-1))
-    SDL2.Mix_CloseAudio()
-    SDL2.TTF_Quit()
-    SDL2.Mix_Quit()
-    SDL2.Quit()
+    SDL2.SDL_Mix_HaltMusic()
+    SDL2.SDL_Mix_HaltChannel(Int32(-1))
+    SDL2.SDL_Mix_CloseAudio()
+    SDL2.SDL_TTF_Quit()
+    SDL2.SDL_Mix_Quit()
+    SDL2.SDL_Quit()
 end
 
 function main()
