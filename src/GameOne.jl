@@ -1,4 +1,4 @@
-module GameZero
+module GameOne
 
 using Colors
 using Random
