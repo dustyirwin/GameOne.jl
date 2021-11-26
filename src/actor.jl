@@ -1,9 +1,9 @@
 
 mutable struct Actor
     label::String
-    surfaces::Vector{Ptr{SDL2.Surface}}
-    textures::Vector{Ptr{SDL2.Texture}}
-    position::SDL2.Rect
+    surfaces::Vector{Ptr{SDL2.SDL_Surface}}
+    textures::Vector{Ptr{SDL2.SDL_Texture}}
+    position::SDL2.SDL_Rect
     scale::Vector{Float32}
     rotate_center::Union{Vector{Int32},Ptr{Nothing}}
     angle::Float64
@@ -130,7 +130,7 @@ atan2(y, x) = pi - pi/2 * (1 + sign(x)) * (1 - sign(y^2)) - pi/4 * (2 + sign(x))
                             sign(x*y) * atan((abs(x) - abs(y)) / (abs(x) + abs(y)))
 
 
-function Base.size(s::Ptr{SDL2.Surface})
+function Base.size(s::Ptr{SDL2.SDL_Surface})
     ss = unsafe_load(s)
     (ss.w, ss.h)
 end

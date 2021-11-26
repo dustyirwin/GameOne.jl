@@ -45,7 +45,7 @@ mutable struct Circle <: Geom
 end
 
 
-Base.convert(T::Type{SDL2.Rect}, r::Rect) = SDL2.Rect(Cint.((r.x, r.y, r.w, r.h))...)
+Base.convert(T::Type{SDL2.SDL_Rect}, r::Rect) = SDL2.SDL_Rect(Cint.((r.x, r.y, r.w, r.h))...)
 
 function Base.setproperty!(s::Geom, p::Symbol, x)
     if hasfield(typeof(s), p)
@@ -150,7 +150,7 @@ function draw(s::Screen, r::Rect, c::Colorant=colorant"black"; fill=false)
         s.renderer,
         sdl_colors(c)...,
     )
-    sr = convert(SDL2.Rect, r)
+    sr = convert(SDL2.SDL_Rect, r)
 
     if !fill
         SDL2.RenderDrawRect(s.renderer, Ref(sr))
