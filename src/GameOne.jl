@@ -257,26 +257,26 @@ end
 struct QuitException <: Exception end
 
 function getSDLError()
-    x = SDL2.GetError()
+    x = SDL2.SDL_GetError()
     return unsafe_string(x)
 end
 
 function initSDL()
-    SDL2.SDL_GL_SetAttribute(SDL2.GL_MULTISAMPLEBUFFERS, 4)
-    SDL2.SDL_GL_SetAttribute(SDL2.GL_MULTISAMPLESAMPLES, 4)
-    r = SDL2.Init(UInt32(SDL2.INIT_VIDEO | SDL2.INIT_AUDIO))
+    SDL2.SDL_GL_SetAttribute(SDL2.SDL_GL_MULTISAMPLEBUFFERS, 4)
+    SDL2.SDL_GL_SetAttribute(SDL2.SDL_GL_MULTISAMPLESAMPLES, 4)
+    r = SDL2.SDL_Init(UInt32(SDL2.SDL_INIT_VIDEO | SDL2.SDL_INIT_AUDIO))
     if r != 0
         error("Uanble to initialise SDL: $(getSDLError())")
     end
     SDL2.TTF_Init()
 
-    mix_init_flags = SDL2.MIX_INIT_FLAC|SDL2.MIX_INIT_MP3|SDL2.MIX_INIT_OGG
+    mix_init_flags = SDL2.MIX_INIT_FLAC | SDL2.MIX_INIT_MP3|SDL2.MIX_INIT_OGG
     inited = SDL2.Mix_Init(Int32(mix_init_flags))
     if inited & mix_init_flags != mix_init_flags
         @warn "Failed to initialise audio mixer properly. All sounds may not play correctly\n$(getSDLError())"
     end
 
-    device = SDL2.Mix_OpenAudio(Int32(22050), UInt16(SDL2.MIX_DEFAULT_FORMAT), Int32(2), Int32(1024) )
+    device = SDL2.Mix_OpenAudio(Int32(22050), UInt16(SDL2.AUDIO_S16SYS), Int32(2), Int32(1024) )
     if device != 0
         @warn "No audio device available, sounds and music will not play.\n$(getSDLError())"
         SDL2.Mix_CloseAudio()
@@ -297,11 +297,11 @@ function quitSDL(g::Game)
 end
 
 function quitSDL()
-    SDL2.SDL_Mix_HaltMusic()
-    SDL2.SDL_Mix_HaltChannel(Int32(-1))
-    SDL2.SDL_Mix_CloseAudio()
-    SDL2.SDL_TTF_Quit()
-    SDL2.SDL_Mix_Quit()
+    SDL2.Mix_HaltMusic()
+    SDL2.Mix_HaltChannel(Int32(-1))
+    SDL2.Mix_CloseAudio()
+    SDL2.TTF_Quit()
+    SDL2.Mix_Quit()
     SDL2.SDL_Quit()
 end
 
