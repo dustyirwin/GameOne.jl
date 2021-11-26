@@ -1,5 +1,4 @@
 
-
 mutable struct Actor
     label::String
     surfaces::Vector{Ptr{SDL2.Surface}}
