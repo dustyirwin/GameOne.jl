@@ -10,7 +10,7 @@ begin
 
 	Pkg.activate(mktempdir())
 	Pkg.add(["Colors" "PlutoUI" "Images" "ImageIO" "SimpleDirectMediaLayer" "ShiftedArrays"])
-	Pkg.add(url="https://github.com/dustyirwin/GameZero.jl")
+	Pkg.add(url="https://github.com/dustyirwin/GameOne.jl")
 	Pkg.add(url="https://github.com/Pocket-titan/DarkMode")
 	
 
@@ -18,7 +18,7 @@ begin
 	using Images
 	using ImageIO
 	using PlutoUI
-	using GameZero
+	using GameOne
 	using ShiftedArrays
 	using SimpleDirectMediaLayer
 	

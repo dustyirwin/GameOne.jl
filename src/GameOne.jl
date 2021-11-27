@@ -189,7 +189,7 @@ function rungame(jlf::String)
             @error e exception = (e, catch_backtrace())
         end
     finally
-        GameZero.quitSDL(game[])
+        GameOne.quitSDL(game[])
     end
 end
 
@@ -209,8 +209,8 @@ function initgame(jlf::String)
     g.location = dirname(jlf)
     g.keyboard = Keyboard()
 
-    Base.include_string(game_module, "using GameZero")
-    Base.include_string(game_module, "import GameZero.draw")
+    Base.include_string(game_module, "using GameOne")
+    Base.include_string(game_module, "import GameOne.draw")
     Base.include_string(game_module, "using Colors")
     Base.include(game_module, jlf)
 
@@ -220,7 +220,7 @@ function initgame(jlf::String)
     g.onmouseup_function = getfn(game_module, :on_mouse_up, 3)
     g.onmousedown_function = getfn(game_module, :on_mouse_down, 3)
     g.onmousemove_function = getfn(game_module, :on_mouse_move, 2)
-    g.screen = initscreen(game_module, "GameZero::"*name)
+    g.screen = initscreen(game_module, "GameOne::"*name)
     clear(g.screen)
     return g
 end
@@ -266,17 +266,17 @@ function initSDL()
     SDL2.GL_SetAttribute(SDL2.GL_MULTISAMPLESAMPLES, 4)
     r = SDL2.Init(UInt32(SDL2.INIT_VIDEO | SDL2.INIT_AUDIO))
     if r != 0
-        error("Uanble to initialise SDL: $(getSDLError())")
+        error("Unable to initialise SDL: $(getSDLError())")
     end
     SDL2.TTF_Init()
 
-    mix_init_flags = SDL2.MIX_INIT_FLAC|SDL2.MIX_INIT_MP3|SDL2.MIX_INIT_OGG
+    mix_init_flags = SDL2.MIX_INIT_FLAC | SDL2.MIX_INIT_MP3|SDL2.MIX_INIT_OGG
     inited = SDL2.Mix_Init(Int32(mix_init_flags))
     if inited & mix_init_flags != mix_init_flags
         @warn "Failed to initialise audio mixer properly. All sounds may not play correctly\n$(getSDLError())"
     end
 
-    device = SDL2.Mix_OpenAudio(Int32(22050), UInt16(SDL2.MIX_DEFAULT_FORMAT), Int32(2), Int32(1024) )
+    device = SDL2.Mix_OpenAudio(Int32(22050), UInt16(SDL2.AUDIO_S16SYS), Int32(2), Int32(1024) )
     if device != 0
         @warn "No audio device available, sounds and music will not play.\n$(getSDLError())"
         SDL2.Mix_CloseAudio()

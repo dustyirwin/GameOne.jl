@@ -4,5 +4,5 @@
 ```
 
 ```@autodocs
-Modules = [GameZero]
+Modules = [GameOne]
 ```

@@ -9,7 +9,7 @@ function getEventType(e::Array{UInt8})
     bitcat(UInt32, e[4:-1:1])
 end
 
-function getEventType(e::SDL2.Event)
+function getEventType(e::SDL2.SDL_Event)
     bitcat(UInt32, e[4:-1:1])
 end
 

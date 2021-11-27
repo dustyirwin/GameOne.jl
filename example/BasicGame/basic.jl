@@ -1,3 +1,5 @@
+using Images
+
 
 # Height of the game window
 HEIGHT = 400
@@ -11,10 +13,10 @@ dx = 2
 dy = 2
 
 # Create an `Actor` object with an image
-a=Actor("alien.png")
+a=Image("example/BasicGame/images/alien.png", load("example/BasicGame/images/alien.png"))
 
 # Start playing background music
-play_music("radetzky_ogg")
+play_music("music/radetzky_ogg")
 
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
@@ -63,5 +65,5 @@ function on_key_down(g, k)
 end
 
 # We define functions to change the image for the actor. These functions are called from the keydown and scheduled events.
-alien_hurt() = a.image = "alien_hurt.png"
-alien_normal() = a.image = "alien.png"
+alien_hurt() = a.image = "images/alien_hurt.png"
+alien_normal() = a.image = "images/alien.png"

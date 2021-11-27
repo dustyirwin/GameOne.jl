@@ -8,14 +8,14 @@ The best way to learn how to use this package is by looking at code. There are s
 
 ## Running games
 
-Games created using GameZero are `.jl` files that live in any directory. To play the games, start the Julia REPL and:
+Games created using GameOne are `.jl` files that live in any directory. To play the games, start the Julia REPL and:
 
 ```
-pkg> add GameZero
+pkg> add GameOne
 
 pkg> add Colors
 
-julia> using GameZero
+julia> using GameOne
 
 julia> rungame("C:\\path\\to\\game\\Spaceship\\Spaceship.jl")
 
@@ -41,7 +41,7 @@ Game objects on-screen are represented as `Actors` which have several associated
 `a = Actor(image.png, xpos, ypos)`
 
 ## Rects, circles, and lines
-GameZero.jl also includes basic geometric shapes. `Rects`, `Circles` and `Lines` can be used to do everything an `Actor` can, having the same attributes (apart from image).
+GameOne.jl also includes basic geometric shapes. `Rects`, `Circles` and `Lines` can be used to do everything an `Actor` can, having the same attributes (apart from image).
 
 ```julia
 r = Rect(xpos, ypos, width, height)
