@@ -19,7 +19,7 @@ mutable struct Actor
 end
 
 
-function Image(img_name::String, img; x=0, y=0, kv...)
+function ImageActor(img_name::String, img; x=0, y=0, kv...)
     @show img_name
     img = ARGB.(transpose(img))
     w, h = Int32.(size(img))
@@ -147,6 +147,16 @@ function GIFActor(gif_name::String, gif; x=0, y=0, frame_delay=Millisecond(120),
     for (k, v) in kv
         setproperty!(a, k, v)
     end
+    return a
+end
+
+function update_text_actor!(a::Actor, new_text::String)
+    font = SDL2.TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
+    a.surfaces = [SDL2.TTF_RenderText_Blended_Wrapped(font, new_text,
+        SDL2.Color(a.data[:font_color]...), UInt32(a.data[:wrap_length]))]
+    a.w, a.h = size(a.surfaces[begin])
+    a.label = new_text
+    a.textures = []
     return a
 end
 

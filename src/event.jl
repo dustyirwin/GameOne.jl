@@ -13,12 +13,13 @@ function getEventType(e::SDL2.Event)
     bitcat(UInt32, e[4:-1:1])
 end
 
+# TextInputEvent only?
 function getTextInputEventChar(e::Array{UInt8})
     Char(e[13])
 end
 
 function getTextEditEventString(e::Array{UInt8})
-    "$([Char.(e[13:13+32])]...)"
+    join([string.(e[13:13+32])]...)
 end
 
 function bitcat(::Type{T}, arr)::T where T<:Number

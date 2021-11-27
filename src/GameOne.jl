@@ -8,9 +8,9 @@ const SDL2 = SimpleDirectMediaLayer
 
 export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
-    getEventType, getTextInputEventChar, getTextEditEventString, start_terminal
+    getEventType, getTextInputEventChar, getTextEditEventString, start_terminal, update_text_actor!
 export Game, Keys, Keymods, MouseButtons
-export Actor, Line, Rect, Circle
+export ImageActor, TextActor, Line, Rect, Circle
 
 
 
@@ -78,13 +78,13 @@ function mainloop(g::Game)
     start!(timer)
 
     while (true)
-      #Don't run if game is paused by system (resizing, lost focus, etc)
-      while window_paused[] != 0
-          _ = pollEvent!()
-          sleep(0.25)
-      end
+        #Don't run if game is paused by system (resizing, lost focus, etc)
+        while window_paused[] != 0
+            _ = pollEvent!()
+            sleep(0.25)
+        end
 
-      # Handle Events
+        # Handle Events
         errorMsg = ""
 
         try
@@ -99,18 +99,18 @@ function mainloop(g::Game)
             rethrow()
         end
 
-      #if (debug && debugText) renderFPS(renderer,last_10_frame_times) end
+        #if (debug && debugText) renderFPS(renderer,last_10_frame_times) end
         SDL2.RenderClear(g.screen.renderer)
         Base.invokelatest(g.render_function, g)
         SDL2.RenderPresent(g.screen.renderer)
 
         dt = elapsed(timer)
-      # Don't let the game proceed at fewer than this frames per second. If an
-      # update takes too long, allow the game to actually slow, rather than
-      # having too big of frames.
+        # Don't let the game proceed at fewer than this frames per second. If an
+        # update takes too long, allow the game to actually slow, rather than
+        # having too big of frames.
         min_fps = 30.0
         max_fps = 60.0
-        dt = min(dt/1e9, 1.0 / min_fps)
+        dt = min(dt / 1e9, 1.0 / min_fps)
         start!(timer)
         Base.invokelatest(g.update_function, g, dt)
         tick!(scheduler[])
@@ -127,7 +127,7 @@ function handleEvents!(g::Game, e, t)
         handleKeyPress(g::Game, e, t)
     elseif (t == SDL2.MOUSEBUTTONUP || t == SDL2.MOUSEBUTTONDOWN)
         handleMouseClick(g::Game, e, t)
-    #TODO elseif (t == SDL2.MOUSEWHEEL); handleMouseScroll(e)
+        #TODO elseif (t == SDL2.MOUSEWHEEL); handleMouseScroll(e)
     elseif (t == SDL2.MOUSEMOTION)
         handleMousePan(g::Game, e, t)
     elseif (t == SDL2.QUIT)
@@ -197,8 +197,8 @@ function initgame(jlf::String)
     if !isfile(jlf)
         ArgumentError("File not found: $jlf")
     end
-    name = titlecase(replace(basename(jlf), ".jl"=>""))
-    module_name = Symbol(name*"_"*randstring(5))
+    name = titlecase(replace(basename(jlf), ".jl" => ""))
+    module_name = Symbol(name * "_" * randstring(5))
     game_module = Module(module_name)
     @debug "Initialised Anonymous Game Module" module_name
     initSDL()
@@ -220,21 +220,21 @@ function initgame(jlf::String)
     g.onmouseup_function = getfn(game_module, :on_mouse_up, 3)
     g.onmousedown_function = getfn(game_module, :on_mouse_down, 3)
     g.onmousemove_function = getfn(game_module, :on_mouse_move, 2)
-    g.screen = initscreen(game_module, "GameOne::"*name)
+    g.screen = initscreen(game_module, "GameOne::" * name)
     clear(g.screen)
     return g
 end
 
 game_include(jlf::String) = Base.include(game[].game_module, jlf)
 
-function getfn(m::Module, s::Symbol, maxargs=3)
+function getfn(m::Module, s::Symbol, maxargs = 3)
     if isdefined(m, s)
         fn = getfield(m, s)
 
         ms = copy(methods(fn).ms)
-        filter!(x->x.module == m, ms)
+        filter!(x -> x.module == m, ms)
         if length(ms) > 1
-            sort!(ms, by=x->x.nargs, rev=true)
+            sort!(ms, by = x -> x.nargs, rev = true)
         end
         m = ms[1]
         if (m.nargs - 1) > maxargs
@@ -270,13 +270,13 @@ function initSDL()
     end
     SDL2.TTF_Init()
 
-    mix_init_flags = SDL2.MIX_INIT_FLAC | SDL2.MIX_INIT_MP3|SDL2.MIX_INIT_OGG
+    mix_init_flags = SDL2.MIX_INIT_FLAC | SDL2.MIX_INIT_MP3 | SDL2.MIX_INIT_OGG
     inited = SDL2.Mix_Init(Int32(mix_init_flags))
     if inited & mix_init_flags != mix_init_flags
         @warn "Failed to initialise audio mixer properly. Sounds may not play correctly\n$(getSDLError())"
     end
 
-    device = SDL2.Mix_OpenAudio(Int32(22050), UInt16(SDL2.AUDIO_S16SYS), Int32(2), Int32(1024) )
+    device = SDL2.Mix_OpenAudio(Int32(22050), UInt16(SDL2.AUDIO_S16SYS), Int32(2), Int32(1024))
     if device != 0
         @warn "No audio device available, sounds and music will not play.\n$(getSDLError())"
         SDL2.Mix_CloseAudio()
@@ -284,57 +284,47 @@ function initSDL()
 end
 
 
-function start_terminal(g::Game, comp="")
-    done = false
-    comp == "" ? ">" : ">$comp"
-
+function start_terminal(g::Game, comp = ">")
     SDL2.StartTextInput()
+    done = false
 
     while !done
         event, success = GameOne.pollEvent!()
-        
+
         if success
-            
+            @show "Incoming event: $(getEventType(event))"
+            @show str = getTextEditEventString(event)
+            # event codes 
+            # 256 -> QUIT
+            # 768 -> KEYDOWN
+            # 769 -> KEYUP
+            # 771 -> TEXTINPUT
+            # 1024 -> MOUSE
+            # 512 -> LOSE FOCUS?
+        
             if getEventType(event) == SDL2.TEXTINPUT
-                
-                @show SDL2.GetClipboardText()
-                #comp *= String(Char(i) for i in clip)
-                
                 char = getTextInputEventChar(event)
-                
+            
                 comp *= char
                 comp = comp == ">`" ? ">" : comp
-                @show "TextInputEvent! comp: $comp"
-
-            elseif getEventType(event) == SDL2.TEXTEDITING
-                
-                #=
-                Update the composition text.
-                Update the cursor position.
-                Update the selection length (if any).
-                =#
-                
-                #cursor = getTextEditEventCursorPosition(event) #.edit.start)
-                #selection_len = getTextEditEventCursorPosition(event) #.edit.length)
-                
-                @show "TextEditingEvent! Exiting..."
+                @show "TextInputEvent: $(getEventType(event)) comp: $comp"
+            
+            elseif length(comp) > 1 && getEventType(event) == SDL2.KEYDOWN && str == "100042000800001600000082151961450000805022570"
+                @show comp = comp[1:end-1]
+                @show "BackspaceEvent: $(getEventType(event)) comp: $comp"
+            
+            elseif getEventType(event) == SDL2.KEYDOWN && str == "1000400001300001600000082151961450000805022570"
+                @show "QuitEvent: $(getEventType(event))"
                 done = true
             end
         end
-        
+
         #Redraw()
     end
 
     SDL2.StopTextInput()
-    
-    @show ex = Meta.parse(comp[2:end])
-    @show res = eval(M, ex)
 
-    """
-    >$(comp[2:end])
-    $res
-    """ |> println
-
+    comp
 end # func
 
 
@@ -345,11 +335,12 @@ function quitSDL(g::Game)
     # https://github.com/n0name/2D_Engine/issues/3
     @debug "Quitting the game"
     clear!(scheduler[])
-    SDL2.DelEventWatch(window_event_watcher_cfunc[], g.screen.window);
+    SDL2.DelEventWatch(window_event_watcher_cfunc[], g.screen.window)
     SDL2.DestroyRenderer(g.screen.renderer)
     SDL2.DestroyWindow(g.screen.window)
     #Run all finalisers
-    GC.gc();GC.gc();
+    GC.gc()
+    GC.gc()
     quitSDL()
 end
 

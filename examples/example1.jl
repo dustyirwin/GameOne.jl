@@ -1,8 +1,5 @@
 using Images
 
-
-using Images
-
 # Height of the game window
 HEIGHT = 400
 # Width of the game window
@@ -14,15 +11,20 @@ BACKGROUND = colorant"purple"
 dx = 2
 dy = 2
 
-# Create an `Actor` object with an image
-a=Image("example/BasicGame/images/alien.png", load("example/BasicGame/images/alien.png"))
+
+# Create an `ImageActor` object from a PNG file
+a = ImageActor("examples/images/alien.png", load("examples/images/alien.png"))
+
+# Create an `TextActor` object from an empty string for terminal use
+tt = TextActor(">", "examples/fonts/OpenSans-Regular.ttf")
 
 # Start playing background music
-play_music("music/radetzky_ogg")
+play_music("examples/music/radetzky_ogg")
 
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
     draw(a)
+    draw(tt)
 end
 
 
@@ -36,12 +38,12 @@ function update(g::Game)
     a.position.x += dx
     a.position.y += dy
 
-    if a.x > 400-a.w || a.x < 2
+    if a.x > 400 - a.w || a.x < 2
         dx = -dx
         play_sound("examples/sounds/eep.wav")
     end
 
-    if a.y > 400-a.h || a.y < 2
+    if a.y > 400 - a.h || a.y < 2
         dy = -dy
         play_sound("examples/sounds/eep.wav")
     end
@@ -60,9 +62,12 @@ end
 # If the "space" key is pressed, change the displayed image to the "hurt" variant.
 # Also schedule an event to change it back to normal after one second.
 
-function on_key_down(g, k)
-    if k == Keys.BACKQUOTE
-        start_terminal(g)
+function on_key_down(g, key, keymod)
+    if key == Keys.BACKQUOTE
+        comp = start_terminal(g)
+        #@show ex = Meta.parse(command)
+        #@show res = @eval ex
+        update_text_actor!(tt, comp)
     end
 end
 
