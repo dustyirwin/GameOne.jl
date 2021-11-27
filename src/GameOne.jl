@@ -3,11 +3,11 @@ module GameOne
 using Colors
 using Random
 
-export Image, Game, game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
-        collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
-        getEventType, getTextInputEventChar, getTextEditEventString, start_terminal
-export Keys, Keymods, MouseButtons
-export Line, Rect, Circle
+export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
+    collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
+    getEventType, getTextInputEventChar, getTextEditEventString, start_terminal
+export Game, Keys, Keymods, MouseButtons
+export Actor, Line, Rect, Circle
 
 
 using SimpleDirectMediaLayer
