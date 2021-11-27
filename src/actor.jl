@@ -4,7 +4,7 @@ using GameOne
 using ShiftedArrays
 using SimpleDirectMediaLayer
 
-const SDL2 = SimpleDirectMediaLayer.LibSDL2
+const SDL2 = SimpleDirectMediaLayer
 
 mutable struct Actor
     label::String
