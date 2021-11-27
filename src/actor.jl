@@ -8,9 +8,9 @@ const SDL2 = SimpleDirectMediaLayer.LibSDL2
 
 mutable struct Actor
     label::String
-    surfaces::Vector{Ptr{SDL2.SDL_Surface}}
-    textures::Vector{Ptr{SDL2.SDL_Texture}}
-    position::SDL2.SDL_Rect
+    surfaces::Vector{Ptr{SDL2.Surface}}
+    textures::Vector{Ptr{SDL2.Texture}}
+    position::SDL2.Rect
     scale::Vector{Float32}
     rotate_center::Union{Vector{Int32},Ptr{Nothing}}
     angle::Float64
