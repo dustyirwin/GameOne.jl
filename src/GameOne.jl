@@ -2,6 +2,9 @@ module GameOne
 
 using Colors
 using Random
+using SimpleDirectMediaLayer
+
+const SDL2 = SimpleDirectMediaLayer
 
 export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
@@ -10,8 +13,6 @@ export Game, Keys, Keymods, MouseButtons
 export Actor, Line, Rect, Circle
 
 
-using SimpleDirectMediaLayer
-const SDL2 = SimpleDirectMediaLayer
 
 include("keyboard.jl")
 include("timer.jl")
