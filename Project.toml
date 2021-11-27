@@ -1,5 +1,5 @@
 name = "GameOne"
-uuid = "b831c3d0-16f1-4eaa-ad23-1d0424ad4597"
+uuid = "9da27670-f782-11e9-1da1-f53579315bfe"
 authors = ["Dustin Irwin"]  # GameZero.jl authored by Avik Sengupta & Ahan Sengupta
 version = "0.1.0"
 
