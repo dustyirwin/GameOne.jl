@@ -7,13 +7,8 @@ using InteractiveUtils
 # ╔═╡ 19a5bffa-86b3-11eb-2a1b-d9acf5a05351
 begin
 	using Pkg
-
-	Pkg.activate(mktempdir())
-	Pkg.add(["Colors" "PlutoUI" "Images" "ImageIO" "SimpleDirectMediaLayer" "ShiftedArrays"])
-	Pkg.add(url="https://github.com/dustyirwin/GameOne.jl")
-	Pkg.add(url="https://github.com/Pocket-titan/DarkMode")
+	Pkg.activate(".")
 	
-
 	using Colors
 	using Images
 	using ImageIO
@@ -22,9 +17,7 @@ begin
 	using ShiftedArrays
 	using SimpleDirectMediaLayer
 	
-	import DarkMode
-
-	const SDL2 = SimpleDirectMediaLayer
+	const SDL2 = GameOne.SDL2
 
 	md"""
 	## Basic Game Example 1
