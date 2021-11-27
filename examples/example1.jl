@@ -1,6 +1,8 @@
 using Images
 
 
+using Images
+
 # Height of the game window
 HEIGHT = 400
 # Width of the game window
@@ -23,10 +25,12 @@ function draw(g::Game)
     draw(a)
 end
 
+
 # The update function is called every frame. Within the function, we
 # * change the position of the actor by the velocity
 # * if the actor hits the edges, we invert the velocity, and play a sound
 # * if the up/down/left/right keys are pressed, we change the velocity to move the actor in the direction of the keypress
+
 function update(g::Game)
     global dx, dy
     a.position.x += dx
@@ -34,12 +38,12 @@ function update(g::Game)
 
     if a.x > 400-a.w || a.x < 2
         dx = -dx
-        play_sound("eep")
+        play_sound("examples/sounds/eep.wav")
     end
 
     if a.y > 400-a.h || a.y < 2
         dy = -dy
-        play_sound("eep")
+        play_sound("examples/sounds/eep.wav")
     end
 
     if g.keyboard.DOWN
@@ -51,16 +55,14 @@ function update(g::Game)
     elseif g.keyboard.RIGHT
         dx = 2
     end
-
-
 end
 
 # If the "space" key is pressed, change the displayed image to the "hurt" variant.
 # Also schedule an event to change it back to normal after one second.
+
 function on_key_down(g, k)
-    if k == Keys.SPACE
-        alien_hurt()
-        schedule_once(alien_normal, 1)
+    if k == Keys.BACKQUOTE
+        start_terminal(g)
     end
 end
 

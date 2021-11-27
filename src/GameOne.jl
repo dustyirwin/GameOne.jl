@@ -2,16 +2,17 @@ module GameOne
 
 using Colors
 using Random
-
-export Actor, ActorImage, ActorText, Game, game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
-        collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
-        getEventType, getTextInputEventChar, getTextEditEventString
-export Keys, Keymods, MouseButtons
-export Line, Rect, Circle
-
-
 using SimpleDirectMediaLayer
+
 const SDL2 = SimpleDirectMediaLayer
+
+export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
+    collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
+    getEventType, getTextInputEventChar, getTextEditEventString, start_terminal
+export Game, Keys, Keymods, MouseButtons
+export Actor, Line, Rect, Circle
+
+
 
 include("keyboard.jl")
 include("timer.jl")
@@ -26,7 +27,6 @@ include("actor.jl")
 const HEIGHTSYMBOL = :SCREEN_HEIGHT
 const WIDTHSYMBOL = :SCREEN_WIDTH
 const BACKSYMBOL = :BACKGROUND
-
 
 mutable struct Game
     screen::Screen
@@ -273,7 +273,7 @@ function initSDL()
     mix_init_flags = SDL2.MIX_INIT_FLAC | SDL2.MIX_INIT_MP3|SDL2.MIX_INIT_OGG
     inited = SDL2.Mix_Init(Int32(mix_init_flags))
     if inited & mix_init_flags != mix_init_flags
-        @warn "Failed to initialise audio mixer properly. All sounds may not play correctly\n$(getSDLError())"
+        @warn "Failed to initialise audio mixer properly. Sounds may not play correctly\n$(getSDLError())"
     end
 
     device = SDL2.Mix_OpenAudio(Int32(22050), UInt16(SDL2.AUDIO_S16SYS), Int32(2), Int32(1024) )
@@ -282,6 +282,63 @@ function initSDL()
         SDL2.Mix_CloseAudio()
     end
 end
+
+
+function start_terminal(g::Game, comp="")
+    done = false
+    comp == "" ? ">" : ">$comp"
+
+    SDL2.StartTextInput()
+
+    while !done
+        event, success = GameOne.pollEvent!()
+        
+        if success
+            
+            if getEventType(event) == SDL2.TEXTINPUT
+                
+                @show SDL2.GetClipboardText()
+                #comp *= String(Char(i) for i in clip)
+                
+                char = getTextInputEventChar(event)
+                
+                comp *= char
+                comp = comp == ">`" ? ">" : comp
+                @show "TextInputEvent! comp: $comp"
+
+            elseif getEventType(event) == SDL2.TEXTEDITING
+                
+                #=
+                Update the composition text.
+                Update the cursor position.
+                Update the selection length (if any).
+                =#
+                
+                #cursor = getTextEditEventCursorPosition(event) #.edit.start)
+                #selection_len = getTextEditEventCursorPosition(event) #.edit.length)
+                
+                @show "TextEditingEvent! Exiting..."
+                done = true
+            end
+        end
+        
+        #Redraw()
+    end
+
+    SDL2.StopTextInput()
+    
+    @show ex = Meta.parse(comp[2:end])
+    @show res = eval(M, ex)
+
+    """
+    >$(comp[2:end])
+    $res
+    """ |> println
+
+end # func
+
+
+
 
 function quitSDL(g::Game)
     # Need to close the callback before quitting SDL to prevent it from hanging
