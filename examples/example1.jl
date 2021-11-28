@@ -1,5 +1,3 @@
-using Images
-
 # Height of the game window
 HEIGHT = 400
 # Width of the game window
@@ -16,7 +14,7 @@ dy = 2
 a = ImageActor("examples/images/alien.png", load("examples/images/alien.png"))
 
 # Create an `TextActor` object from an empty string for terminal use
-tt = TextActor(">", "examples/fonts/OpenSans-Regular.ttf")
+ta = TextActor(">", "examples/fonts/OpenSans-Regular.ttf")
 
 # Start playing background music
 play_music("examples/music/radetzky_ogg")
@@ -24,7 +22,7 @@ play_music("examples/music/radetzky_ogg")
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
     draw(a)
-    draw(tt)
+    draw(ta)
 end
 
 
@@ -61,16 +59,32 @@ end
 
 # If the "space" key is pressed, change the displayed image to the "hurt" variant.
 # Also schedule an event to change it back to normal after one second.
+# We define functions to change the image for the actor. These functions are called 
+# from the keydown and scheduled events.
+
+alien_hurt() = a.image = "images/alien_hurt.png"
+alien_normal() = a.image = "images/alien.png"
+
+module M end
 
 function on_key_down(g, key, keymod)
+    # start terminal and accept input text to be parsed and executed by
     if key == Keys.BACKQUOTE
-        comp = start_terminal(g)
-        update_text_actor!(tt, comp)
-        #@show ex = Meta.parse(comp)
-        #@show res = @eval ex
+        SDL2.RenderClear(g.screen.renderer)
+        update_text_actor!(ta, ">")
+        draw(ta)
+        draw(a)
+        SDL2.RenderPresent(g.screen.renderer)
+        text = start_text_input(g, ta)
+    
+        # evaluate entered text
+        try
+            ex = Meta.parse(text)
+            @show eval(M, ex)
+        catch e
+            @warn e
+        end
     end
 end
 
-# We define functions to change the image for the actor. These functions are called from the keydown and scheduled events.
-alien_hurt() = a.image = "images/alien_hurt.png"
-alien_normal() = a.image = "images/alien.png"
+

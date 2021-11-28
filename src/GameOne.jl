@@ -1,6 +1,7 @@
 module GameOne
 
 using Colors
+using Images
 using Random
 using SimpleDirectMediaLayer
 
@@ -8,7 +9,7 @@ const SDL2 = SimpleDirectMediaLayer
 
 export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
-    getEventType, getTextInputEventChar, getTextEditEventString, start_terminal, update_text_actor!
+    getEventType, getTextInputEventChar, start_text_input, update_text_actor!
 export Game, Keys, Keymods, MouseButtons
 export ImageActor, TextActor, Line, Rect, Circle
 
@@ -21,6 +22,7 @@ include("event.jl")
 include("resources.jl")
 include("screen.jl")
 include("actor.jl")
+include("textInput.jl")
 
 
 #Magic variables
@@ -282,59 +284,6 @@ function initSDL()
         SDL2.Mix_CloseAudio()
     end
 end
-
-
-function start_terminal(g::Game, comp = ">")
-    SDL2.StartTextInput()
-    
-    done = false
-
-    while !done
-        event, success = GameOne.pollEvent!()
-
-        if success
-            #string(event_array[21]) == "'//b'"
-            @show "Event array: $(event_array = [Char(i) for i in event])"
-            @show "Event type: $(event_type = getEventType(event))"
-            @show key_sym = event_array[21] |> string
-        
-        
-            # event codes 
-            # 256 -> QUIT
-            # 768 -> KEYDOWN
-            # 769 -> KEYUP
-            # 771 -> TEXTINPUT
-            # 1024 -> MOUSEMOVEMENT
-            # 1025 -> MOUSEDOWN
-            # 1026 -> MOUSEUP
-            # 512 -> LOSE FOCUS?
-        
-            if getEventType(event) == SDL2.TEXTINPUT
-                char = getTextInputEventChar(event)
-                comp *= char
-                comp = comp == ">`" ? ">" : comp
-                @show "TextInputEvent: $(getEventType(event)) comp: $comp"
-        
-            elseif length(comp) > 1 && event_type == SDL2.KEYDOWN && key_sym == "\b"
-                @show comp = comp[1:end-1]
-                @show "BackspaceEvent: $(getEventType(event)) comp: $comp"
-        
-            elseif getEventType(event) == SDL2.KEYDOWN && key_sym == "\r"
-                @show "QuitEvent: $(getEventType(event))"
-                done = true
-            end
-        end
-        
-        #Redraw()
-    end
-
-    SDL2.StopTextInput()
-
-    comp
-end # func
-
-
-
 
 function quitSDL(g::Game)
     # Need to close the callback before quitting SDL to prevent it from hanging

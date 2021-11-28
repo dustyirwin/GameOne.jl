@@ -1,60 +1,20 @@
 
-function start_terminal(g::Game, comp::String)
-    done = false
-    comp = ">"
+            //Main loop flag
+            bool quit = false;
 
-    SDL2.StartTextInput()
+            //Event handler
+            SDL_Event e;
 
-    while !done
-        event, success = GameOne.pollEvent!()
-        
-        if success
-            
-            if getEventType(event) == SDL2.TEXTINPUT
-                
-                @show SDL2.GetClipboardText()
-                #comp *= String(Char(i) for i in clip)
-                
-                char = getTextInputEventChar(event)
-                
-                comp *= char
-                comp = comp == ">`" ? ">" : comp
-                @show "TextInputEvent! comp: $comp"
+            //Set text color as black
+            SDL_Color textColor = { 0, 0, 0, 0xFF };
 
-            elseif getEventType(event) == SDL2.TEXTEDITING
-                
-                #=
-                Update the composition text.
-                Update the cursor position.
-                Update the selection length (if any).
-                =#
-                
-                #cursor = getTextEditEventCursorPosition(event) #.edit.start)
-                #selection_len = getTextEditEventCursorPosition(event) #.edit.length)
-                
-                @show "TextEditingEvent! Exiting..."
-                done = true
-            end
-        end
-        
-        SDL2.Redraw()
-    end
+            //The current input text.
+            std::string inputText = "Some Text";
+            gInputTextTexture.loadFromRenderedText( inputText.c_str(), textColor );
 
-    SDL2.StopTextInput()
-    
-    @show ex = Meta.parse(comp[2:end])
-    @show res = eval(M, ex)
+            //Enable text input
+            SDL_StartTextInput();
 
-    comp = 
-    """
-    >$(comp[2:end])
-    $res
-    """
-    
-    println(comp)
-end # func
-
-"""
 SDL2 Structs:
 mutable struct TextEditingEvent <: AbstractEvent
     _type::Uint32
@@ -132,7 +92,8 @@ end
                 }
             }
         }
-            //Rerender text if needed
+        //Rerender text if needed
+        
         if( renderText )
         {
             //Text is not empty
@@ -190,5 +151,3 @@ end
         }
         Redraw();
     }
-
-    """
