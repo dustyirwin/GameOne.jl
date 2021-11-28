@@ -1,3 +1,5 @@
+using Images 
+
 # Height of the game window
 HEIGHT = 400
 # Width of the game window
@@ -15,6 +17,7 @@ a = ImageActor("examples/images/alien.png", load("examples/images/alien.png"))
 
 # Create an `TextActor` object from an empty string for terminal use
 ta = TextActor(">", "examples/fonts/OpenSans-Regular.ttf")
+ta.alpha = 0
 
 # Start playing background music
 play_music("examples/music/radetzky_ogg")
@@ -70,7 +73,8 @@ module M end
 function on_key_down(g, key, keymod)
     # start terminal and accept input text to be parsed and executed by
     if key == Keys.BACKQUOTE
-        SDL2.RenderClear(g.screen.renderer)
+        ta.alpha = 255
+        GameOne.SDL2.RenderClear(g.screen.renderer)
         update_text_actor!(ta, ">")
         draw(ta)
         draw(a)
@@ -84,6 +88,8 @@ function on_key_down(g, key, keymod)
         catch e
             @warn e
         end
+    
+        ta.alpha = 200
     end
 end
 
