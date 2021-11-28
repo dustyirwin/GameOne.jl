@@ -16,8 +16,8 @@ dy = 2
 a = ImageActor("examples/images/alien.png", load("examples/images/alien.png"))
 
 # Create an `TextActor` object from an empty string for terminal use
-ta = TextActor(">", "examples/fonts/OpenSans-Regular.ttf")
-ta.alpha = 0
+terminal = TextActor(">", "examples/fonts/OpenSans-Regular.ttf")
+terminal.alpha = 0
 
 # Start playing background music
 play_music("examples/music/radetzky_ogg")
@@ -25,7 +25,7 @@ play_music("examples/music/radetzky_ogg")
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
     draw(a)
-    draw(ta)
+    draw(terminal)
 end
 
 
@@ -73,14 +73,15 @@ module M end
 function on_key_down(g, key, keymod)
     # start terminal and accept input text to be parsed and executed by
     if key == Keys.BACKQUOTE
-        ta.alpha = 255
+        terminal.alpha = 255
         GameOne.SDL2.RenderClear(g.screen.renderer)
-        update_text_actor!(ta, ">")
-        draw(ta)
-        draw(a)
+        update_text_actor!(terminal, ">")
+        draw(terminal)
         SDL2.RenderPresent(g.screen.renderer)
-        text = start_text_input(g, ta)
+        text = start_text_input(g, terminal)
     
+        terminal.alpha = 150
+        update_text_actor!(terminal, "evaluating: $text...")
         # evaluate entered text
         try
             ex = Meta.parse(text)
@@ -89,7 +90,7 @@ function on_key_down(g, key, keymod)
             @warn e
         end
     
-        ta.alpha = 200
+        schedule_once(() -> terminal.alpha = 0, 2)
     end
 end
 

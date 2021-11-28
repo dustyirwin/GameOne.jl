@@ -295,7 +295,7 @@ function start_text_input(g::Game, ta::Actor)
     end
 
     SDL2.StopTextInput()
-    comp[2:end]
+    ta.label = comp[2:end]
 end
 
 
