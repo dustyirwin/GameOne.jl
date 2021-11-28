@@ -12,7 +12,7 @@ export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique,
     getEventType, getTextInputEventChar, start_text_input, update_text_actor!
 export Game, Keys, Keymods, MouseButtons
 export ImageActor, TextActor, Line, Rect, Circle
-
+export SDL2
 
 
 include("keyboard.jl")
@@ -22,7 +22,6 @@ include("event.jl")
 include("resources.jl")
 include("screen.jl")
 include("actor.jl")
-include("textInput.jl")
 
 
 #Magic variables
@@ -251,6 +250,52 @@ function getfn(m::Module, s::Symbol, maxargs = 3)
     else
         return (x...) -> nothing
     end
+end
+
+function start_text_input(g::Game, ta::Actor)
+    done = false
+    comp = ta.label
+
+    SDL2.StartTextInput()
+
+    while !done
+        event, success = GameOne.pollEvent!()
+
+        if success
+            event_array = [Char(i) for i in event]
+            event_type = getEventType(event)
+            key_sym = event_array[21] |> string
+
+            if getEventType(event) == SDL2.TEXTINPUT
+                char = getTextInputEventChar(event)
+                comp *= char
+                comp = comp == ">`" ? ">" : comp
+
+                update_text_actor!(ta, comp)
+
+                @show "TextInputEvent: $(getEventType(event)) comp: $comp"
+
+            elseif length(comp) > 1 && event_type == SDL2.KEYDOWN && key_sym == "\b"  # backspace key
+                comp = comp[1:end-1]
+
+                update_text_actor!(ta, comp)
+
+                @show "BackspaceEvent: $(getEventType(event)) comp: $comp"
+
+            elseif getEventType(event) == SDL2.KEYDOWN && key_sym == "\r" # return key
+                @show "QuitEvent: $(getEventType(event))"
+                done = true
+            end
+
+            # Update screen
+            SDL2.RenderClear(g.screen.renderer)
+            draw(ta)
+            SDL2.RenderPresent(g.screen.renderer)
+        end
+    end
+
+    SDL2.StopTextInput()
+    comp[2:end]
 end
 
 
