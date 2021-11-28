@@ -65,9 +65,9 @@ end
 function on_key_down(g, key, keymod)
     if key == Keys.BACKQUOTE
         comp = start_terminal(g)
-        #@show ex = Meta.parse(command)
-        #@show res = @eval ex
         update_text_actor!(tt, comp)
+        #@show ex = Meta.parse(comp)
+        #@show res = @eval ex
     end
 end
 

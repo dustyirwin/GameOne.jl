@@ -18,8 +18,12 @@ function getTextInputEventChar(e::Array{UInt8})
     Char(e[13])
 end
 
+function getTextEditEventChar(e::Array{UInt8})
+    Char(e[14])
+end
+
 function getTextEditEventString(e::Array{UInt8})
-    join([string.(e[13:13+32])]...)
+    join([string.(e[13:32])]...)
 end
 
 function bitcat(::Type{T}, arr)::T where T<:Number

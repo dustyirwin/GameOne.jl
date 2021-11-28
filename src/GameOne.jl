@@ -286,39 +286,45 @@ end
 
 function start_terminal(g::Game, comp = ">")
     SDL2.StartTextInput()
+    
     done = false
 
     while !done
         event, success = GameOne.pollEvent!()
 
         if success
-            @show "Incoming event: $(getEventType(event))"
-            @show str = getTextEditEventString(event)
+            #string(event_array[21]) == "'//b'"
+            @show "Event array: $(event_array = [Char(i) for i in event])"
+            @show "Event type: $(event_type = getEventType(event))"
+            @show key_sym = event_array[21] |> string
+        
+        
             # event codes 
             # 256 -> QUIT
             # 768 -> KEYDOWN
             # 769 -> KEYUP
             # 771 -> TEXTINPUT
-            # 1024 -> MOUSE
+            # 1024 -> MOUSEMOVEMENT
+            # 1025 -> MOUSEDOWN
+            # 1026 -> MOUSEUP
             # 512 -> LOSE FOCUS?
         
             if getEventType(event) == SDL2.TEXTINPUT
                 char = getTextInputEventChar(event)
-            
                 comp *= char
                 comp = comp == ">`" ? ">" : comp
                 @show "TextInputEvent: $(getEventType(event)) comp: $comp"
-            
-            elseif length(comp) > 1 && getEventType(event) == SDL2.KEYDOWN && str == "100042000800001600000082151961450000805022570"
+        
+            elseif length(comp) > 1 && event_type == SDL2.KEYDOWN && key_sym == "\b"
                 @show comp = comp[1:end-1]
                 @show "BackspaceEvent: $(getEventType(event)) comp: $comp"
-            
-            elseif getEventType(event) == SDL2.KEYDOWN && str == "1000400001300001600000082151961450000805022570"
+        
+            elseif getEventType(event) == SDL2.KEYDOWN && key_sym == "\r"
                 @show "QuitEvent: $(getEventType(event))"
                 done = true
             end
         end
-
+        
         #Redraw()
     end
 
