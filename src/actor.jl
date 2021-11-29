@@ -1,10 +1,3 @@
-using Dates
-using Images
-using GameOne
-using ShiftedArrays
-using SimpleDirectMediaLayer
-
-const SDL2 = SimpleDirectMediaLayer
 
 mutable struct Actor
     label::String

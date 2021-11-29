@@ -1,9 +1,13 @@
 module GameOne
 
+using Dates
 using Colors
-using Images
 using Random
+using Reexport
 using SimpleDirectMediaLayer
+
+@reexport using Images
+@reexport using ShiftedArrays
 
 const SDL2 = SimpleDirectMediaLayer
 
