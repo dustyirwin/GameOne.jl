@@ -256,9 +256,9 @@ function getfn(m::Module, s::Symbol, maxargs = 3)
     end
 end
 
-function start_text_input(g::Game, ta::Actor)
+function start_text_input(g::Game, terminal::Actor)
     done = false
-    comp = ta.label
+    comp = terminal.label
 
     SDL2.StartTextInput()
 
@@ -269,37 +269,47 @@ function start_text_input(g::Game, ta::Actor)
             event_array = [Char(i) for i in event]
             event_type = getEventType(event)
             key_sym = event_array[21] |> string
-
+            @show SDL2.GetModState() |> string
+            #LCTRL = 4160
+            #RCTRL = 4096
+            
+        
             if getEventType(event) == SDL2.TEXTINPUT
-                char = getTextInputEventChar(event)
+                @show char = getTextInputEventChar(event)
                 comp *= char
                 comp = comp == ">`" ? ">" : comp
-
-                update_text_actor!(ta, comp)
-
+            
+                update_text_actor!(terminal, comp)
+            
                 @show "TextInputEvent: $(getEventType(event)) comp: $comp"
-
+            
+            
+            elseif event_type == SDL2.KEYDOWN && (SDL2.GetModState() |> string == "4160" || SDL2.GetModState() |> string == "4096") && (key_sym == "v" || key_sym == "V")
+                @show comp = comp * "$(unsafe_string(SDL2.GetClipboardText()))"
+                update_text_actor!(terminal, comp)
+            
+            
             elseif length(comp) > 1 && event_type == SDL2.KEYDOWN && key_sym == "\b"  # backspace key
                 comp = comp[1:end-1]
-
+            
                 update_text_actor!(ta, comp)
-
+            
                 @show "BackspaceEvent: $(getEventType(event)) comp: $comp"
-
+            
             elseif getEventType(event) == SDL2.KEYDOWN && key_sym == "\r" # return key
                 @show "QuitEvent: $(getEventType(event))"
                 done = true
             end
-
+        
             # Update screen
             SDL2.RenderClear(g.screen.renderer)
-            draw(ta)
+            draw(g)
             SDL2.RenderPresent(g.screen.renderer)
         end
     end
 
     SDL2.StopTextInput()
-    ta.label = comp[2:end]
+    terminal.label = comp[2:end]
 end
 
 

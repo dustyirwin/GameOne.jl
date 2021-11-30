@@ -74,9 +74,8 @@ function on_key_down(g, key, keymod)
     # start terminal and accept input text to be parsed and executed by
     if key == Keys.BACKQUOTE
         terminal.alpha = 255
-        GameOne.SDL2.RenderClear(g.screen.renderer)
         update_text_actor!(terminal, ">")
-        draw(terminal)
+        draw(g)
         SDL2.RenderPresent(g.screen.renderer)
         text = start_text_input(g, terminal)
     
