@@ -270,8 +270,6 @@ function start_text_input(g::Game, terminal::Actor)
             event_type = getEventType(event)
             key_sym = event_array[21] |> string
             @show SDL2.GetModState() |> string
-            #LCTRL = 4160
-            #RCTRL = 4096
             
         
             if getEventType(event) == SDL2.TEXTINPUT
@@ -283,7 +281,7 @@ function start_text_input(g::Game, terminal::Actor)
             
                 @show "TextInputEvent: $(getEventType(event)) comp: $comp"
             
-            
+            # KEYMODs: LCTRL = 4160 | RCTRL = 4096
             elseif event_type == SDL2.KEYDOWN && (SDL2.GetModState() |> string == "4160" || SDL2.GetModState() |> string == "4096") && (key_sym == "v" || key_sym == "V")
                 @show comp = comp * "$(unsafe_string(SDL2.GetClipboardText()))"
                 update_text_actor!(terminal, comp)
@@ -292,7 +290,7 @@ function start_text_input(g::Game, terminal::Actor)
             elseif length(comp) > 1 && event_type == SDL2.KEYDOWN && key_sym == "\b"  # backspace key
                 comp = comp[1:end-1]
             
-                update_text_actor!(ta, comp)
+                update_text_actor!(terminal, comp)
             
                 @show "BackspaceEvent: $(getEventType(event)) comp: $comp"
             
