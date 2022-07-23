@@ -146,11 +146,14 @@ function handleKeyPress(g::Game, e, t)
     @debug "Keyboard" keySym, keyMod
     if (t == SDL2.KEYDOWN)
         push!(g.keyboard, keySym)
+        
+        # TODO: clean up keyboard errors... experiencing Argument Error: Invalid value for enum key: 1073741593 (audio volume up key)... and other un-mapped keys
         try 
             Base.invokelatest(g.onkey_function, g, Keys.Key(keySym), keyMod)
         catch err
             @error "ERROR: $err"
         end
+    
     elseif (t == SDL2.KEYUP)
         delete!(g.keyboard, keySym)
     end
@@ -273,7 +276,7 @@ function start_text_input(g::Game, terminal::Actor)
             event_array = [Char(i) for i in event]
             event_type = getEventType(event)
             key_sym = event_array[21] |> string
-            @show SDL2.GetModState() |> string
+            @info SDL2.GetModState() |> string
             
         
             if getEventType(event) == SDL2.TEXTINPUT
@@ -283,7 +286,7 @@ function start_text_input(g::Game, terminal::Actor)
             
                 update_text_actor!(terminal, comp)
             
-                @show "TextInputEvent: $(getEventType(event)) comp: $comp"
+                @info "TextInputEvent: $(getEventType(event)) comp: $comp"
             
             # KEYMODs: LCTRL = 4160 | RCTRL = 4096
             elseif event_type == SDL2.KEYDOWN && (SDL2.GetModState() |> string == "4160" || SDL2.GetModState() |> string == "4096") && (key_sym == "v" || key_sym == "V")
@@ -296,10 +299,10 @@ function start_text_input(g::Game, terminal::Actor)
             
                 update_text_actor!(terminal, comp)
             
-                @show "BackspaceEvent: $(getEventType(event)) comp: $comp"
+                @info "BackspaceEvent: $(getEventType(event)) comp: $comp"
             
             elseif getEventType(event) == SDL2.KEYDOWN && key_sym == "\r" # return key
-                @show "QuitEvent: $(getEventType(event))"
+                @info "QuitEvent: $(getEventType(event))"
                 done = true
             end
         
