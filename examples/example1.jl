@@ -7,8 +7,8 @@ WIDTH = 400
 BACKGROUND = colorant"purple"
 
 # Globals to store the velocity of the actor
-dx = 2
-dy = 2
+dx = 1
+dy = 1
 
 
 # Create an `ImageActor` object from a PNG file
@@ -19,7 +19,7 @@ terminal = TextActor(">", "examples/fonts/OpenSans-Regular.ttf")
 terminal.alpha = 0
 
 label = TextActor("this is some example text", "examples/fonts/OpenSans-Regular.ttf")
-label.position.x = 50
+label.position.x = 75
 label.position.y = 50
 
 # Start playing background music
@@ -28,7 +28,6 @@ play_music("examples/music/radetzky_ogg")
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
     draw.([a, terminal])
-    #draw(outline_label)
     draw(label)
 end
 
@@ -69,10 +68,10 @@ end
 # We define functions to change the image for the actor. These functions are called 
 # from the keydown and scheduled events.
 
+
 alien_hurt() = a.image = "images/alien_hurt.png"
 alien_normal() = a.image = "images/alien.png"
 
-module M end
 
 function on_key_down(g, key, keymod)
     # start terminal and accept input text to be parsed and executed by
@@ -88,12 +87,12 @@ function on_key_down(g, key, keymod)
         # evaluate entered text
         try
             ex = Meta.parse(text)
-            @show eval(M, ex)
+            @show eval(g.game_module, ex)
         catch e
             @warn e
         end
 
-        schedule_once(() -> terminal.alpha = 0, 2)
+        schedule_once(() -> terminal.alpha = 0, 4)
     end
 end
 

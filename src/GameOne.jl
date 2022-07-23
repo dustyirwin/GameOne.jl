@@ -276,17 +276,16 @@ function start_text_input(g::Game, terminal::Actor)
             event_array = [Char(i) for i in event]
             event_type = getEventType(event)
             key_sym = event_array[21] |> string
-            @info SDL2.GetModState() |> string
-            
+            #SDL2.GetModState() |> string
         
             if getEventType(event) == SDL2.TEXTINPUT
-                @show char = getTextInputEventChar(event)
+                char = getTextInputEventChar(event)
                 comp *= char
                 comp = comp == ">`" ? ">" : comp
             
                 update_text_actor!(terminal, comp)
             
-                @info "TextInputEvent: $(getEventType(event)) comp: $comp"
+                #@info "TextInputEvent: $(getEventType(event)) comp: $comp"
             
             # KEYMODs: LCTRL = 4160 | RCTRL = 4096
             elseif event_type == SDL2.KEYDOWN && (SDL2.GetModState() |> string == "4160" || SDL2.GetModState() |> string == "4096") && (key_sym == "v" || key_sym == "V")
@@ -299,7 +298,7 @@ function start_text_input(g::Game, terminal::Actor)
             
                 update_text_actor!(terminal, comp)
             
-                @info "BackspaceEvent: $(getEventType(event)) comp: $comp"
+                #@info "BackspaceEvent: $(getEventType(event)) comp: $comp"
             
             elseif getEventType(event) == SDL2.KEYDOWN && key_sym == "\r" # return key
                 @info "QuitEvent: $(getEventType(event))"
