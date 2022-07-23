@@ -54,37 +54,42 @@ function ImageActor(img_name::String, img; x=0, y=0, kv...)
     return a
 end
 
-function TextActor(text::String, font_path::String; x=0, y=0, pt_size=24,
-    font_color=Int[255,255,0,200], wrap_length=800, kv...)
-    @show text
+function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
+    font_color = Int[255, 255, 0, 200], wrap_length = 800, outline_size = 1, kv...)
+
+    # outline
+    outline_color = Int[0, 0, 0, 200]
+    outline_font = SDL2.TTF_OpenFont(font_path, pt_size)
+    SDL2.TTF_SetFontOutline(outline_font, Int32(outline_size))
+    bg = SDL2.TTF_RenderText_Blended_Wrapped(outline_font, text, SDL2.Color(outline_color...), UInt32(wrap_length))
 
     text_font = SDL2.TTF_OpenFont(font_path, pt_size)
-    sf = SDL2.TTF_RenderText_Blended_Wrapped(text_font, text, SDL2.Color(font_color...), UInt32(wrap_length))
-    w, h = size(sf)
+    fg = SDL2.TTF_RenderText_Blended_Wrapped(text_font, text, SDL2.Color(font_color...), UInt32(wrap_length))
+    w, h = size(bg)
     r = SDL2.Rect(x, y, w, h)
 
     a = Actor(
         text,
-        [sf],
+        [bg, fg],
         [],
         r,
-        [1,1],
+        [1, 1],
         C_NULL,
         0,
         255,
         Dict(
-            :sz=>[w,h],
-            :fade=>false,
-            :fade_out=>true,
-            :spin=>false,
-            :spin_cw=>true,
-            :shake=>false,
-            :next_frame=>false,
-            :font_path=>font_path,
-            :pt_size=>pt_size,
-            :wrap_length=>wrap_length,
-            :mouse_offset=>Int32[0,0],
-            :font_color=>font_color,
+            :sz => [w, h],
+            :fade => false,
+            :fade_out => true,
+            :spin => false,
+            :spin_cw => true,
+            :shake => false,
+            :next_frame => false,
+            :font_path => font_path,
+            :pt_size => pt_size,
+            :wrap_length => wrap_length,
+            :mouse_offset => Int32[0, 0],
+            :font_color => font_color,
         )
     )
     for (k, v) in kv

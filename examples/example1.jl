@@ -1,4 +1,3 @@
-using Images 
 
 # Height of the game window
 HEIGHT = 400
@@ -19,16 +18,21 @@ a = ImageActor("examples/images/alien.png", load("examples/images/alien.png"))
 terminal = TextActor(">", "examples/fonts/OpenSans-Regular.ttf")
 terminal.alpha = 0
 
+label = TextActor("this is some example text", "examples/fonts/OpenSans-Regular.ttf")
+label.position.x = 50
+label.position.y = 50
+
 # Start playing background music
 play_music("examples/music/radetzky_ogg")
 
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
-    draw(a)
-    draw(terminal)
+    draw.([a, terminal])
+    #draw(outline_label)
+    draw(label)
 end
 
-
+ 
 # The update function is called every frame. Within the function, we
 # * change the position of the actor by the velocity
 # * if the actor hits the edges, we invert the velocity, and play a sound
@@ -78,9 +82,9 @@ function on_key_down(g, key, keymod)
         draw(g)
         SDL2.RenderPresent(g.screen.renderer)
         text = start_text_input(g, terminal)
-    
         terminal.alpha = 150
         update_text_actor!(terminal, "evaluating: $text...")
+
         # evaluate entered text
         try
             ex = Meta.parse(text)
@@ -88,7 +92,7 @@ function on_key_down(g, key, keymod)
         catch e
             @warn e
         end
-    
+
         schedule_once(() -> terminal.alpha = 0, 2)
     end
 end

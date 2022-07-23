@@ -8,6 +8,17 @@ __GameOne.jl is a WIP non-zero overhead game engine, based on [aviks/GameZero.jl
 ## Running Games
 
 Games created using GameOne are `.jl` files that live in any directory.
+To play the games, start the Julia REPL and:
+
+```
+julia> using Pkg
+
+julia> Pkg.activate(".")
+
+julia> using GameOne
+
+julia> rungame("examples/example1.jl")
+```
 
 ## Acknowledgement
 The design of this library is inspired by the Julia library aviks/GameZero.jl, which is based on the python package [PyGameZero](https://pygame-zero.readthedocs.io) by [Daniel Pope](https://github.com/lordmauve).

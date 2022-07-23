@@ -146,7 +146,11 @@ function handleKeyPress(g::Game, e, t)
     @debug "Keyboard" keySym, keyMod
     if (t == SDL2.KEYDOWN)
         push!(g.keyboard, keySym)
-        Base.invokelatest(g.onkey_function, g, Keys.Key(keySym), keyMod)
+        try 
+            Base.invokelatest(g.onkey_function, g, Keys.Key(keySym), keyMod)
+        catch err
+            @error "ERROR: $err"
+        end
     elseif (t == SDL2.KEYUP)
         delete!(g.keyboard, keySym)
     end
