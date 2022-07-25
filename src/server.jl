@@ -10,10 +10,9 @@ using Images
 
 @async HTTP.WebSockets.listen(SERVERIP, HTTPPORT) do ws
     while !eof(ws)
-        sort!(recieved_message, readavailable(ws))
+        recieved_message = readavailable(ws)
         isempty(recieved_message) ? break : nothing
         data = JSON.parse(String(recieved_message))
-        push!()
         say = rand() < 0.1 ? "bye" : "hello"
         send_message = Dict(:x => rand(), :y => say)
         jmessage = JSON.json(send_message)

@@ -13,7 +13,7 @@ end
 
 
 function ImageActor(img_name::String, img; x=0, y=0, kv...)
-    @show img_name
+    @info img_name
     img = ARGB.(transpose(img))
     w, h = Int32.(size(img))
     sf = SDL2.CreateRGBSurfaceWithFormatFrom(
@@ -39,8 +39,8 @@ function ImageActor(img_name::String, img; x=0, y=0, kv...)
             :img=>img,
             :label=>img_name,
             :sz=>[w,h],
-            :fade=>false,
-            :fade_out=>true,
+            :fade=>false,           #  change to fade_in? remove anim-specific keys (add k,v when anim is run?)
+             :fade_out=>true,
             :spin=>false,
             :spin_cw=>true,
             :shake=>false,
@@ -70,7 +70,7 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
 
     a = Actor(
         text,
-        [bg, fg],
+        [fg, bg],
         [],
         r,
         [1, 1],

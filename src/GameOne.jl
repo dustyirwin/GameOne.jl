@@ -317,7 +317,7 @@ function start_text_input(g::Game, terminal::Actor)
 end
 
 
-# Having a QuitException is useful for testing, since an exception will simply
+# H ving a QuitException is useful for testing, since an exception will simply
 # pause the interpreter. For release builds, the catch() block will call quitSDL().
 struct QuitException <: Exception end
 

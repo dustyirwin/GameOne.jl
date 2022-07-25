@@ -19,7 +19,7 @@ terminal = TextActor(">", "examples/fonts/OpenSans-Regular.ttf")
 terminal.alpha = 0
 
 label = TextActor("this is some example text", "examples/fonts/OpenSans-Regular.ttf")
-label.position.x = 75
+label.position.x = 50
 label.position.y = 50
 
 # Start playing background music
@@ -86,8 +86,11 @@ function on_key_down(g, key, keymod)
 
         # evaluate entered text
         try
+            io = IOBuffer()
             ex = Meta.parse(text)
-            @show eval(g.game_module, ex)
+            show(IOContext(io, :limit=>true, :displaysize=>(100,20)), "text/plain", eval(g.game_module, ex))
+            s = String(take!(io))
+            update_text_actor!(terminal, s)
         catch e
             @warn e
         end
