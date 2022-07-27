@@ -67,10 +67,11 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
     fg = SDL2.TTF_RenderText_Blended_Wrapped(text_font, text, SDL2.Color(font_color...), UInt32(wrap_length))
     w, h = size(bg)
     r = SDL2.Rect(x, y, w, h)
-
+    SDL2.UpperBlit(fg, SDL2.C_NULL, bg, SDL2.C_NULL) 
+    
     a = Actor(
         text,
-        [fg, bg],
+        [bg],
         [],
         r,
         [1, 1],
@@ -100,13 +101,13 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
 end
 
 function GIFActor(gif_name::String, gif; x=0, y=0, frame_delay=Millisecond(120), kv...)
-    @show gif_name
+    @info gif_name
     h, w, n = Int32.(size(gif))
-    frame_delays = [ frame_delay for i in 1:n ]
+    frame_delays = [i for i in 1:n]
     surfaces = []
 
     for i in 1:n
-        gimg = ARGB.(transpose(gif[:,:,i]))
+        gimg = ARGB.(transpose(gif[:, :, i]))
         sf = SDL2.CreateRGBSurfaceWithFormatFrom(
             gimg,
             w,
@@ -124,21 +125,21 @@ function GIFActor(gif_name::String, gif; x=0, y=0, frame_delay=Millisecond(120),
         surfaces,
         [],
         r,
-        [1,1],
+        [1, 1],
         C_NULL,
         0,
         255,
         Dict(
-            :sz=>[w, h],
-            :fade=>false,
-            :fade_out=>true,
-            :spin=>false,
-            :spin_cw=>true,
-            :shake=>false,
-            :then=>now(),
-            :next_frame=>false,
-            :frame_delays=>frame_delays,
-            :mouse_offset=>Int32[0,0],
+            :sz => [w, h],
+            :fade => false,
+            :fade_out => true,
+            :spin => false,
+            :spin_cw => true,
+            :shake => false,
+            :then => now(),
+            :next_frame => false,
+            :frame_delays => frame_delays,
+            :mouse_offset => Int32[0, 0],
         )
     )
 

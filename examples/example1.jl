@@ -7,8 +7,8 @@ WIDTH = 400
 BACKGROUND = colorant"purple"
 
 # Globals to store the velocity of the actor
-dx = 1
-dy = 1
+dx = 2
+dy = 2
 
 
 # Create an `ImageActor` object from a PNG file
