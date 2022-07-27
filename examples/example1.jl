@@ -18,7 +18,10 @@ a = ImageActor("examples/images/alien.png", load("examples/images/alien.png"))
 terminal = TextActor(">", "examples/fonts/OpenSans-Regular.ttf")
 terminal.alpha = 0
 
-label = TextActor("this is some example text", "examples/fonts/OpenSans-Regular.ttf")
+label = TextActor(
+    "this is some example text", 
+    "examples/fonts/OpenSans-Regular.ttf", 
+    outline_size=1)
 label.position.x = 50
 label.position.y = 50
 

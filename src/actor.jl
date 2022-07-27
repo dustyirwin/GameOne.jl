@@ -55,23 +55,31 @@ function ImageActor(img_name::String, img; x=0, y=0, kv...)
 end
 
 function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
-    font_color = Int[255, 255, 0, 200], wrap_length = 800, outline_size = 1, kv...)
+    font_color = Int[255, 255, 0, 200], outline_color = Int[0, 0, 0, 200],
+    wrap_length = 800, outline_size = 0, outline_font_path="", kv...)
 
     # outline
-    outline_color = Int[0, 0, 0, 200]
-    outline_font = SDL2.TTF_OpenFont(font_path, pt_size)
-    SDL2.TTF_SetFontOutline(outline_font, Int32(outline_size))
-    bg = SDL2.TTF_RenderText_Blended_Wrapped(outline_font, text, SDL2.Color(outline_color...), UInt32(wrap_length))
-
     text_font = SDL2.TTF_OpenFont(font_path, pt_size)
     fg = SDL2.TTF_RenderText_Blended_Wrapped(text_font, text, SDL2.Color(font_color...), UInt32(wrap_length))
-    w, h = size(bg)
+    w, h = size(fg)
     r = SDL2.Rect(x, y, w, h)
-    SDL2.UpperBlit(fg, SDL2.C_NULL, bg, SDL2.C_NULL) 
     
+    if outline_size > 0  
+        if outline_font_path == ""
+            outline_font = SDL2.TTF_OpenFont(font_path, pt_size)
+        else
+            outline_font = SDL2.TTF_OpenFont(outline_font_path, pt_size)
+        end
+        
+        SDL2.TTF_SetFontOutline(outline_font, Int32(outline_size))
+        bg = SDL2.TTF_RenderText_Blended_Wrapped(outline_font, text, SDL2.Color(outline_color...), UInt32(wrap_length))
+        SDL2.UpperBlit(fg, SDL2.C_NULL, bg, SDL2.C_NULL)
+        fg = bg
+    end
+
     a = Actor(
         text,
-        [bg],
+        [fg],
         [],
         r,
         [1, 1],
