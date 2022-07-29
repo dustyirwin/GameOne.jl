@@ -64,10 +64,10 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
     r = SDL2.Rect(x, y, w, h)
     
     fg = if outline_size > 0
-        outline_font = SDL2.TTF_OpenFont(font_path, pt_size + outline_size)
+        outline_font = SDL2.TTF_OpenFont(font_path, pt_size)
         SDL2.TTF_SetFontOutline(outline_font, Int32(outline_size))
         bg = SDL2.TTF_RenderText_Blended_Wrapped(outline_font, text, SDL2.Color(outline_color...), UInt32(wrap_length))
-        SDL2.UpperBlitScaled(fg, SDL2.C_NULL, bg, SDL2.C_NULL)
+        SDL2.UpperBlitScaled(fg, SDL2.C_NULL, bg, Int32[outline_size,outline_size,w,h])
         bg
     else
         fg
@@ -97,8 +97,9 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
             :wrap_length => wrap_length,
             :mouse_offset => Int32[0, 0],
             :font_color => font_color,
+            )
         )
-    )
+    
     for (k, v) in kv
         setproperty!(a, k, v)
     end
