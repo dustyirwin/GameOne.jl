@@ -55,8 +55,8 @@ function ImageActor(img_name::String, img; x=0, y=0, kv...)
 end
 
 function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
-    font_color = Int[255, 255, 0, 225], outline_color = Int[0, 0, 0, 225],
-    wrap_length = 800, outline_size = 0, kv...)
+    font_color = Int[255, 255, 255, 225], outline_color = Int[0, 0, 0, 225],
+    wrap_length = 800, outline_size = 1, kv...)
 
     text_font = SDL2.TTF_OpenFont(font_path, pt_size)
     fg = SDL2.TTF_RenderText_Blended_Wrapped(text_font, text, SDL2.Color(font_color...), UInt32(wrap_length))
