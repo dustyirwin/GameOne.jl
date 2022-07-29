@@ -11,8 +11,7 @@ mutable struct Actor
     data::Dict{Symbol,Any}
 end
 
-
-function ImageActor(img_name::String, img; x=0, y=0, kv...)
+function ImageActor(img_name::String, img; x=0, y=0, kv...) 
     @info img_name
     img = ARGB.(transpose(img))
     w, h = Int32.(size(img))
@@ -36,11 +35,11 @@ function ImageActor(img_name::String, img; x=0, y=0, kv...)
         0,
         255,
         Dict(
-            :img=>img,
             :label=>img_name,
+            :img=>img,
             :sz=>[w,h],
             :fade=>false,           #  change to fade_in? remove anim-specific keys (add k,v when anim is run?)
-             :fade_out=>true,
+            :fade_out=>true,
             :spin=>false,
             :spin_cw=>true,
             :shake=>false,
@@ -107,6 +106,28 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
     return a
 end
 
+function update_text_actor!(a::Actor, new_text::String)
+    font = SDL2.TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
+    fg = SDL2.TTF_RenderText_Blended_Wrapped(font, new_text,
+        SDL2.Color(a.data[:font_color]...), UInt32(a.data[:wrap_length]))
+    w, h = size(fg)
+    fg = if a.data[:outline_size] > 0
+        outline_font = SDL2.TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
+        SDL2.TTF_SetFontOutline(outline_font, Int32(a.data[:outline_size]))
+        bg = SDL2.TTF_RenderText_Blended_Wrapped(outline_font, new_text, SDL2.Color(a.data[:outline_color]...), UInt32(a.data[:wrap_length]))
+        SDL2.UpperBlitScaled(fg, SDL2.C_NULL, bg, Int32[a.data[:outline_size], a.data[:outline_size], w, h])
+        bg
+    else
+        fg
+    end
+
+    a.surfaces = [fg]
+    a.w, a.h = size(a.surfaces[begin])
+    a.textures = []
+    a.label = new_text
+    return a
+end
+
 function GIFActor(gif_name::String, gif; x=0, y=0, frame_delay=Millisecond(120), kv...)
     @info gif_name
     h, w, n = Int32.(size(gif))
@@ -122,9 +143,9 @@ function GIFActor(gif_name::String, gif; x=0, y=0, frame_delay=Millisecond(120),
             Int32(32),
             Int32(4w),
             SDL2.PIXELFORMAT_ARGB32,
-            )
-            push!(surfaces, sf)
-        end
+        )
+        push!(surfaces, sf)
+    end
         
     r = SDL2.Rect(x, y, w, h)
     a = Actor(
