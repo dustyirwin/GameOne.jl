@@ -12,29 +12,32 @@ dy = 2
 
 
 # Create an `ImageActor` object from a PNG file
-a = ImageActor("examples/images/alien.png", load("examples/images/alien.png"))
+alien = ImageActor("examples/images/alien.png", load("examples/images/alien.png"))
 
 # Create an `TextActor` object from an empty string for terminal use
 terminal = TextActor(">", "examples/fonts/OpenSans-Regular.ttf")
 terminal.alpha = 0
 
 label = TextActor(
-    "this is some example text", 
-    "examples/fonts/OpenSans-Regular.ttf", 
-    outline_size=1)
-label.position.x = 50
-label.position.y = 50
+    "this is some example text",
+    "examples/fonts/OpenSans-Regular.ttf",
+    outline_size=2,
+    pt_size=32)
+label.position.x = 25
+label.position.y = 25
+
+#load a GIF!
+#giffy = GIFActor("giffy", load("examples/images/Brainstorm.gif"))
 
 # Start playing background music
 play_music("examples/music/radetzky_ogg")
 
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
-    draw.([a, terminal])
-    draw(label)
+    draw.([alien, terminal, label])
 end
 
- 
+
 # The update function is called every frame. Within the function, we
 # * change the position of the actor by the velocity
 # * if the actor hits the edges, we invert the velocity, and play a sound
@@ -42,15 +45,15 @@ end
 
 function update(g::Game)
     global dx, dy
-    a.position.x += dx
-    a.position.y += dy
+    alien.position.x += dx
+    alien.position.y += dy
 
-    if a.x > 400 - a.w || a.x < 2
+    if alien.x > 400 - alien.w || alien.x < 2
         dx = -dx
         play_sound("examples/sounds/eep.wav")
     end
 
-    if a.y > 400 - a.h || a.y < 2
+    if alien.y > 400 - alien.h || alien.y < 2
         dy = -dy
         play_sound("examples/sounds/eep.wav")
     end
@@ -72,18 +75,19 @@ end
 # from the keydown and scheduled events.
 
 
-alien_hurt() = a.image = "images/alien_hurt.png"
-alien_normal() = a.image = "images/alien.png"
+alien_hurt() = alien.image = "images/alien_hurt.png"
+alien_normal() = alien.image = "images/alien.png"
 
+command_history = ["@show alien.label"]
 
 function on_key_down(g, key, keymod)
     # start terminal and accept input text to be parsed and executed by
     if key == Keys.BACKQUOTE
+        @info "Terminal Started!"
         terminal.alpha = 255
+        draw(g); SDL2.RenderPresent(g.screen.renderer)
         update_text_actor!(terminal, ">")
-        draw(g)
-        SDL2.RenderPresent(g.screen.renderer)
-        text = start_text_input(g, terminal)
+        text = start_text_input(g, terminal, command_history)
         terminal.alpha = 150
         update_text_actor!(terminal, "evaluating: $text...")
 
@@ -91,14 +95,17 @@ function on_key_down(g, key, keymod)
         try
             io = IOBuffer()
             ex = Meta.parse(text)
-            show(IOContext(io, :limit=>true, :displaysize=>(100,20)), "text/plain", eval(g.game_module, ex))
+            show(IOContext(io, :limit => true, :displaysize => (100, 150)), "text/plain", eval(g.game_module, ex))
             s = String(take!(io))
             update_text_actor!(terminal, s)
+            push!(command_history, text)
         catch e
             @warn e
         end
-
+        
         schedule_once(() -> terminal.alpha = 0, 4)
+        #=
+        =#
     end
 end
 

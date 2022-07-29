@@ -263,7 +263,7 @@ function getfn(m::Module, s::Symbol, maxargs = 3)
     end
 end
 
-function start_text_input(g::Game, terminal::Actor)
+function start_text_input(g::Game, terminal::Actor, history=String[])
     done = false
     comp = terminal.label
 
@@ -274,8 +274,8 @@ function start_text_input(g::Game, terminal::Actor)
 
         if success
             event_array = [Char(i) for i in event]
-            event_type = getEventType(event)
-            key_sym = event_array[21] |> string
+            @show event_type = getEventType(event)
+            @show key_sym = event_array[21] |> string
             #SDL2.GetModState() |> string
         
             if getEventType(event) == SDL2.TEXTINPUT
@@ -287,19 +287,22 @@ function start_text_input(g::Game, terminal::Actor)
             
                 #@info "TextInputEvent: $(getEventType(event)) comp: $comp"
             
+            # Paste from clipboard
             # KEYMODs: LCTRL = 4160 | RCTRL = 4096
             elseif event_type == SDL2.KEYDOWN && (SDL2.GetModState() |> string == "4160" || SDL2.GetModState() |> string == "4096") && (key_sym == "v" || key_sym == "V")
-                @show comp = comp * "$(unsafe_string(SDL2.GetClipboardText()))"
+                comp = comp * "$(unsafe_string(SDL2.GetClipboardText()))"
                 update_text_actor!(terminal, comp)
             
             
             elseif length(comp) > 1 && event_type == SDL2.KEYDOWN && key_sym == "\b"  # backspace key
                 comp = comp[1:end-1]
-            
                 update_text_actor!(terminal, comp)
             
                 #@info "BackspaceEvent: $(getEventType(event)) comp: $comp"
             
+            elseif string(event_type) == "0x00000300" && key_sym == "R"
+                update_text_actor!(terminal, history[end])
+
             elseif getEventType(event) == SDL2.KEYDOWN && key_sym == "\r" # return key
                 @info "QuitEvent: $(getEventType(event))"
                 done = true

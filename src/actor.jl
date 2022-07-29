@@ -55,26 +55,22 @@ function ImageActor(img_name::String, img; x=0, y=0, kv...)
 end
 
 function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
-    font_color = Int[255, 255, 0, 200], outline_color = Int[0, 0, 0, 200],
-    wrap_length = 800, outline_size = 0, outline_font_path="", kv...)
+    font_color = Int[255, 255, 0, 225], outline_color = Int[0, 0, 0, 225],
+    wrap_length = 800, outline_size = 0, kv...)
 
-    # outline
     text_font = SDL2.TTF_OpenFont(font_path, pt_size)
     fg = SDL2.TTF_RenderText_Blended_Wrapped(text_font, text, SDL2.Color(font_color...), UInt32(wrap_length))
     w, h = size(fg)
     r = SDL2.Rect(x, y, w, h)
     
-    if outline_size > 0  
-        if outline_font_path == ""
-            outline_font = SDL2.TTF_OpenFont(font_path, pt_size)
-        else
-            outline_font = SDL2.TTF_OpenFont(outline_font_path, pt_size)
-        end
-        
+    fg = if outline_size > 0
+        outline_font = SDL2.TTF_OpenFont(font_path, pt_size + outline_size)
         SDL2.TTF_SetFontOutline(outline_font, Int32(outline_size))
         bg = SDL2.TTF_RenderText_Blended_Wrapped(outline_font, text, SDL2.Color(outline_color...), UInt32(wrap_length))
-        SDL2.UpperBlit(fg, SDL2.C_NULL, bg, SDL2.C_NULL)
-        fg = bg
+        SDL2.UpperBlitScaled(fg, SDL2.C_NULL, bg, SDL2.C_NULL)
+        bg
+    else
+        fg
     end
 
     a = Actor(
@@ -96,6 +92,8 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
             :next_frame => false,
             :font_path => font_path,
             :pt_size => pt_size,
+            :outline_size => outline_size,
+            :outline_color => outline_color,
             :wrap_length => wrap_length,
             :mouse_offset => Int32[0, 0],
             :font_color => font_color,
@@ -108,12 +106,35 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
     return a
 end
 
+function update_text_actor!(a::Actor, new_text::String)
+    font = SDL2.TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
+    fg = SDL2.TTF_RenderText_Blended_Wrapped(font, new_text,
+        SDL2.Color(a.data[:font_color]...), UInt32(a.data[:wrap_length]))
+
+    fg = if a.data[:outline_size] > 0
+        outline_font = SDL2.TTF_OpenFont(a.data[:font_path], a.data[:pt_size] + a.data[:outline_size])
+        SDL2.TTF_SetFontOutline(outline_font, Int32(a.data[:outline_size]))
+        bg = SDL2.TTF_RenderText_Blended_Wrapped(outline_font, new_text, SDL2.Color(a.data[:outline_color]...), UInt32(a.data[:wrap_length]))
+        SDL2.UpperBlitScaled(fg, SDL2.C_NULL, bg, SDL2.C_NULL)
+        bg
+    else
+        fg
+    end
+    #=
+    =#
+    a.surfaces = [fg]
+    a.w, a.h = size(a.surfaces[begin])
+    a.textures = []
+    a.label = new_text
+    return a
+end
+
 function GIFActor(gif_name::String, gif; x=0, y=0, frame_delay=Millisecond(120), kv...)
     @info gif_name
     h, w, n = Int32.(size(gif))
-    frame_delays = [i for i in 1:n]
+    frame_delays = [frame_delay for _ in 1:n]
     surfaces = []
-
+    
     for i in 1:n
         gimg = ARGB.(transpose(gif[:, :, i]))
         sf = SDL2.CreateRGBSurfaceWithFormatFrom(
@@ -121,12 +142,12 @@ function GIFActor(gif_name::String, gif; x=0, y=0, frame_delay=Millisecond(120),
             w,
             h,
             Int32(32),
-            Int32(4 * w),
+            Int32(4w),
             SDL2.PIXELFORMAT_ARGB32,
-        )
-        push!(surfaces, sf)
-    end
-
+            )
+            push!(surfaces, sf)
+        end
+        
     r = SDL2.Rect(x, y, w, h)
     a = Actor(
         gif_name,
@@ -154,16 +175,6 @@ function GIFActor(gif_name::String, gif; x=0, y=0, frame_delay=Millisecond(120),
     for (k, v) in kv
         setproperty!(a, k, v)
     end
-    return a
-end
-
-function update_text_actor!(a::Actor, new_text::String)
-    font = SDL2.TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
-    a.surfaces = [SDL2.TTF_RenderText_Blended_Wrapped(font, new_text,
-        SDL2.Color(a.data[:font_color]...), UInt32(a.data[:wrap_length]))]
-    a.w, a.h = size(a.surfaces[begin])
-    a.label = new_text
-    a.textures = []
     return a
 end
 
