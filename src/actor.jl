@@ -107,29 +107,6 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
     return a
 end
 
-function update_text_actor!(a::Actor, new_text::String)
-    font = SDL2.TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
-    fg = SDL2.TTF_RenderText_Blended_Wrapped(font, new_text,
-        SDL2.Color(a.data[:font_color]...), UInt32(a.data[:wrap_length]))
-    w, h = size(fg)
-    fg = if a.data[:outline_size] > 0
-        outline_font = SDL2.TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
-        SDL2.TTF_SetFontOutline(outline_font, Int32(a.data[:outline_size]))
-        bg = SDL2.TTF_RenderText_Blended_Wrapped(outline_font, new_text, SDL2.Color(a.data[:outline_color]...), UInt32(a.data[:wrap_length]))
-        SDL2.UpperBlitScaled(fg, SDL2.C_NULL, bg, Int32[a.data[:outline_size], a.data[:outline_size], w, h])
-        bg
-    else
-        fg
-    end
-    #=
-    =#
-    a.surfaces = [fg]
-    a.w, a.h = size(a.surfaces[begin])
-    a.textures = []
-    a.label = new_text
-    return a
-end
-
 function GIFActor(gif_name::String, gif; x=0, y=0, frame_delay=Millisecond(120), kv...)
     @info gif_name
     h, w, n = Int32.(size(gif))
