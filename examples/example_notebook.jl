@@ -146,7 +146,7 @@ end
 function on_key_down(a::Actor, dx, dy, k)
 	if k == Keys.SPACE
 		@show "$k :)"
-        a = shift_surface()
+        a = shift_surface(a)
         schedule_once(shift_surface, 1)
 
 	elseif k == Keys.DOWN

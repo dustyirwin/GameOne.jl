@@ -21,8 +21,8 @@ terminal.alpha = 0
 label = TextActor(
     "this is some example text",
     "examples/fonts/OpenSans-Regular.ttf",
-    outline_size=2,
-    pt_size=32)
+    outline_size=1,
+    pt_size=24)
 label.position.x = 25
 label.position.y = 25
 
