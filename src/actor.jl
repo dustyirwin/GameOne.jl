@@ -1,6 +1,5 @@
 
 mutable struct Actor
-    id::String
     label::String
     surfaces::Vector{Ptr{SDL2.Surface}}
     textures::Vector{Ptr{SDL2.Texture}}
@@ -10,9 +9,10 @@ mutable struct Actor
     angle::Float64
     alpha::UInt8
     data::Dict{Symbol,Any}
+    id=randstring(10)
 end
 
-function ImageActor(id::String, img_name::String, img; x=0, y=0, kv...) 
+function ImageActor(img_name::String, img; x=0, y=0, kv...) 
     @info img_name
     img = ARGB.(transpose(img))
     w, h = Int32.(size(img))
@@ -27,7 +27,6 @@ function ImageActor(id::String, img_name::String, img; x=0, y=0, kv...)
 
     r = SDL2.Rect(x, y, w, h)
     a = Actor(
-        id,
         img_name,
         [sf],
         [],
@@ -55,7 +54,7 @@ function ImageActor(id::String, img_name::String, img; x=0, y=0, kv...)
     return a
 end
 
-function TextActor(id::String, text::String, font_path::String; x = 0, y = 0, pt_size = 24,
+function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
     font_color = Int[255, 255, 255, 255], outline_color = Int[0, 0, 0, 225],
     wrap_length = 800, outline_size = 0, kv...)
 
@@ -75,7 +74,6 @@ function TextActor(id::String, text::String, font_path::String; x = 0, y = 0, pt
     end
 
     a = Actor(
-        id,
         text,
         [fg],
         [],
@@ -131,7 +129,7 @@ function update_text_actor!(a::Actor, new_text::String)
     return a
 end
 
-function GIFActor(id::String, gif_name::String, gif; x=0, y=0, frame_delay=Millisecond(120), kv...)
+function GIFActor(gif_name::String, gif; x=0, y=0, frame_delay=Millisecond(120), kv...)
     @info gif_name
     h, w, n = Int32.(size(gif))
     frame_delays = [frame_delay for _ in 1:n]
@@ -152,7 +150,6 @@ function GIFActor(id::String, gif_name::String, gif; x=0, y=0, frame_delay=Milli
         
     r = SDL2.Rect(x, y, w, h)
     a = Actor(
-        id,
         gif_name,
         surfaces,
         [],
