@@ -1,5 +1,6 @@
 
 mutable struct Actor
+    id::String
     label::String
     surfaces::Vector{Ptr{SDL2.Surface}}
     textures::Vector{Ptr{SDL2.Texture}}
@@ -9,7 +10,6 @@ mutable struct Actor
     angle::Float64
     alpha::UInt8
     data::Dict{Symbol,Any}
-    id=randstring(10)
 end
 
 function ImageActor(img_name::String, img; x=0, y=0, kv...) 
@@ -27,6 +27,7 @@ function ImageActor(img_name::String, img; x=0, y=0, kv...)
 
     r = SDL2.Rect(x, y, w, h)
     a = Actor(
+        randstring(10),
         img_name,
         [sf],
         [],
@@ -74,6 +75,7 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
     end
 
     a = Actor(
+        randstring(10),
         text,
         [fg],
         [],
@@ -150,6 +152,7 @@ function GIFActor(gif_name::String, gif; x=0, y=0, frame_delay=Millisecond(120),
         
     r = SDL2.Rect(x, y, w, h)
     a = Actor(
+        randstring(10),
         gif_name,
         surfaces,
         [],

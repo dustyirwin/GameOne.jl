@@ -13,14 +13,13 @@ dy = 2
 
 
 # Create an `ImageActor` object from a PNG file
-alien = ImageActor(randstring(10), "examples/images/alien.png", load("examples/images/alien.png"))
+alien = ImageActor("examples/images/alien.png", load("examples/images/alien.png"))
 
 # Create an `TextActor` object from an empty string for terminal use
-terminal = TextActor(randstring(10), ">", "examples/fonts/OpenSans-Regular.ttf")
+terminal = TextActor(">", "examples/fonts/OpenSans-Regular.ttf")
 terminal.alpha = 0
 
 label = TextActor(
-    randstring(10),
     "this is some example text",
     "examples/fonts/OpenSans-Regular.ttf",
     outline_size=1,
