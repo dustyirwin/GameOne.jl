@@ -426,9 +426,9 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [[deps.Interpolations]]
 deps = ["Adapt", "AxisAlgorithms", "ChainRulesCore", "LinearAlgebra", "OffsetArrays", "Random", "Ratios", "Requires", "SharedArrays", "SparseArrays", "StaticArrays", "WoodburyMatrices"]
-git-tree-sha1 = "a82caeb68217255e488ba9b9fbd71ddabc4e63c0"
+git-tree-sha1 = "23e651bbb8d00e9971015d0dd306b780edbdb6b9"
 uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
-version = "0.14.2"
+version = "0.14.3"
 
 [[deps.IntervalSets]]
 deps = ["Dates", "Random", "Statistics"]
@@ -478,9 +478,9 @@ version = "2.1.2+0"
 
 [[deps.JuliaInterpreter]]
 deps = ["CodeTracking", "InteractiveUtils", "Random", "UUIDs"]
-git-tree-sha1 = "1101d9e5a062963612e8d2bd5bd653d73ae033f4"
+git-tree-sha1 = "0f960b1404abb0b244c1ece579a0ec78d056a5d1"
 uuid = "aa1ae85d-cabe-5617-a682-6adf51b2e16a"
-version = "0.9.14"
+version = "0.9.15"
 
 [[deps.LERC_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
