@@ -13,7 +13,6 @@ mutable struct Actor
 end
 
 function ImageActor(img_name::String, img; x=0, y=0, kv...) 
-    @info img_name
     img = ARGB.(transpose(img))
     w, h = Int32.(size(img))
     sf = SDL2.CreateRGBSurfaceWithFormatFrom(
@@ -132,7 +131,6 @@ function update_text_actor!(a::Actor, new_text::String)
 end
 
 function GIFActor(gif_name::String, gif; x=0, y=0, frame_delay=Millisecond(120), kv...)
-    @info gif_name
     h, w, n = Int32.(size(gif))
     frame_delays = [frame_delay for _ in 1:n]
     surfaces = []
