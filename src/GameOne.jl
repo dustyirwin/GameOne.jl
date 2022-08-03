@@ -274,8 +274,13 @@ function start_text_input(g::Game, terminal::Actor, history=String[])
 
         if success
             event_array = [Char(i) for i in event]
-            @show event_type = getEventType(event)
-            @show key_sym = event_array[21] |> string
+            
+            event_type = getEventType(event)
+            #@info event_type
+            
+            key_sym = event_array[21] |> string
+            #@info key_sym
+            
             #SDL2.GetModState() |> string
         
             if getEventType(event) == SDL2.TEXTINPUT
@@ -305,6 +310,7 @@ function start_text_input(g::Game, terminal::Actor, history=String[])
 
             elseif getEventType(event) == SDL2.KEYDOWN && key_sym == "\r" # return key
                 @info "QuitEvent: $(getEventType(event))"
+                @info "Composition: $comp"
                 done = true
             end
         
