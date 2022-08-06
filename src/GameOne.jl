@@ -162,13 +162,14 @@ end
 
 function handleMouseClick(g::Game, e, t)
     button = getMouseButtonClick(e)
+    keyMod = getKeyMod(e)
     x = getMouseClickX(e)
     y = getMouseClickY(e)
     @debug "Mouse Button" button, x, y
     if (t == SDL2.MOUSEBUTTONUP)
         Base.invokelatest(g.onmouseup_function, g, (x, y), MouseButtons.MouseButton(button))
     elseif (t == SDL2.MOUSEBUTTONDOWN)
-        Base.invokelatest(g.onmousedown_function, g, (x, y), MouseButtons.MouseButton(button))
+        Base.invokelatest(g.onmousedown_function, g, (x, y), MouseButtons.MouseButton(button), keyMod)
     end
 end
 
@@ -230,7 +231,7 @@ function initgame(jlf::String)
     g.render_function = getfn(game_module, :draw, 1)
     g.onkey_function = getfn(game_module, :on_key_down, 4)
     g.onmouseup_function = getfn(game_module, :on_mouse_up, 3)
-    g.onmousedown_function = getfn(game_module, :on_mouse_down, 3)
+    g.onmousedown_function = getfn(game_module, :on_mouse_down, 4)
     g.onmousemove_function = getfn(game_module, :on_mouse_move, 2)
     g.screen = initscreen(game_module, "GameOne::" * name)
     clear(g.screen)
