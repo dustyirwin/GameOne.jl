@@ -1,3 +1,4 @@
+
 module MouseButtons
 export MouseButton
 @enum MouseButton::UInt8 begin
@@ -8,7 +9,6 @@ export MouseButton
     WHEEL_DOWN = 5
 end
 end
-
 
 
 module Keys
@@ -147,7 +147,7 @@ export Key
     SYSREQ = SDL2.SDLK_SYSREQ;
     MENU = SDL2.SDLK_MENU;
     POWER = SDL2.SDLK_POWER;
-    EURO = SDL2.SDLK_CURRENCYUNIT;
+    DOLLAR = SDL2.SDLK_CURRENCYUNIT;
 end
 end
 
