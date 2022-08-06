@@ -162,14 +162,13 @@ end
 
 function handleMouseClick(g::Game, e, t)
     button = getMouseButtonClick(e)
-    keyMod = getKeyMod(e)
     x = getMouseClickX(e)
     y = getMouseClickY(e)
     @debug "Mouse Button" button, x, y
     if (t == SDL2.MOUSEBUTTONUP)
         Base.invokelatest(g.onmouseup_function, g, (x, y), MouseButtons.MouseButton(button))
     elseif (t == SDL2.MOUSEBUTTONDOWN)
-        Base.invokelatest(g.onmousedown_function, g, (x, y), MouseButtons.MouseButton(button), keyMod)
+        Base.invokelatest(g.onmousedown_function, g, (x, y), MouseButtons.MouseButton(button))
     end
 end
 
