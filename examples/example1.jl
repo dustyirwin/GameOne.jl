@@ -1,9 +1,9 @@
 using Random
 
 # Height of the game window
-HEIGHT = 400
+HEIGHT = 600
 # Width of the game window
-WIDTH = 400
+WIDTH = 800
 # Background color of the game window
 BACKGROUND = colorant"purple"
 
@@ -28,14 +28,16 @@ label.position.x = 25
 label.position.y = 25
 
 #load a GIF!
-#giffy = GIFActor("giffy", load("examples/images/Brainstorm.gif"))
+giffy = GIFActor("giffy", load("examples/images/Brainstorm_test.gif"))
 
 # Start playing background music
-play_music("examples/music/radetzky_ogg")
+
+#play_music("examples/music/radetzky_ogg")
 
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
-    draw.([alien, terminal, label])
+    draw.([alien, terminal, label, giffy])
+
 end
 
 

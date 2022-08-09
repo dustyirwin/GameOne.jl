@@ -130,6 +130,19 @@ function update_text_actor!(a::Actor, new_text::String)
     return a
 end
 
+
+#= 
+IMPORTANT: For GIFs to work, the gif must be pre-processed in GIMP (or other) with the following settings:
+
+1. Convert to RGB color format (from indexed)
+2. Interlaced - checked (need unconfirmed)
+3. As animation - checked
+3. 120 ms frame rate? (set in GIFActor)
+4. Frame disposal set to 'replace'
+4. Use same frame rate and disposal method for all frames
+=#
+
+
 function GIFActor(gif_name::String, gif; x=0, y=0, frame_delay=Millisecond(120), kv...)
     h, w, n = Int32.(size(gif))
     frame_delays = [frame_delay for _ in 1:n]
