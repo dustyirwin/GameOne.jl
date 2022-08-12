@@ -15,7 +15,7 @@ export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
     getEventType, getTextInputEventChar, start_text_input, update_text_actor!
 export Game, Keys, Keymods, MouseButtons
-export ImageActor, TextActor, GIFActor, Actor, Line, Rect, Circle
+export ImageActor, TextActor, AnimActor, Actor, Line, Rect, Circle
 export SDL2
 
 
@@ -66,8 +66,8 @@ const paused = Ref{Bool}(false)
 function __init__() end
 
 function initscreen(gm::Module, name::String)
-    h = getifdefined(gm, HEIGHTSYMBOL, 400)
-    w = getifdefined(gm, WIDTHSYMBOL, 600)
+    h = getifdefined(gm, HEIGHTSYMBOL, 600)
+    w = getifdefined(gm, WIDTHSYMBOL, 800)
     color = getifdefined(gm, BACKSYMBOL, ARGB(colorant"white"))
     s = Screen(name, w, h, color)
     clear(s)

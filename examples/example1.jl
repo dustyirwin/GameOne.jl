@@ -1,4 +1,5 @@
 using Random
+using Dates
 
 # Height of the game window
 HEIGHT = 600
@@ -11,6 +12,12 @@ BACKGROUND = colorant"purple"
 dx = 2
 dy = 2
 
+
+function next_frame!(a::Actor)
+    a.textures = circshift(a.textures, -1)
+    a.data[:then] = now()
+    return a
+end
 
 # Create an `ImageActor` object from a PNG file
 alien = ImageActor("examples/images/alien.png", load("examples/images/alien.png"))
@@ -27,8 +34,16 @@ label = TextActor(
 label.position.x = 25
 label.position.y = 25
 
-#load a GIF!
-giffy = GIFActor("giffy", load("examples/images/Brainstorm_test.gif"))
+img_fns = [ "examples/images/FireElem1/Visible$i.png" for i in 0:7 ]
+
+fe_imgs = [ load(fn) for fn in img_fns ]
+
+
+#load a animation
+anim = AnimActor("alien_anim", fe_imgs)
+anim.data[:next_frame] = true
+anim.y = 50
+anim.x =10
 
 # Start playing background music
 
@@ -36,8 +51,12 @@ giffy = GIFActor("giffy", load("examples/images/Brainstorm_test.gif"))
 
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
-    draw.([alien, terminal, label, giffy])
-
+    draw.([
+        alien, 
+        terminal, 
+        label, 
+        anim,
+        ])
 end
 
 
@@ -50,6 +69,13 @@ function update(g::Game)
     global dx, dy
     alien.position.x += dx
     alien.position.y += dy
+
+    if anim.data[:next_frame]
+        
+        if now() - anim.data[:then] > Millisecond(120) 
+            next_frame!(anim)
+        end
+    end
 
     if alien.x > 400 - alien.w || alien.x < 2
         dx = -dx

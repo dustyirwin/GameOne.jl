@@ -269,9 +269,9 @@ version = "1.7.1"
 
 [[deps.HTTP]]
 deps = ["Base64", "CodecZlib", "Dates", "IniFile", "Logging", "LoggingExtras", "MbedTLS", "NetworkOptions", "Random", "SimpleBufferStream", "Sockets", "URIs", "UUIDs"]
-git-tree-sha1 = "ed47af35905b7cc8f1a522ca684b35a212269bd8"
+git-tree-sha1 = "f0956f8d42a92816d2bf062f8a6a6a0ad7f9b937"
 uuid = "cd3eb016-35fb-5094-929b-558a96fad6f3"
-version = "1.2.0"
+version = "1.2.1"
 
 [[deps.Hyperscript]]
 deps = ["Test"]
@@ -426,9 +426,9 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [[deps.Interpolations]]
 deps = ["Adapt", "AxisAlgorithms", "ChainRulesCore", "LinearAlgebra", "OffsetArrays", "Random", "Ratios", "Requires", "SharedArrays", "SparseArrays", "StaticArrays", "WoodburyMatrices"]
-git-tree-sha1 = "23e651bbb8d00e9971015d0dd306b780edbdb6b9"
+git-tree-sha1 = "64f138f9453a018c8f3562e7bae54edc059af249"
 uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
-version = "0.14.3"
+version = "0.14.4"
 
 [[deps.IntervalSets]]
 deps = ["Dates", "Random", "Statistics"]

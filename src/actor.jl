@@ -143,15 +143,17 @@ IMPORTANT: For GIFs to work, the gif must be pre-processed in GIMP (or other) wi
 =#
 
 
-function GIFActor(gif_name::String, gif; x=0, y=0, frame_delay=Millisecond(120), kv...)
-    h, w, n = Int32.(size(gif))
-    frame_delays = [frame_delay for _ in 1:n]
+function AnimActor(anim_name::String, imgs; x=0, y=0, frame_delay=Millisecond(120), kv...)
+    w, h = Int32.(size(transpose(imgs[begin])))
+    n = Int32.(length(imgs))
+    frame_delays = [ frame_delay for _ in 1:n ]
     surfaces = []
     
-    for i in 1:n
-        gimg = ARGB.(transpose(gif[:, :, i]))
+    for im in imgs
+        img = ARGB.(transpose(im))
+        w, h = Int32.(size(img))
         sf = SDL2.CreateRGBSurfaceWithFormatFrom(
-            gimg,
+            img,
             w,
             h,
             Int32(32),
@@ -164,15 +166,17 @@ function GIFActor(gif_name::String, gif; x=0, y=0, frame_delay=Millisecond(120),
     r = SDL2.Rect(x, y, w, h)
     a = Actor(
         randstring(10),
-        gif_name,
+        anim_name,
         surfaces,
         [],
         r,
-        [1, 1],
+        [1,1],
         C_NULL,
         0,
         255,
         Dict(
+            :label => anim_name,
+            :imgs => imgs,
             :sz => [w, h],
             :fade => false,
             :fade_out => true,
