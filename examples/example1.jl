@@ -20,7 +20,7 @@ function next_frame!(a::Actor)
 end
 
 # Create an `ImageActor` object from a PNG file
-alien = ImageActor("examples/images/alien.png", load("examples/images/alien.png"))
+alien = ImageActor("examples/images/alien.png", load("examples/images/alien.png") )
 
 # Create an `TextActor` object from an empty string for terminal use
 terminal = TextActor(">", "examples/fonts/OpenSans-Regular.ttf")
@@ -35,15 +35,13 @@ label.position.x = 25
 label.position.y = 25
 
 img_fns = [ "examples/images/FireElem1/Visible$i.png" for i in 0:7 ]
-
 fe_imgs = [ load(fn) for fn in img_fns ]
-
 
 #load a animation
 anim = AnimActor("alien_anim", fe_imgs)
 anim.data[:next_frame] = true
 anim.y = 50
-anim.x =10
+anim.x = 10
 
 # Start playing background music
 
@@ -76,6 +74,8 @@ function update(g::Game)
             next_frame!(anim)
         end
     end
+    #=
+    =#
 
     if alien.x > 400 - alien.w || alien.x < 2
         dx = -dx
