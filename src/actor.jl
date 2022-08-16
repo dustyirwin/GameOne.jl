@@ -143,6 +143,45 @@ IMPORTANT: For GIFs to work, the gif must be pre-processed in GIMP (or other) wi
 =#
 
 
+function AnimActor(anim_name::String, bmp_fns; x=0, y=0, frame_delay=Millisecond(120), kv...)
+    n = Int32.(length(bmp_fns))
+    frame_delays = [ frame_delay for _ in 1:n ]
+    surfaces = [ SDL2.LoadBMP(bmp_fn) for bmp_fn in bmp_fns ]
+    w, h = Int32.(size(surfaces[begin]))
+    
+    r = SDL2.Rect(x, y, w, h)
+    a = Actor(
+        randstring(10),
+        anim_name,
+        surfaces,
+        [],
+        r,
+        [1,1],
+        C_NULL,
+        0,
+        255,
+        Dict(
+            :label => anim_name,
+            :sz => [w, h],
+            :fade => false,
+            :fade_out => true,
+            :spin => false,
+            :spin_cw => true,
+            :shake => false,
+            :then => now(),
+            :next_frame => false,
+            :frame_delays => frame_delays,
+            :mouse_offset => Int32[0, 0],
+        )
+    )
+
+    for (k, v) in kv
+        setproperty!(a, k, v)
+    end
+    return a
+end
+
+#=
 function AnimActor(anim_name::String, imgs; x=0, y=0, frame_delay=Millisecond(120), kv...)
     w, h = Int32.(size(transpose(imgs[begin])))
     n = Int32.(length(imgs))
@@ -195,6 +234,8 @@ function AnimActor(anim_name::String, imgs; x=0, y=0, frame_delay=Millisecond(12
     end
     return a
 end
+=#
+
 
 function draw(a::Actor)
     if isempty(a.textures)

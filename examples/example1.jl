@@ -34,11 +34,10 @@ label = TextActor(
 label.position.x = 25
 label.position.y = 25
 
-img_fns = [ "examples/images/FireElem1/Visible$i.png" for i in 0:7 ]
-fe_imgs = [ load(fn) for fn in img_fns ]
 
-#load a animation
-anim = AnimActor("alien_anim", fe_imgs)
+#load a custom animation
+anim_fns = [ "C:/Users/dusty/My Drive/PlaymatProjects/PlaymatAssets/MtG/unprocessed_gifs/FEBMP/Visible$i.bmp" for i in 0:7 ]
+anim = AnimActor("alien_anim", anim_fns)
 anim.data[:next_frame] = true
 anim.y = 50
 anim.x = 10
@@ -64,14 +63,13 @@ end
 # * if the up/down/left/right keys are pressed, we change the velocity to move the actor in the direction of the keypress
 
 function update(g::Game)
-    global dx, dy
+    global dx, dy, anim
     alien.position.x += dx
     alien.position.y += dy
 
     if anim.data[:next_frame]
-        
         if now() - anim.data[:then] > Millisecond(120) 
-            next_frame!(anim)
+            anim = next_frame!(anim)
         end
     end
     #=
