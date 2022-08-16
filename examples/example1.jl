@@ -37,7 +37,7 @@ label.position.y = 25
 
 #load a custom animation
 anim_fns = [ "C:/Users/dusty/My Drive/PlaymatProjects/PlaymatAssets/MtG/unprocessed_gifs/FEBMP/Visible$i.bmp" for i in 0:7 ]
-anim = AnimActor("alien_anim", anim_fns)
+anim = AnimActorBMP("alien_anim", anim_fns)
 anim.data[:next_frame] = true
 anim.y = 50
 anim.x = 10

@@ -130,20 +130,7 @@ function update_text_actor!(a::Actor, new_text::String)
     return a
 end
 
-
-#= 
-IMPORTANT: For GIFs to work, the gif must be pre-processed in GIMP (or other) with the following settings:
-
-1. Convert to RGB color format (from indexed)
-2. Interlaced - checked (need unconfirmed)
-3. As animation - checked
-3. 120 ms frame rate? (set in GIFActor)
-4. Frame disposal set to 'replace'
-4. Use same frame rate and disposal method for all frames
-=#
-
-
-function AnimActor(anim_name::String, bmp_fns; x=0, y=0, frame_delay=Millisecond(120), kv...)
+function AnimActorBMP(anim_name::String, bmp_fns; x=0, y=0, frame_delay=Millisecond(120), kv...)
     n = Int32.(length(bmp_fns))
     frame_delays = [ frame_delay for _ in 1:n ]
     surfaces = [ SDL2.LoadBMP(bmp_fn) for bmp_fn in bmp_fns ]

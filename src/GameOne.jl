@@ -15,7 +15,7 @@ export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
     getEventType, getTextInputEventChar, start_text_input, update_text_actor!
 export Game, Keys, Keymods, MouseButtons
-export ImageActor, TextActor, AnimActor, Actor, Line, Rect, Circle
+export ImageActor, TextActor, AnimActorBMP, Actor, Line, Rect, Circle
 export SDL2
 
 
