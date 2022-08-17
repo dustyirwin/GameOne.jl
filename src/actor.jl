@@ -36,6 +36,7 @@ function ImageActor(img_name::String, img; x=0, y=0, kv...)
         0,
         255,
         Dict(
+            :anim => false,
             :label=>img_name,
             :img=>img,
             :sz=>[w,h],
@@ -148,6 +149,7 @@ function AnimActorBMP(anim_name::String, bmp_fns; x=0, y=0, frame_delay=Millisec
         0,
         255,
         Dict(
+            :anim => true,
             :label => anim_name,
             :sz => [w, h],
             :fade => false,
