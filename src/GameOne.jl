@@ -35,7 +35,7 @@ const BACKSYMBOL = :BACKGROUND
 
 mutable struct Game
     const screen::Screen
-    const location::String
+    location::String
     game_module::Module
     const keyboard::Keyboard
     const render_function::Function
