@@ -44,7 +44,7 @@ mutable struct Game
     onmousedown_function::Function
     onmouseup_function::Function
     onmousemove_function::Function
-    const Game() = new()
+    Game() = new()
 end
 
 
