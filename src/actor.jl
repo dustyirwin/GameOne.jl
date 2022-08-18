@@ -196,14 +196,11 @@ function draw(a::Actor)
     end
 
     flip = if a.w < 0 && a.h < 0
-        SDL2.SDL_FLIP_HORIZONTAL | SDL2.SDL_FLIP_VERTICAL
-
+        SDL2.SDL_FLIP_HORIZONTAL|SDL2.SDL_FLIP_VERTICAL
     elseif a.h < 0
         SDL2.SDL_FLIP_VERTICAL
-
     elseif a.w < 0
         SDL2.SDL_FLIP_HORIZONTAL
-
     else
         SDL2.SDL_FLIP_NONE
     end
@@ -215,7 +212,7 @@ function draw(a::Actor)
         Ref(SDL2.SDL_Rect(Int32[ a.x, a.y, ceil(a.w * a.scale[1]), ceil(a.h * a.scale[2]) ]...)),
         a.angle,
         a.rotate_center,
-        SDL2.SDL_FLIP_NONE,
+        flip,
     )
 end
 
