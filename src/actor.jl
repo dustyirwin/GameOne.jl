@@ -196,7 +196,7 @@ function draw(a::Actor)
     end
 
     flip = if a.w < 0 && a.h < 0
-        SDL2.SDL_FLIP_VERTICAL | SDL2.SDL_FLIP_HORIZONTAL
+        SDL2.SDL_FLIP_VERTICAL || SDL2.SDL_FLIP_HORIZONTAL
     elseif a.h < 0
         SDL2.SDL_FLIP_VERTICAL
     elseif a.w < 0
