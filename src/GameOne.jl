@@ -39,7 +39,7 @@ mutable struct Game
     game_module::Module
     keyboard::Keyboard
     const render_function::Function
-    const update_function::Function
+    update_function::Function
     const onkey_function::Function
     const onmousedown_function::Function
     const onmouseup_function::Function
