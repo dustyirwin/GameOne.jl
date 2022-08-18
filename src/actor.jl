@@ -215,7 +215,7 @@ function draw(a::Actor)
         Ref(SDL2.SDL_Rect(Int32[ a.x, a.y, ceil(a.w * a.scale[1]), ceil(a.h * a.scale[2]) ]...)),
         a.angle,
         a.rotate_center,
-        UInt32(flip),
+        SDL2.SDL_FLIP_NONE,
     )
 end
 
