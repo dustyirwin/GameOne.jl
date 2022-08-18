@@ -34,7 +34,7 @@ const WIDTHSYMBOL = :SCREEN_WIDTH
 const BACKSYMBOL = :BACKGROUND
 
 mutable struct Game
-    const screen::Screen
+    screen::Screen
     location::String
     game_module::Module
     keyboard::Keyboard
