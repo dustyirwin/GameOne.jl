@@ -195,7 +195,7 @@ function draw(a::Actor)
         SDL2.SDL_SetTextureAlphaMod(a.textures[begin], a.alpha)
     end
 
-    flip = if a.w < 0 && a.h < 0
+    flip = UInt32(if a.w < 0 && a.h < 0
         SDL2.SDL_FLIP_HORIZONTAL | SDL2.SDL_FLIP_VERTICAL
 
     elseif a.h < 0
@@ -206,7 +206,7 @@ function draw(a::Actor)
 
     else
         SDL2.SDL_FLIP_NONE
-    end
+    end)
 
     SDL2.SDL_RenderCopyEx(
         game[].screen.renderer,
