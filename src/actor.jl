@@ -1,6 +1,6 @@
 
 mutable struct Actor
-    id::String
+    const id::String
     label::String
     surfaces::Vector{Ptr{SDL2.Surface}}
     textures::Vector{Ptr{SDL2.Texture}}

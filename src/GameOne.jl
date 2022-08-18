@@ -34,16 +34,16 @@ const WIDTHSYMBOL = :SCREEN_WIDTH
 const BACKSYMBOL = :BACKGROUND
 
 mutable struct Game
-    screen::Screen
-    location::String
+    const screen::Screen
+    const location::String
     game_module::Module
-    keyboard::Keyboard
-    render_function::Function
-    update_function::Function
-    onkey_function::Function
-    onmousedown_function::Function
-    onmouseup_function::Function
-    onmousemove_function::Function
+    const keyboard::Keyboard
+    const render_function::Function
+    const update_function::Function
+    const onkey_function::Function
+    const onmousedown_function::Function
+    const onmouseup_function::Function
+    const onmousemove_function::Function
     Game() = new()
 end
 
