@@ -38,6 +38,7 @@ function ImageActor(img_name::String, img; x=0, y=0, kv...)
         Dict(
             :anim => false,
             :label=>img_name,
+            :img=>img,
             :sz=>[w,h],
             :fade=>false,           #  change to fade_in? remove anim-specific keys (add k,v when anim is run?)
             :fade_out=>true,
@@ -171,7 +172,6 @@ end
 
 function draw(a::Actor)
     if isempty(a.textures)
-        SDL2.SetHint(SDL2.HINT_RENDER_SCALE_QUALITY, "best")
 
         for (i, sf) in enumerate(a.surfaces)
             tx = SDL2.CreateTextureFromSurface(game[].screen.renderer, sf)
