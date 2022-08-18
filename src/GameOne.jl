@@ -40,11 +40,11 @@ mutable struct Game
     keyboard::Keyboard
     render_function::Function
     update_function::Function
-    const onkey_function::Function
-    const onmousedown_function::Function
-    const onmouseup_function::Function
-    const onmousemove_function::Function
-    Game() = new()
+    onkey_function::Function
+    onmousedown_function::Function
+    onmouseup_function::Function
+    onmousemove_function::Function
+    const Game() = new()
 end
 
 
