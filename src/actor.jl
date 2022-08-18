@@ -38,7 +38,7 @@ function ImageActor(img_name::String, img; x=0, y=0, kv...)
         Dict(
             :anim => false,
             :label=>img_name,
-            #:img=>img,
+            :img=>img,
             :sz=>[w,h],
             :fade=>false,           #  change to fade_in? remove anim-specific keys (add k,v when anim is run?)
             :fade_out=>true,
