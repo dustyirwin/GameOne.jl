@@ -2,9 +2,9 @@
 mutable struct Actor
     const id::String
     label::String
-    surfaces::Vector{Ptr{SDL2.Surface}}
-    textures::Vector{Ptr{SDL2.Texture}}
-    position::SDL2.Rect
+    surfaces::Vector{Ptr{SDL2.SDL_Surface}}
+    textures::Vector{Ptr{SDL2.SDL_Texture}}
+    position::SDL2.SDL_Rect
     scale::Vector{Float32}
     rotate_center::Union{Vector{Int32},Ptr{Nothing}}
     angle::Float64
@@ -15,16 +15,16 @@ end
 function ImageActor(img_name::String, img; x=0, y=0, kv...) 
     img = ARGB.(transpose(img))
     w, h = Int32.(size(img))
-    sf = SDL2.CreateRGBSurfaceWithFormatFrom(
+    sf = SDL2.SDL_CreateRGBSurfaceWithFormatFrom(
         img,
         w,
         h,
         Int32(32),
         Int32(4w),
-        SDL2.PIXELFORMAT_ARGB32,
+        SDL2.SDL_PIXELFORMAT_ARGB32,
     )
 
-    r = SDL2.Rect(x, y, w, h)
+    r = SDL2.SDL_Rect(x, y, w, h)
     a = Actor(
         randstring(10),
         img_name,
@@ -60,15 +60,15 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
     wrap_length = 800, outline_size = 0, kv...)
 
     text_font = SDL2.TTF_OpenFont(font_path, pt_size)
-    fg = SDL2.TTF_RenderText_Blended_Wrapped(text_font, text, SDL2.Color(font_color...), UInt32(wrap_length))
+    fg = SDL2.TTF_RenderText_Blended_Wrapped(text_font, text, SDL2.SDL_Color(font_color...), UInt32(wrap_length))
     w, h = size(fg)
-    r = SDL2.Rect(x, y, w, h)
+    r = SDL2.SDL_Rect(x, y, w, h)
     
     fg = if outline_size > 0
         outline_font = SDL2.TTF_OpenFont(font_path, pt_size)
         SDL2.TTF_SetFontOutline(outline_font, Int32(outline_size))
-        bg = SDL2.TTF_RenderText_Blended_Wrapped(outline_font, text, SDL2.Color(outline_color...), UInt32(wrap_length))
-        SDL2.UpperBlitScaled(fg, SDL2.C_NULL, bg, Int32[outline_size,outline_size, w, h])
+        bg = SDL2.TTF_RenderText_Blended_Wrapped(outline_font, text, SDL2.SDL_Color(outline_color...), UInt32(wrap_length))
+        SDL2.SDL_UpperBlitScaled(fg, C_NULL, bg, Int32[outline_size,outline_size, w, h])
         bg
     else
         fg
@@ -112,13 +112,13 @@ end
 function update_text_actor!(a::Actor, new_text::String)
     font = SDL2.TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
     fg = SDL2.TTF_RenderText_Blended_Wrapped(font, new_text,
-        SDL2.Color(a.data[:font_color]...), UInt32(a.data[:wrap_length]))
+        SDL2.SDL_Color(a.data[:font_color]...), UInt32(a.data[:wrap_length]))
     w, h = size(fg)
     fg = if a.data[:outline_size] > 0
         outline_font = SDL2.TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
         SDL2.TTF_SetFontOutline(outline_font, Int32(a.data[:outline_size]))
-        bg = SDL2.TTF_RenderText_Blended_Wrapped(outline_font, new_text, SDL2.Color(a.data[:outline_color]...), UInt32(a.data[:wrap_length]))
-        SDL2.UpperBlitScaled(fg, SDL2.C_NULL, bg, Int32[a.data[:outline_size], a.data[:outline_size], w, h])
+        bg = SDL2.TTF_RenderText_Blended_Wrapped(outline_font, new_text, SDL2.SDL_Color(a.data[:outline_color]...), UInt32(a.data[:wrap_length]))
+        SDL2.SDL_UpperBlitScaled(fg, C_NULL, bg, Int32[a.data[:outline_size], a.data[:outline_size], w, h])
         bg
     else
         fg
@@ -131,13 +131,15 @@ function update_text_actor!(a::Actor, new_text::String)
     return a
 end
 
+LoadBMP(src::String) = SDL2.SDL_LoadBMP_RW(src, 1)
+
 function AnimActorBMP(anim_name::String, bmp_fns; x=0, y=0, frame_delay=Millisecond(120), kv...)
     n = Int32.(length(bmp_fns))
     frame_delays = [ frame_delay for _ in 1:n ]
-    surfaces = [ SDL2.LoadBMP(bmp_fn) for bmp_fn in bmp_fns ]
+    surfaces = [ SDL2.IMG_Load(bmp_fn) for bmp_fn in bmp_fns ]
     w, h = Int32.(size(surfaces[begin]))
     
-    r = SDL2.Rect(x, y, w, h)
+    r = SDL2.SDL_Rect(x, y, w, h)
     a = Actor(
         randstring(10),
         anim_name,
@@ -174,9 +176,9 @@ function draw(a::Actor)
     if isempty(a.textures)
 
         for (i, sf) in enumerate(a.surfaces)
-            tx = SDL2.CreateTextureFromSurface(game[].screen.renderer, sf)
+            tx = SDL2.SDL_CreateTextureFromSurface(game[].screen.renderer, sf)
 
-            if tx == SDL2.C_NULL
+            if tx == C_NULL
                 @warn "Failed to create texture $i for $(a.label)! Fall back to CPU?"
             end
 
@@ -184,33 +186,33 @@ function draw(a::Actor)
         end
 
         for sf in a.surfaces
-            SDL2.FreeSurface(sf)
+            SDL2.SDL_FreeSurface(sf)
         end
     end
 
     if a.alpha < 255
-        SDL2.SetTextureBlendMode(a.textures[begin], SDL2.BLENDMODE_BLEND)
-        SDL2.SetTextureAlphaMod(a.textures[begin], a.alpha)
+        SDL2.SDL_SetTextureBlendMode(a.textures[begin], SDL2.SDL_BLENDMODE_BLEND)
+        SDL2.SDL_SetTextureAlphaMod(a.textures[begin], a.alpha)
     end
 
     flip = if a.w < 0 && a.h < 0
-        SDL2.FLIP_HORIZONTAL | SDL2.FLIP_VERTICAL
+        SDL2.SDL_FLIP_HORIZONTAL | SDL2.SDL_FLIP_VERTICAL
 
     elseif a.h < 0
-        SDL2.FLIP_VERTICAL
+        SDL2.SDL_FLIP_VERTICAL
 
     elseif a.w < 0
-        SDL2.FLIP_HORIZONTAL
+        SDL2.SDL_FLIP_HORIZONTAL
 
     else
-        SDL2.FLIP_NONE
+        SDL2.SDL_FLIP_NONE
     end
 
-    SDL2.RenderCopyEx(
+    SDL2.SDL_RenderCopyEx(
         game[].screen.renderer,
         a.textures[begin],
         C_NULL,
-        Ref(SDL2.Rect(Int32[ a.x, a.y, ceil(a.w * a.scale[1]), ceil(a.h * a.scale[2]) ]...)),
+        Ref(SDL2.SDL_Rect(Int32[ a.x, a.y, ceil(a.w * a.scale[1]), ceil(a.h * a.scale[2]) ]...)),
         a.angle,
         a.rotate_center,
         flip,
@@ -288,8 +290,8 @@ atan2(y, x) = pi - pi/2 * (1 + sign(x)) * (1 - sign(y^2)) - pi/4 * (2 + sign(x))
                             sign(x*y) * atan((abs(x) - abs(y)) / (abs(x) + abs(y)))
 
 
-function Base.size(s::Ptr{SDL2.Surface})
-    ss = SDL2.unsafe_load(s)
+function Base.size(s::Ptr{SDL2.SDL_Surface})
+    ss = unsafe_load(s)
     (ss.w, ss.h)
 end
 

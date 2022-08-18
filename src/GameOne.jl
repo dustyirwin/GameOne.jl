@@ -9,7 +9,9 @@ using SimpleDirectMediaLayer
 @reexport using Images
 @reexport using ShiftedArrays
 
-const SDL2 = SimpleDirectMediaLayer
+const SDL2 = SimpleDirectMediaLayer.LibSDL2
+
+
 
 export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
@@ -21,8 +23,8 @@ export SDL2
 
 include("keyboard.jl")
 include("timer.jl")
-include("window.jl")
 include("event.jl")
+include("window.jl")
 include("resources.jl")
 include("screen.jl")
 include("actor.jl")
@@ -105,9 +107,9 @@ function mainloop(g::Game)
         end
 
         #if (debug && debugText) renderFPS(renderer,last_10_frame_times) end
-        SDL2.RenderClear(g.screen.renderer)
+        SDL2.SDL_RenderClear(g.screen.renderer)
         Base.invokelatest(g.render_function, g)
-        SDL2.RenderPresent(g.screen.renderer)
+        SDL2.SDL_RenderPresent(g.screen.renderer)
 
         dt = elapsed(timer)
         # Don't let the game proceed at fewer than this frames per second. If an
@@ -128,14 +130,14 @@ end
 function handleEvents!(g::Game, e, t)
     global playing, paused
 
-    if (t == SDL2.KEYDOWN || t == SDL2.KEYUP)
+    if (t == SDL2.SDL_KEYDOWN || t == SDL2.SDL_KEYUP)
         handleKeyPress(g::Game, e, t)
-    elseif (t == SDL2.MOUSEBUTTONUP || t == SDL2.MOUSEBUTTONDOWN)
+    elseif (t == SDL2.SDL_MOUSEBUTTONUP || t == SDL2.SDL_MOUSEBUTTONDOWN)
         handleMouseClick(g::Game, e, t)
         #TODO elseif (t == SDL2.MOUSEWHEEL); handleMouseScroll(e)
-    elseif (t == SDL2.MOUSEMOTION)
+    elseif (t == SDL2.SDL_MOUSEMOTION)
         handleMousePan(g::Game, e, t)
-    elseif (t == SDL2.QUIT)
+    elseif (t == SDL2.SDL_QUIT)
         paused[] = playing[] = false
     end
 end
@@ -144,7 +146,7 @@ function handleKeyPress(g::Game, e, t)
     keySym = getKeySym(e)
     keyMod = getKeyMod(e)
     @debug "Keyboard" keySym, keyMod
-    if (t == SDL2.KEYDOWN)
+    if (t == SDL2.SDL_KEYDOWN)
         push!(g.keyboard, keySym)
         
         # TODO: clean up keyboard errors... experiencing Argument Error: Invalid value for enum key: 1073741593 (audio volume up key)... and other un-mapped keys
@@ -154,7 +156,7 @@ function handleKeyPress(g::Game, e, t)
             @error "ERROR: $err"
         end
     
-    elseif (t == SDL2.KEYUP)
+    elseif (t == SDL2.SDL_KEYUP)
         delete!(g.keyboard, keySym)
     end
     #keyRepeat = (getKeyRepeat(e) != 0)
@@ -165,9 +167,9 @@ function handleMouseClick(g::Game, e, t)
     x = getMouseClickX(e)
     y = getMouseClickY(e)
     @debug "Mouse Button" button, x, y
-    if (t == SDL2.MOUSEBUTTONUP)
+    if (t == SDL2.SDL_MOUSEBUTTONUP)
         Base.invokelatest(g.onmouseup_function, g, (x, y), MouseButtons.MouseButton(button))
-    elseif (t == SDL2.MOUSEBUTTONDOWN)
+    elseif (t == SDL2.SDL_MOUSEBUTTONDOWN)
         Base.invokelatest(g.onmousedown_function, g, (x, y), MouseButtons.MouseButton(button))
     end
 end
@@ -267,8 +269,6 @@ function start_text_input(g::Game, terminal::Actor, history=String[])
     done = false
     comp = terminal.label
 
-    SDL2.StartTextInput()
-
     while !done
         event, success = GameOne.pollEvent!()
 
@@ -283,7 +283,7 @@ function start_text_input(g::Game, terminal::Actor, history=String[])
             
             #SDL2.GetModState() |> string
         
-            if getEventType(event) == SDL2.TEXTINPUT
+            if getEventType(event) == SDL2.SDL_TEXTINPUT
                 char = getTextInputEventChar(event)
                 comp *= char
                 comp = comp == ">`" ? ">" : comp
@@ -294,12 +294,12 @@ function start_text_input(g::Game, terminal::Actor, history=String[])
             
             # Paste from clipboard
             # KEYMODs: LCTRL = 4160 | RCTRL = 4096
-            elseif event_type == SDL2.KEYDOWN && (SDL2.GetModState() |> string == "4160" || SDL2.GetModState() |> string == "4096") && (key_sym == "v" || key_sym == "V")
-                comp = comp * "$(unsafe_string(SDL2.GetClipboardText()))"
+            elseif event_type == SDL2.SDL_KEYDOWN && (SDL2.SDL_GetModState() |> string == "4160" || SDL2.SDL_GetModState() |> string == "4096") && (key_sym == "v" || key_sym == "V")
+                comp = comp * "$(unsafe_string(SDL2.SDL_GetClipboardText()))"
                 update_text_actor!(terminal, comp)
             
             
-            elseif length(comp) > 1 && event_type == SDL2.KEYDOWN && key_sym == "\b"  # backspace key
+            elseif length(comp) > 1 && event_type == SDL2.SDL_KEYDOWN && key_sym == "\b"  # backspace key
                 comp = comp[1:end-1]
                 update_text_actor!(terminal, comp)
             
@@ -308,20 +308,20 @@ function start_text_input(g::Game, terminal::Actor, history=String[])
             elseif string(event_type) == "0x00000300" && key_sym == "R"
                 update_text_actor!(terminal, history[end])
 
-            elseif getEventType(event) == SDL2.KEYDOWN && key_sym == "\r" # return key
+            elseif getEventType(event) == SDL2.SDL_KEYDOWN && key_sym == "\r" # return key
                 @info "QuitEvent: $(getEventType(event))"
                 @info "Composition: $comp"
                 done = true
             end
         
             # Update screen
-            SDL2.RenderClear(g.screen.renderer)
+            SDL2.SDL_RenderClear(g.screen.renderer)
             draw(g)
-            SDL2.RenderPresent(g.screen.renderer)
+            SDL2.SDL_RenderPresent(g.screen.renderer)
         end
     end
 
-    SDL2.StopTextInput()
+    SDL2.SDL_StopTextInput()
     terminal.label = comp[2:end]
 end
 
@@ -331,14 +331,14 @@ end
 struct QuitException <: Exception end
 
 function getSDLError()
-    x = SDL2.GetError()
+    x = SDL2.SDL_GetError()
     return unsafe_string(x)
 end
 
 function initSDL()
-    SDL2.GL_SetAttribute(SDL2.GL_MULTISAMPLEBUFFERS, 4)
-    SDL2.GL_SetAttribute(SDL2.GL_MULTISAMPLESAMPLES, 4)
-    r = SDL2.Init(UInt32(SDL2.INIT_VIDEO | SDL2.INIT_AUDIO))
+    SDL2.SDL_GL_SetAttribute(SDL2.SDL_GL_MULTISAMPLEBUFFERS, 4)
+    SDL2.SDL_GL_SetAttribute(SDL2.SDL_GL_MULTISAMPLESAMPLES, 4)
+    r = SDL2.SDL_Init(UInt32(SDL2.SDL_INIT_VIDEO | SDL2.SDL_INIT_AUDIO))
     if r != 0
         error("Unable to initialise SDL: $(getSDLError())")
     end
@@ -362,9 +362,9 @@ function quitSDL(g::Game)
     # https://github.com/n0name/2D_Engine/issues/3
     @debug "Quitting the game"
     clear!(scheduler[])
-    SDL2.DelEventWatch(window_event_watcher_cfunc[], g.screen.window)
-    SDL2.DestroyRenderer(g.screen.renderer)
-    SDL2.DestroyWindow(g.screen.window)
+    SDL2.SDL_DelEventWatch(window_event_watcher_cfunc[], g.screen.window)
+    SDL2.SDL_DestroyRenderer(g.screen.renderer)
+    SDL2.SDL_DestroyWindow(g.screen.window)
     #Run all finalisers
     GC.gc()
     GC.gc()
@@ -377,7 +377,7 @@ function quitSDL()
     SDL2.Mix_CloseAudio()
     SDL2.TTF_Quit()
     SDL2.Mix_Quit()
-    SDL2.Quit()
+    SDL2.SDL_Quit()
 end
 
 function main()

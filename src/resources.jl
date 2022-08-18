@@ -1,11 +1,11 @@
 
 function play_sound(sound_path::String, loops=0, volume=Int32(128))
-    sample=SDL2.Mix_LoadWAV(sound_path);
+    sample=SDL2.Mix_LoadWAV_RW(SDL2.SDL_RWFromFile(sound_path, "rb"), 1);
     if sample == C_NULL
         @warn "Could not load sound file: $sound_path\n$(getSDLError())"
     end
 
-    r = SDL2.Mix_PlayChannel(Int32(-1), sample, Int32(loops))
+    r = SDL2.Mix_PlayChannelTimed(Int32(-1), sample, Int32(loops), Int32(-1))
     if r == -1
         @warn "Unable to play sound $sound_path\n$(getSDLError())"
     end

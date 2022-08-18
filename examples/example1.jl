@@ -112,7 +112,7 @@ function on_key_down(g, key, keymod)
     if key == Keys.BACKQUOTE
         @info "Terminal Started!"
         terminal.alpha = 255
-        draw(g); SDL2.RenderPresent(g.screen.renderer)
+        draw(g); SDL2.SDL_RenderPresent(g.screen.renderer)
         update_text_actor!(terminal, ">")
         text = start_text_input(g, terminal, command_history)
         terminal.alpha = 150
