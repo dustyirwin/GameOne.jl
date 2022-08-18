@@ -37,7 +37,7 @@ mutable struct Game
     const screen::Screen
     location::String
     game_module::Module
-    const keyboard::Keyboard
+    keyboard::Keyboard
     const render_function::Function
     const update_function::Function
     const onkey_function::Function
