@@ -38,7 +38,6 @@ function ImageActor(img_name::String, img; x=0, y=0, kv...)
         Dict(
             :anim => false,
             :label=>img_name,
-            :img=>img,
             :sz=>[w,h],
             :fade=>false,           #  change to fade_in? remove anim-specific keys (add k,v when anim is run?)
             :fade_out=>true,
@@ -169,62 +168,6 @@ function AnimActorBMP(anim_name::String, bmp_fns; x=0, y=0, frame_delay=Millisec
     end
     return a
 end
-
-#=
-function AnimActor(anim_name::String, imgs; x=0, y=0, frame_delay=Millisecond(120), kv...)
-    w, h = Int32.(size(transpose(imgs[begin])))
-    n = Int32.(length(imgs))
-    frame_delays = [ frame_delay for _ in 1:n ]
-    surfaces = []
-    
-    for im in imgs
-        img = ARGB.(transpose(im))
-        w, h = Int32.(size(img))
-        sf = SDL2.CreateRGBSurfaceWithFormatFrom(
-            img,
-            w,
-            h,
-            Int32(32),
-            Int32(4w),
-            SDL2.PIXELFORMAT_ARGB32,
-        )
-        push!(surfaces, sf)
-    end
-        
-    r = SDL2.Rect(x, y, w, h)
-    a = Actor(
-        randstring(10),
-        anim_name,
-        surfaces,
-        [],
-        r,
-        [1,1],
-        C_NULL,
-        0,
-        255,
-        Dict(
-            :label => anim_name,
-            :imgs => imgs,
-            :sz => [w, h],
-            :fade => false,
-            :fade_out => true,
-            :spin => false,
-            :spin_cw => true,
-            :shake => false,
-            :then => now(),
-            :next_frame => false,
-            :frame_delays => frame_delays,
-            :mouse_offset => Int32[0, 0],
-        )
-    )
-
-    for (k, v) in kv
-        setproperty!(a, k, v)
-    end
-    return a
-end
-=#
-
 
 function draw(a::Actor)
     if isempty(a.textures)
