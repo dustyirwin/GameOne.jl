@@ -196,13 +196,13 @@ function draw(a::Actor)
     end
 
     flip = if a.w < 0 && a.h < 0
-        SDL2.SDL_FLIP_HORIZONTAL|SDL2.SDL_FLIP_VERTICAL
+        UInt32(1)|UInt32(1)
     elseif a.h < 0
-        SDL2.SDL_FLIP_VERTICAL
+        UInt32(2)
     elseif a.w < 0
-        SDL2.SDL_FLIP_HORIZONTAL
+        UInt32(1)#SDL2.SDL_FLIP_HORIZONTAL
     else
-        SDL2.SDL_FLIP_NONE
+        UInt32(0)#SDL2.SDL_FLIP_NONE
     end
 
     SDL2.SDL_RenderCopyEx(
