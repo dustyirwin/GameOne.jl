@@ -196,7 +196,7 @@ function draw(a::Actor)
     end
 
     flip = if a.w < 0 && a.h < 0
-        UInt32(1)|UInt32(1)
+        UInt32(1)|UInt32(2)
     elseif a.h < 0
         UInt32(2)
     elseif a.w < 0
