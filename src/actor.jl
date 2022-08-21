@@ -133,10 +133,10 @@ end
 
 LoadBMP(src::String) = SDL2.SDL_LoadBMP_RW(src, 1)
 
-function AnimActorBMP(anim_name::String, bmp_fns; x=0, y=0, frame_delay=Millisecond(120), kv...)
-    n = Int32.(length(bmp_fns))
+function ImageFileAnimActor(anim_name::String, img_fns; x=0, y=0, frame_delay=Millisecond(120), kv...)
+    n = Int32.(length(img_fns))
     frame_delays = [ frame_delay for _ in 1:n ]
-    surfaces = [ SDL2.IMG_Load(bmp_fn) for bmp_fn in bmp_fns ]
+    surfaces = [ SDL2.IMG_Load(fn) for fn in img_fns ]
     w, h = Int32.(size(surfaces[begin]))
     
     r = SDL2.SDL_Rect(x, y, w, h)
@@ -153,6 +153,7 @@ function AnimActorBMP(anim_name::String, bmp_fns; x=0, y=0, frame_delay=Millisec
         Dict(
             :anim => true,
             :label => anim_name,
+            :img_fns => img_fns,
             :sz => [w, h],
             :fade => false,
             :fade_out => true,
