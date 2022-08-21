@@ -133,9 +133,9 @@ end
 
 LoadBMP(src::String) = SDL2.SDL_LoadBMP_RW(src, 1)
 
-function ImageFileAnimActor(anim_name::String, img_fns; x=0, y=0, frame_delay=Millisecond(120), kv...)
+function ImageFileAnimActor(anim_name::String, img_fns; x=0, y=0, frame_delays=[], kv...)
     n = Int32.(length(img_fns))
-    frame_delays = [ frame_delay for _ in 1:n ]
+    frame_delays = isempty(frame_delays) ? [ Millisecond(100) for _ in 1:n ] : frame_delays
     surfaces = [ SDL2.IMG_Load(fn) for fn in img_fns ]
     w, h = Int32.(size(surfaces[begin]))
     
