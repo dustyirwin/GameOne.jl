@@ -31,12 +31,12 @@ label = TextActor(
     "examples/fonts/OpenSans-Regular.ttf",
     outline_size=1,
     pt_size=24)
-label.position.x = 25
-label.position.y = 25
+label.x = 25
+label.y = 25
 
 
 #load a custom animation
-anim_fns = [ "C:/Users/dusty/My Drive/PlaymatProjects/PlaymatAssets/Mage/BMPanims/FireElemToken/$i.bmp" for i in 1:8 ]
+anim_fns = [ "C:/Users/dusty/My Drive/PlaymatProjects/PlaymatAssets/Mage/anims/FireElemToken/$i.bmp" for i in 1:8 ]
 anim = ImageFileAnimActor("fe_anim", anim_fns)
 anim.data[:next_frame] = true
 anim.y = 50
