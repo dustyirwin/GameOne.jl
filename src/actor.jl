@@ -174,6 +174,7 @@ function ImageFileAnimActor(anim_name::String, img_fns::Vector{String}; x=0, y=0
 end
 
 function draw(a::Actor)
+    
     if isempty(a.textures)
 
         for (i, sf) in enumerate(a.surfaces)
@@ -218,6 +219,7 @@ function draw(a::Actor)
 end
 
 function Base.setproperty!(s::Actor, p::Symbol, x)
+    
     if hasfield(Actor, p)
         setfield!(s, p, convert(fieldtype(Actor, p), x))
     else

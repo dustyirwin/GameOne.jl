@@ -23,7 +23,7 @@ end
 alien = ImageActor("examples/images/alien.png", load("examples/images/alien.png") )
 
 # Create an `TextActor` object from an empty string for terminal use
-terminal = TextActor(">", "examples/fonts/OpenSans-Regular.ttf")
+terminal = TextActor(">", "examples/fonts/OpenSans-Regular.ttf", outline_size=1, pt_size=35)
 terminal.alpha = 0
 
 label = TextActor(
@@ -36,7 +36,7 @@ label.y = 25
 
 
 #load a custom animation
-anim_fns = [ "C:/Users/dusty/My Drive/PlaymatProjects/PlaymatAssets/Mage/anims/FireElemToken/$i.bmp" for i in 1:8 ]
+anim_fns = [ "C:/Users/dusty/My Drive/PlaymatProjects/PlaymatGames/AniMage/assets/anims/FireElemToken/$i.bmp" for i in 1:8 ]
 anim = ImageFileAnimActor("fe_anim", anim_fns)
 anim.data[:next_frame] = true
 anim.y = 50
@@ -105,7 +105,7 @@ end
 alien_hurt() = alien.image = "images/alien_hurt.png"
 alien_normal() = alien.image = "images/alien.png"
 
-command_history = ["@show alien.label"]
+#command_history = ["@show alien.label"]
 
 function on_key_down(g, key, keymod)
     # start terminal and accept input text to be parsed and executed by
@@ -114,7 +114,7 @@ function on_key_down(g, key, keymod)
         terminal.alpha = 255
         draw(g); SDL2.SDL_RenderPresent(g.screen.renderer)
         update_text_actor!(terminal, ">")
-        text = start_text_input(g, terminal, command_history)
+        text = start_text_input(g, terminal)
         terminal.alpha = 150
         update_text_actor!(terminal, "evaluating: $text...")
 
@@ -122,7 +122,7 @@ function on_key_down(g, key, keymod)
         try
             io = IOBuffer()
             ex = Meta.parse(text)
-            show(IOContext(io, :limit => true, :displaysize => (100, 150)), "text/plain", eval(g.game_module, ex))
+            show(IOContext(io, :limit => true, :displaysize => (500, 250)), "text/plain", eval(g.game_module, ex))
             s = String(take!(io))
             update_text_actor!(terminal, s)
             push!(command_history, text)

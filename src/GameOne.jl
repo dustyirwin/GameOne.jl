@@ -263,23 +263,25 @@ function getfn(m::Module, s::Symbol, maxargs = 3)
     end
 end
 
-function start_text_input(g::Game, terminal::Actor, history=String[])
+function start_text_input(g::Game, terminal::Actor
+    #history=String[]
+    )
     done = false
     comp = terminal.label
 
     while !done
-        event, success = GameOne.pollEvent!()
+        event, success = pollEvent!()
 
         if success
             event_array = [Char(i) for i in event]
             
             event_type = getEventType(event)
-            #@info event_type
+            @info event_type
             
             key_sym = event_array[21] |> string
-            #@info key_sym
+            @info key_sym
             
-            #SDL2.GetModState() |> string
+            SDL2.SDL_GetModState() |> string
         
             if getEventType(event) == SDL2.SDL_TEXTINPUT
                 char = getTextInputEventChar(event)
@@ -287,8 +289,7 @@ function start_text_input(g::Game, terminal::Actor, history=String[])
                 comp = comp == ">`" ? ">" : comp
             
                 update_text_actor!(terminal, comp)
-            
-                #@info "TextInputEvent: $(getEventType(event)) comp: $comp"
+                @info "TextInputEvent: $(getEventType(event)) comp: $comp"
             
             # Paste from clipboard
             # KEYMODs: LCTRL = 4160 | RCTRL = 4096
@@ -296,15 +297,16 @@ function start_text_input(g::Game, terminal::Actor, history=String[])
                 comp = comp * "$(unsafe_string(SDL2.SDL_GetClipboardText()))"
                 update_text_actor!(terminal, comp)
             
-            
-            elseif length(comp) > 1 && event_type == SDL2.SDL_KEYDOWN && key_sym == "\b"  # backspace key
+            #=
+            elseif length(comp) > 1 && getEventType(event_type) == SDL2.SDL_KEYDOWN && key_sym == "\b"  # backspace key
                 comp = comp[1:end-1]
                 update_text_actor!(terminal, comp)
             
                 #@info "BackspaceEvent: $(getEventType(event)) comp: $comp"
             
-            elseif string(event_type) == "0x00000300" && key_sym == "R"
+            #elseif string(event_type) == "0x00000300" && key_sym == "R"
                 update_text_actor!(terminal, history[end])
+            =#    
 
             elseif getEventType(event) == SDL2.SDL_KEYDOWN && key_sym == "\r" # return key
                 @info "QuitEvent: $(getEventType(event))"
