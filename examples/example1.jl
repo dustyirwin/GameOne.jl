@@ -125,7 +125,7 @@ function on_key_down(g, key, keymod)
             show(IOContext(io, :limit => true, :displaysize => (500, 250)), "text/plain", eval(g.game_module, ex))
             s = String(take!(io))
             update_text_actor!(terminal, s)
-            push!(command_history, text)
+            #push!(command_history, text)
         catch e
             @warn e
         end

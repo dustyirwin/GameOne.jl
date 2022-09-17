@@ -263,11 +263,10 @@ function getfn(m::Module, s::Symbol, maxargs = 3)
     end
 end
 
-function start_text_input(g::Game, terminal::Actor
-    #history=String[]
-    )
+function start_text_input(g::Game, terminal::Actor)
     done = false
     comp = terminal.label
+    SDL2.SDL_StartTextInput()
 
     while !done
         event, success = pollEvent!()
@@ -276,12 +275,12 @@ function start_text_input(g::Game, terminal::Actor
             event_array = [Char(i) for i in event]
             
             event_type = getEventType(event)
-            @info event_type
+            @info "event type: $event_type"
             
             key_sym = event_array[21] |> string
-            @info key_sym
+            @info "key sym: $key_sym"
             
-            SDL2.SDL_GetModState() |> string
+            #SDL2.SDL_GetModState() |> string
         
             if getEventType(event) == SDL2.SDL_TEXTINPUT
                 char = getTextInputEventChar(event)
@@ -293,11 +292,11 @@ function start_text_input(g::Game, terminal::Actor
             
             # Paste from clipboard
             # KEYMODs: LCTRL = 4160 | RCTRL = 4096
+            #=
             elseif event_type == SDL2.SDL_KEYDOWN && (SDL2.SDL_GetModState() |> string == "4160" || SDL2.SDL_GetModState() |> string == "4096") && (key_sym == "v" || key_sym == "V")
                 comp = comp * "$(unsafe_string(SDL2.SDL_GetClipboardText()))"
                 update_text_actor!(terminal, comp)
             
-            #=
             elseif length(comp) > 1 && getEventType(event_type) == SDL2.SDL_KEYDOWN && key_sym == "\b"  # backspace key
                 comp = comp[1:end-1]
                 update_text_actor!(terminal, comp)
