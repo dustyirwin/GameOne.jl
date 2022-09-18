@@ -150,8 +150,8 @@ function handleKeyPress(g::Game, e, t)
         # TODO: clean up keyboard errors... experiencing Argument Error: Invalid value for enum key: 1073741593 (audio volume up key)... and other un-mapped keys
         try 
             Base.invokelatest(g.onkey_function, g, Keys.Key(keySym), Keymods.Keymod(keyMod))
-        catch err
-            @error "ERROR: $err"
+        catch e
+            @error e exception = (e, catch_backtrace())
         end
     
     elseif (t == SDL2.SDL_KEYUP)
