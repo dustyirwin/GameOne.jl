@@ -232,7 +232,7 @@ function initgame(jlf::String)
     g.onmouseup_function = getfn(game_module, :on_mouse_up, 3)
     g.onmousedown_function = getfn(game_module, :on_mouse_down, 3)
     g.onmousemove_function = getfn(game_module, :on_mouse_move, 2)
-    g.screen = initscreen(game_module, "GameOne::" * name)
+    g.screen = initscreen(game_module, "AniMat::" * name)
     clear(g.screen)
     return g
 end

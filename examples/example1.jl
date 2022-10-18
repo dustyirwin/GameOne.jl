@@ -36,7 +36,7 @@ label.y = 25
 
 
 #load a custom animation
-anim_fns = [ "C:/Users/dusty/My Drive/PlaymatProjects/PlaymatGames/AniMage/assets/anims/FireElemToken/$i.bmp" for i in 1:8 ]
+anim_fns = [ "C:/Users/dusty/My Drive/AnimatProjects/AnimatGames/AniMage/assets/anims/FireElemToken/$i.bmp" for i in 1:8 ]
 anim = ImageFileAnimActor("fe_anim", anim_fns)
 anim.data[:next_frame] = true
 anim.y = 50
