@@ -113,12 +113,12 @@ function mainloop(g::Game)
         # Don't let the game proceed at fewer than this frames per second. If an
         # update takes too long, allow the game to actually slow, rather than
         # having too big of frames.
-        min_fps = 30.0
-        max_fps = 60.0
+        min_fps = 15.0
+        max_fps = 30.0
         dt = min(dt / 1e9, 1.0 / min_fps)
         start!(timer)
         Base.invokelatest(g.update_function, g, dt)
-        tick!(scheduler[])
+        tick!(scheduler[]) 
         if (playing[] == false)
             throw(QuitException())
         end
