@@ -15,7 +15,7 @@ export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
     getEventType, getTextInputEventChar, start_text_input, update_text_actor!
 export Game, Keys, Keymods, MouseButtons
-export ImageActor, TextActor, ImageFileAnimActor, Actor, Line, Rect, Circle
+export ImageActor, TextActor, ImageFileAnimActor, GIFAnimActor, Actor, Line, Rect, Circle
 export SDL2
 
 
@@ -272,12 +272,12 @@ function start_text_input(g::Game, terminal::Actor)
         event, success = pollEvent!()
 
         if success
-            event_array = [Char(i) for i in event]
+            event_array = UInt8.([Char(i) for i in event])
             
-            event_type = getEventType(event)
+            event_type = getEventType(event_array)
             @info "event type: $event_type"
             
-            key_sym = event_array[21] |> string
+            key_sym = event_array[21]
             @info "key sym: $key_sym"
             
             #SDL2.SDL_GetModState() |> string
@@ -290,26 +290,43 @@ function start_text_input(g::Game, terminal::Actor)
                 update_text_actor!(terminal, comp)
                 @info "TextInputEvent: $(getEventType(event)) comp: $comp"
             
-            # Paste from clipboard
+            #= Paste from clipboard
             # KEYMODs: LCTRL = 4160 | RCTRL = 4096
-            #=
-            elseif event_type == SDL2.SDL_KEYDOWN && (SDL2.SDL_GetModState() |> string == "4160" || SDL2.SDL_GetModState() |> string == "4096") && (key_sym == "v" || key_sym == "V")
+            
+            #elseif event_type == SDL2.SDL_KEYDOWN && (SDL2.SDL_GetModState() |> string == "4160" || SDL2.SDL_GetModState() |> string == "4096") && (key_sym == "v" || key_sym == "V")
                 comp = comp * "$(unsafe_string(SDL2.SDL_GetClipboardText()))"
                 update_text_actor!(terminal, comp)
-            
-            elseif length(comp) > 1 && getEventType(event_type) == SDL2.SDL_KEYDOWN && key_sym == "\b"  # backspace key
+                =#
+            elseif length(comp) > 1 && getEventType(event_array) == 768 && key_sym == 8  # "\b" backspace key
                 comp = comp[1:end-1]
                 update_text_actor!(terminal, comp)
+                #draw(g); SDL2.SDL_RenderPresent(g.screen.renderer)
+                
+                @info "BackspaceEvent: $(getEventType(event)) comp: $comp"
             
-                #@info "BackspaceEvent: $(getEventType(event)) comp: $comp"
-            
-            #elseif string(event_type) == "0x00000300" && key_sym == "R"
-                update_text_actor!(terminal, history[end])
-            =#    
+            elseif getEventType(event_array) == 768 && key_sym == 81
+                if haskey(terminal.data, :command_history)
+                    terminal.data[:command_history] = circshift(terminal.data[:command_history], 1)
+                    comp = terminal.data[:command_history][begin]
+                    update_text_actor!(terminal, comp)
+                end
 
-            elseif getEventType(event) == SDL2.SDL_KEYDOWN && key_sym == "\r" # return key
+            elseif getEventType(event_array) == 768 && key_sym == 82
+                if haskey(terminal.data, :command_history)
+                    terminal.data[:command_history] = circshift(terminal.data[:command_history], -1)
+                    comp = terminal.data[:command_history][begin]
+                    update_text_actor!(terminal, comp)
+                end
+
+            elseif getEventType(event) == SDL2.SDL_KEYDOWN && key_sym == 13 #"\r" # return key
                 @info "QuitEvent: $(getEventType(event))"
                 @info "Composition: $comp"
+                
+                if !haskey(terminal.data, :command_history)
+                    terminal.data[:command_history] = []
+                end
+                
+                push!(terminal.data[:command_history], comp)
                 done = true
             end
         
