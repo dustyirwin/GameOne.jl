@@ -149,9 +149,9 @@ uuid = "dc8bdbbb-1ca9-579f-8c36-e416f6a65cce"
 version = "1.0.2"
 
 [[deps.DataAPI]]
-git-tree-sha1 = "46d2680e618f8abd007bce0c3026cb0c4a8f2032"
+git-tree-sha1 = "e08915633fcb3ea83bf9d6126292e5bc5c739922"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
-version = "1.12.0"
+version = "1.13.0"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
@@ -494,9 +494,9 @@ version = "1.4.0"
 
 [[deps.JLD2]]
 deps = ["FileIO", "MacroTools", "Mmap", "OrderedCollections", "Pkg", "Printf", "Reexport", "TranscodingStreams", "UUIDs"]
-git-tree-sha1 = "1c3ff7416cb727ebf4bab0491a56a296d7b8cf1d"
+git-tree-sha1 = "acb4be8227e1f3ff890d564d55dcde9cf92e4337"
 uuid = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
-version = "0.4.25"
+version = "0.4.26"
 
 [[deps.JLLWrappers]]
 deps = ["Preferences"]
@@ -915,21 +915,21 @@ version = "1.4.0+0"
 
 [[deps.SDL2_image_jll]]
 deps = ["Artifacts", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pkg", "SDL2_jll", "libpng_jll", "libwebp_jll"]
-git-tree-sha1 = "7ef5ef320ac06a59b4de273e6b3f892d83dab0da"
+git-tree-sha1 = "5fbbda81c5d2060d03f4b57348273774b6434e75"
 uuid = "41f3cfe1-fd11-58ad-8074-b9730c29438b"
-version = "2.6.2+0"
+version = "2.6.2+1"
 
 [[deps.SDL2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libX11_jll", "Xorg_libXScrnSaver_jll", "Xorg_libXcursor_jll", "Xorg_libXext_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll", "alsa_jll", "alsa_plugins_jll"]
-git-tree-sha1 = "e642030430b8db6f14b974f5cccc3207a5e21d80"
+git-tree-sha1 = "6639d9a9cbba6d384f51898339f2a5ffb2a14243"
 uuid = "ab825dc5-c88e-5901-9575-1e5e20358fcf"
-version = "2.0.20+1"
+version = "2.24.2+1"
 
 [[deps.SDL2_mixer_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "SDL2_jll"]
-git-tree-sha1 = "8197e5144aa1201f560bf09f2f9cdcadf6fe12ed"
+git-tree-sha1 = "e6fef90014a8b690dac99e066146a726c0a2c080"
 uuid = "7e88e5ca-120e-58e7-9660-b2187fd466c0"
-version = "2.6.0+0"
+version = "2.6.2+0"
 
 [[deps.SDL2_ttf_jll]]
 deps = ["Artifacts", "Bzip2_jll", "FreeType2_jll", "Glib_jll", "Graphite2_jll", "JLLWrappers", "Libdl", "PCRE_jll", "Pkg", "SDL2_jll", "libpng_jll"]
