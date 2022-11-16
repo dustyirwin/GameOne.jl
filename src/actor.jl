@@ -13,10 +13,10 @@ mutable struct Actor
 end
 
 function ImageActor(img_name::String, img; x=0, y=0, kv...) 
-    img = ARGB.(transpose(img))
-    w, h = Int32.(size(img))
+    _img = ARGB.(transpose(img))
+    w, h = Int32.(size(_img))
     sf = SDL2.SDL_CreateRGBSurfaceWithFormatFrom(
-        img,
+        _img,
         w,
         h,
         Int32(32),
