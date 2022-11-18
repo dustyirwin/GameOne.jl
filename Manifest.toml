@@ -1,6 +1,6 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.8.2"
+julia_version = "1.8.3"
 manifest_format = "2.0"
 project_hash = "7be33e7bab58609fcbbee239aa05fdaaa27e3f4a"
 
@@ -123,9 +123,9 @@ version = "0.12.8"
 
 [[deps.Compat]]
 deps = ["Dates", "LinearAlgebra", "UUIDs"]
-git-tree-sha1 = "3ca828fe1b75fa84b021a7860bd039eaea84d2f2"
+git-tree-sha1 = "aaabba4ce1b7f8a9b34c015053d3b1edf60fa49c"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "4.3.0"
+version = "4.4.0"
 
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -954,12 +954,10 @@ uuid = "1277b4bf-5013-50f5-be3d-901d8477a67a"
 version = "2.0.0"
 
 [[deps.SimpleDirectMediaLayer]]
-deps = ["CEnum", "ColorTypes", "SDL2_image_jll", "SDL2_jll", "SDL2_mixer_jll", "SDL2_ttf_jll"]
-git-tree-sha1 = "39a2f2f7bf475e12ec2f70f3d6247cacbddc3ab5"
-repo-rev = "master"
-repo-url = "../SimpleDirectMediaLayer.jl"
+deps = ["CEnum", "ColorTypes", "SDL2_image_jll", "SDL2_jll", "SDL2_mixer_jll", "SDL2_ttf_jll", "alsa_plugins_jll"]
+git-tree-sha1 = "d42675612bace0108ae7a96eebc1682ab4bd9f9f"
 uuid = "98e33af6-2ee5-5afd-9e75-cbc738b767c4"
-version = "0.3.0"
+version = "0.4.0"
 
 [[deps.SimpleTraits]]
 deps = ["InteractiveUtils", "MacroTools"]
@@ -1018,9 +1016,9 @@ version = "0.1.1"
 
 [[deps.StaticArrays]]
 deps = ["LinearAlgebra", "Random", "StaticArraysCore", "Statistics"]
-git-tree-sha1 = "f86b3a049e5d05227b10e15dbb315c5b90f14988"
+git-tree-sha1 = "4e051b85454b4e4f66e6a6b7bdc452ad9da3dcf6"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.5.9"
+version = "1.5.10"
 
 [[deps.StaticArraysCore]]
 git-tree-sha1 = "6b7ba252635a5eff6a0b0664a41ee140a1c9e72a"
@@ -1065,9 +1063,9 @@ uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[deps.TiffImages]]
 deps = ["ColorTypes", "DataStructures", "DocStringExtensions", "FileIO", "FixedPointNumbers", "IndirectArrays", "Inflate", "Mmap", "OffsetArrays", "PkgVersion", "ProgressMeter", "UUIDs"]
-git-tree-sha1 = "70e6d2da9210371c927176cb7a56d41ef1260db7"
+git-tree-sha1 = "f8cd5b95aae14d3d88da725414bdde342457366f"
 uuid = "731e570b-9d59-4bfa-96dc-6df516fadf69"
-version = "0.6.1"
+version = "0.6.2"
 
 [[deps.TiledIteration]]
 deps = ["OffsetArrays"]
