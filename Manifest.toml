@@ -2,7 +2,7 @@
 
 julia_version = "1.8.3"
 manifest_format = "2.0"
-project_hash = "606f95abfd39d60ddb24a03f26b46407f3370f12"
+project_hash = "7be33e7bab58609fcbbee239aa05fdaaa27e3f4a"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -149,9 +149,9 @@ uuid = "dc8bdbbb-1ca9-579f-8c36-e416f6a65cce"
 version = "1.0.2"
 
 [[deps.DataAPI]]
-git-tree-sha1 = "e08915633fcb3ea83bf9d6126292e5bc5c739922"
+git-tree-sha1 = "46d2680e618f8abd007bce0c3026cb0c4a8f2032"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
-version = "1.13.0"
+version = "1.12.0"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
@@ -294,12 +294,6 @@ git-tree-sha1 = "9b02998aba7bf074d14de89f9d37ca24a1a0b046"
 uuid = "78b55507-aeef-58d4-861c-77aaff3498b1"
 version = "0.21.0+0"
 
-[[deps.Ghostscript_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "78e2c69783c9753a91cdae88a8d432be85a2ab5e"
-uuid = "61579ee1-b43e-5ca0-a5da-69d92c66a64b"
-version = "9.55.0+0"
-
 [[deps.Giflib_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "8764bb28df7c47742f6838f7c9ed97f27232f472"
@@ -385,16 +379,16 @@ uuid = "82e4d734-157c-48bb-816b-45c225c6df19"
 version = "0.6.6"
 
 [[deps.ImageMagick]]
-deps = ["FileIO", "ImageCore", "ImageMagick_jll", "InteractiveUtils", "Libdl", "Pkg", "Random"]
-git-tree-sha1 = "5bc1cb62e0c5f1005868358db0692c994c3a13c6"
+deps = ["FileIO", "ImageCore", "ImageMagick_jll", "InteractiveUtils"]
+git-tree-sha1 = "ca8d917903e7a1126b6583a097c5cb7a0bedeac1"
 uuid = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
-version = "1.2.1"
+version = "1.2.2"
 
 [[deps.ImageMagick_jll]]
-deps = ["Artifacts", "Ghostscript_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pkg", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "124626988534986113cfd876e3093e4a03890f58"
+deps = ["JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pkg", "Zlib_jll", "libpng_jll"]
+git-tree-sha1 = "1c0a2295cca535fabaf2029062912591e9b61987"
 uuid = "c73af94c-d91f-53ed-93a7-00f77d67a9d7"
-version = "6.9.12+3"
+version = "6.9.10-12+3"
 
 [[deps.ImageMetadata]]
 deps = ["AxisArrays", "ImageAxes", "ImageBase", "ImageCore"]
@@ -963,7 +957,7 @@ version = "2.0.0"
 deps = ["CEnum", "ColorTypes", "SDL2_image_jll", "SDL2_jll", "SDL2_mixer_jll", "SDL2_ttf_jll"]
 path = "C:\\Users\\dusty\\.julia\\dev\\SimpleDirectMediaLayer"
 uuid = "98e33af6-2ee5-5afd-9e75-cbc738b767c4"
-version = "0.3.0"
+version = "0.4.0"
 
 [[deps.SimpleTraits]]
 deps = ["InteractiveUtils", "MacroTools"]

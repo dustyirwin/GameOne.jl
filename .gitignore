@@ -1,6 +1,10 @@
+/Manifest.toml
+
 .DS_Store
 resources
 tmp
+
 *.ttf
 *.gif
 *.png
+*.webp

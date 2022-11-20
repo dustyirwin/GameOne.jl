@@ -19,7 +19,9 @@ SDL_FreeSurface(surface)
 w_ref, h_ref = Ref{Cint}(0), Ref{Cint}(0)
 SDL_QueryTexture(tex, C_NULL, C_NULL, w_ref, h_ref)
 
-try
+
+# why is this in a try / finally block?
+#try
     w, h = w_ref[], h_ref[]
     x = (1000 - w) ÷ 2
     y = (1000 - h) ÷ 2
@@ -68,9 +70,9 @@ try
 
         SDL_Delay(1000 ÷ 60)
     end
-finally
+#finally
     SDL_DestroyTexture(tex)
     SDL_DestroyRenderer(renderer)
     SDL_DestroyWindow(win)
     SDL_Quit()
-end
+#end
