@@ -20,15 +20,15 @@ function next_frame!(a::Actor)
 end
 
 # Create an `ImageActor` object from a PNG file
-alien = ImageActor("examples/images/alien.png", load("examples/images/alien.png") )
+alien = ImageActor("images/alien.png", load("$(@__DIR__)/images/alien.png") )
 
 # Create an `TextActor` object from an empty string for terminal use
-terminal = TextActor(">", "examples/fonts/OpenSans-Regular.ttf", outline_size=1, pt_size=35)
+terminal = TextActor(">", "$(@__DIR__)/fonts/OpenSans-Regular.ttf", outline_size=1, pt_size=35)
 terminal.alpha = 0
 
 label = TextActor(
     "this is some example text",
-    "examples/fonts/OpenSans-Regular.ttf",
+    "$(@__DIR__)/fonts/OpenSans-Regular.ttf",
     outline_size=1,
     pt_size=24)
 label.x = 25
@@ -36,7 +36,7 @@ label.y = 25
 
 
 #load a custom animation
-anim_fns = [ "C:/Users/dusty/My Drive/AnimatProjects/AnimatGames/AniMage/assets/anims/FireElemToken/$i.bmp" for i in 1:8 ]
+anim_fns = [ "$(@__DIR__)/images/FireElem1/Visible$i.png" for i in 0:7 ]
 anim = ImageFileAnimActor("fe_anim", anim_fns)
 anim.data[:next_frame] = true
 anim.y = 50
