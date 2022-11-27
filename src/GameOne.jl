@@ -1,13 +1,14 @@
 module GameOne
 
-using Dates
-using Colors
-using Random
 using Reexport
 using SimpleDirectMediaLayer
 
+@reexport using Dates
+@reexport using Random
 @reexport using Images
+@reexport using Logging
 @reexport using ShiftedArrays
+@reexport using Serialization
 
 const SDL2 = SimpleDirectMediaLayer.LibSDL2
 
@@ -118,7 +119,7 @@ function mainloop(g::Game)
         dt = min(dt / 1e9, 1.0 / min_fps)
         start!(timer)
         Base.invokelatest(g.update_function, g, dt)
-        tick!(scheduler[]) 
+        tick!(scheduler[])
         if (playing[] == false)
             throw(QuitException())
         end
@@ -146,14 +147,14 @@ function handleKeyPress(g::Game, e, t)
     @debug "Keyboard" keySym, keyMod
     if (t == SDL2.SDL_KEYDOWN)
         push!(g.keyboard, keySym)
-        
+
         # TODO: clean up keyboard errors... experiencing Argument Error: Invalid value for enum key: 1073741593 (audio volume up key)... and other un-mapped keys
-        try 
+        try
             Base.invokelatest(g.onkey_function, g, Keys.Key(keySym), Keymods.Keymod(keyMod))
         catch e
             @error e exception = (e, catch_backtrace())
         end
-    
+
     elseif (t == SDL2.SDL_KEYUP)
         delete!(g.keyboard, keySym)
     end
@@ -240,15 +241,18 @@ end
 game_include(jlf::String) = Base.include(game[].game_module, jlf)
 
 function getfn(m::Module, s::Symbol, maxargs = 3)
+    @info "grabbing function $s in module $m"
     if isdefined(m, s)
         fn = getfield(m, s)
-
         ms = copy(methods(fn).ms)
         filter!(x -> x.module == m, ms)
+        
         if length(ms) > 1
             sort!(ms, by = x -> x.nargs, rev = true)
         end
+
         m = ms[1]
+
         if (m.nargs - 1) > maxargs
             error("Found a $s function with $(m.nargs-1) arguments. A maximum of $maxargs arguments are allowed.")
         end
@@ -273,37 +277,37 @@ function start_text_input(g::Game, terminal::Actor)
 
         if success
             event_array = UInt8.([Char(i) for i in event])
-            
+
             event_type = getEventType(event_array)
             @info "event type: $event_type"
-            
+
             key_sym = event_array[21]
             @info "key sym: $key_sym"
-            
+
             #SDL2.SDL_GetModState() |> string
-        
+
             if getEventType(event) == SDL2.SDL_TEXTINPUT
                 char = getTextInputEventChar(event)
                 comp *= char
                 comp = comp == ">`" ? ">" : comp
-            
+
                 update_text_actor!(terminal, comp)
                 @info "TextInputEvent: $(getEventType(event)) comp: $comp"
-            
-            #= Paste from clipboard
-            # KEYMODs: LCTRL = 4160 | RCTRL = 4096
-            
-            #elseif event_type == SDL2.SDL_KEYDOWN && (SDL2.SDL_GetModState() |> string == "4160" || SDL2.SDL_GetModState() |> string == "4096") && (key_sym == "v" || key_sym == "V")
-                comp = comp * "$(unsafe_string(SDL2.SDL_GetClipboardText()))"
-                update_text_actor!(terminal, comp)
-                =#
+
+                #= Paste from clipboard
+                # KEYMODs: LCTRL = 4160 | RCTRL = 4096
+
+                #elseif event_type == SDL2.SDL_KEYDOWN && (SDL2.SDL_GetModState() |> string == "4160" || SDL2.SDL_GetModState() |> string == "4096") && (key_sym == "v" || key_sym == "V")
+                    comp = comp * "$(unsafe_string(SDL2.SDL_GetClipboardText()))"
+                    update_text_actor!(terminal, comp)
+                    =#
             elseif length(comp) > 1 && getEventType(event_array) == 768 && key_sym == 8  # "\b" backspace key
                 comp = comp[1:end-1]
                 update_text_actor!(terminal, comp)
                 #draw(g); SDL2.SDL_RenderPresent(g.screen.renderer)
-                
+
                 @info "BackspaceEvent: $(getEventType(event)) comp: $comp"
-            
+
             elseif getEventType(event_array) == 768 && key_sym == 81
                 if haskey(terminal.data, :command_history)
                     terminal.data[:command_history] = circshift(terminal.data[:command_history], 1)
@@ -321,15 +325,15 @@ function start_text_input(g::Game, terminal::Actor)
             elseif getEventType(event) == SDL2.SDL_KEYDOWN && key_sym == 13 #"\r" # return key
                 @info "QuitEvent: $(getEventType(event))"
                 @info "Composition: $comp"
-                
+
                 if !haskey(terminal.data, :command_history)
                     terminal.data[:command_history] = []
                 end
-                
+
                 push!(terminal.data[:command_history], comp)
                 done = true
             end
-        
+
             # Update screen
             SDL2.SDL_RenderClear(g.screen.renderer)
             draw(g)

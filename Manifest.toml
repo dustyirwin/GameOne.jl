@@ -1,8 +1,8 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.8.2"
+julia_version = "1.8.3"
 manifest_format = "2.0"
-project_hash = "7be33e7bab58609fcbbee239aa05fdaaa27e3f4a"
+project_hash = "5542f035d2db22f028f24e25ac142e5e432ec396"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -915,9 +915,9 @@ version = "1.4.0+0"
 
 [[deps.SDL2_image_jll]]
 deps = ["Artifacts", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pkg", "SDL2_jll", "libpng_jll", "libwebp_jll"]
-git-tree-sha1 = "7ef5ef320ac06a59b4de273e6b3f892d83dab0da"
+git-tree-sha1 = "5fbbda81c5d2060d03f4b57348273774b6434e75"
 uuid = "41f3cfe1-fd11-58ad-8074-b9730c29438b"
-version = "2.6.2+0"
+version = "2.6.2+1"
 
 [[deps.SDL2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libX11_jll", "Xorg_libXScrnSaver_jll", "Xorg_libXcursor_jll", "Xorg_libXext_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll", "alsa_jll", "alsa_plugins_jll"]
