@@ -20,7 +20,7 @@ function next_frame!(a::Actor)
 end
 
 # Create an `ImageActor` object from a PNG file
-alien = ImageActor("images/alien.png", load("$(@__DIR__)/images/alien.png") )
+alien = ImageActor("images/alien.png", load("$(@__DIR__)/images/alien.png"))
 
 # Create an `TextActor` object from an empty string for terminal use
 terminal = TextActor(">", "$(@__DIR__)/fonts/OpenSans-Regular.ttf", outline_size=1, pt_size=35)
@@ -36,11 +36,18 @@ label.y = 25
 
 
 #load a custom animation
-anim_fns = [ "$(@__DIR__)/images/FireElem1/Visible$i.png" for i in 0:7 ]
-anim = ImageFileAnimActor("fe_anim", anim_fns)
+anim_fns = ["$(@__DIR__)/images/FireElem1/Visible$i.png" for i in 0:7]
+anim = ImageFileAnimActor("fe", anim_fns)
 anim.data[:next_frame] = true
 anim.y = 50
 anim.x = 10
+
+
+wanim = WebpAnimActor("swamp", "$(@__DIR__)/images/swamp.webp")
+wanim.data[:next_frame] = true
+wanim.y = 100
+wanim.x = 100
+
 
 # Start playing background music
 
@@ -49,11 +56,12 @@ anim.x = 10
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
     draw.([
-        alien, 
-        terminal, 
-        label, 
+        alien,
+        terminal,
+        label,
         anim,
-        ])
+        wanim,
+    ])
 end
 
 
@@ -63,15 +71,22 @@ end
 # * if the up/down/left/right keys are pressed, we change the velocity to move the actor in the direction of the keypress
 
 function update(g::Game)
-    global dx, dy, anim
+    global dx, dy, anim, wanim
     alien.position.x += dx
     alien.position.y += dy
 
     if anim.data[:next_frame]
-        if now() - anim.data[:then] > Millisecond(120) 
+        if now() - anim.data[:then] > Millisecond(120)
             anim = next_frame!(anim)
         end
     end
+
+    if wanim.data[:next_frame]
+        if now() - wanim.data[:then] > Millisecond(120)
+            wanim = next_frame!(wanim)
+        end
+    end
+
     #=
     =#
 
@@ -112,7 +127,8 @@ function on_key_down(g, key, keymod)
     if key == Keys.BACKQUOTE
         @info "Terminal Started!"
         terminal.alpha = 255
-        draw(g); SDL2.SDL_RenderPresent(g.screen.renderer)
+        draw(g)
+        SDL2.SDL_RenderPresent(g.screen.renderer)
         update_text_actor!(terminal, ">")
         text = start_text_input(g, terminal)
         terminal.alpha = 150
@@ -129,7 +145,7 @@ function on_key_down(g, key, keymod)
         catch e
             @warn e
         end
-        
+
         schedule_once(() -> terminal.alpha = 0, 4)
         #=
         =#

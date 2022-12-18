@@ -173,10 +173,128 @@ function ImageFileAnimActor(anim_name::String, img_fns::Vector{String}; x=0, y=0
     return a
 end
 
+function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
+    surfaces = OrderedDict()
+    s = SpinLock()
+    
+    webp_txt = joinpath(tempdir(), "webp_info.txt")
+    
+    libwebp_jll.webpmux() do webpmux
+        redirect_stdio(stdout=webp_txt) do
+            run(`$webpmux -info $webp_fn`)
+        end
+    end
+    
+    webp_info = readlines(webp_txt)
+
+    w = [ parse(Int32, split(ln)[3]) |> Int32 for ln in webp_info if occursin("Canvas size:", ln) ][1]
+    h = [ parse(Int32, split(ln)[5]) |> Int32 for ln in webp_info if occursin("Canvas size:", ln) ][1]
+    n = [ parse(Int32, split(ln)[4]) |> Int32 for ln in webp_info if occursin("frames:", ln) ][1]
+    
+    frame_data = webp_info[6:end-1]
+    frames_od = OrderedDict()
+    
+    for i in 1:length(frame_data)
+        frames_od[i] = Dict(
+            :width => parse(Int32, split(frame_data[i])[2]),
+            :height => parse(Int32, split(frame_data[i])[3]),
+            :x_offset => parse(Int32, split(frame_data[i])[5]),
+            :y_offset => parse(Int32, split(frame_data[i])[6]),
+            :duration => parse(Int32, split(frame_data[i])[7]),
+        )
+    end
+    
+    frame_delays = [ Millisecond(v[:duration]) for (k,v) in frames_od ]
+    
+    # extracting frames from webp image and saving as pngs to tmp dir
+    @sync @threads for i in 1:n
+        tmp_png = joinpath(tempdir(), "frame_$i.png")
+        tmp_webp = joinpath(tempdir(), "frame_$i.webp")
+
+        libwebp_jll.webpmux() do webpmux
+            run(`$webpmux -get frame $i $webp_fn -o $tmp_webp`)
+        end
+        
+        libwebp_jll.dwebp() do dwebp
+            run(`$dwebp -quiet $tmp_webp -o $tmp_png`)
+        end
+        #=
+        =#
+    end
+    
+    for i in 1:n
+        if i == 1
+            sf = SDL2.IMG_Load(joinpath(tempdir(), "frame_1.png"))
+
+            lock(s)
+            surfaces[i] = sf
+            unlock(s)
+
+        else
+            key_sf = SDL2.IMG_Load(joinpath(tempdir(), "frame_1.png"))
+            frame_sf = SDL2.IMG_Load(joinpath(tempdir(), "frame_$i.png"))
+            
+            # blit frame onto key
+            SDL2.SDL_BlitSurface(
+                frame_sf,
+                C_NULL,
+                key_sf,
+                Int32[ 
+                    frames_od[i][:x_offset], 
+                    frames_od[i][:y_offset], 
+                    0,
+                    0
+                ]
+            )
+            
+            lock(s)
+            surfaces[i] = key_sf
+            unlock(s)
+        end
+    end
+
+    w, h = Int32.(size(surfaces[1]))
+    r = SDL2.SDL_Rect(x, y, w, h)
+    a = Actor(
+        randstring(10),
+        anim_name,
+        [ values(surfaces)...],
+        [],
+        r,
+        [1, 1],
+        C_NULL,
+        0,
+        255,
+        Dict(
+            :anim => true,
+            :label => anim_name,
+            :img_fn => webp_fn,
+            :sz => [w, h],
+            :fade_in => false,
+            :fade_out => false,
+            :spin => false,
+            :spin_cw => true,
+            :shake => false,
+            :then => now(),
+            :next_frame => false,
+            :frame_delays => frame_delays,
+            :mouse_offset => Int32[0, 0],
+        )
+    )
+            
+    for (k, v) in kv
+        setproperty!(a, k, v)
+    end
+    
+    return a
+end        
+#=
+=#
+
 function draw(a::Actor)
     
     if isempty(a.textures)
-
+        
         for (i, sf) in enumerate(a.surfaces)
             tx = SDL2.SDL_CreateTextureFromSurface(game[].screen.renderer, sf)
 

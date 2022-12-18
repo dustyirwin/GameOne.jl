@@ -2,6 +2,7 @@ module GameOne
 
 using Reexport
 using SimpleDirectMediaLayer
+using Base.Threads
 
 @reexport using Dates
 @reexport using Random
@@ -9,14 +10,17 @@ using SimpleDirectMediaLayer
 @reexport using Logging
 @reexport using ShiftedArrays
 @reexport using Serialization
+@reexport using libwebp_jll
+@reexport using DataStructures
+
 
 const SDL2 = SimpleDirectMediaLayer.LibSDL2
 
 export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
-    getEventType, getTextInputEventChar, start_text_input, update_text_actor!
+    getEventType, getTextInputEventChar, start_text_input, update_text_actor!, quitSDL
 export Game, Keys, Keymods, MouseButtons
-export ImageActor, TextActor, ImageFileAnimActor, GIFAnimActor, Actor, Line, Rect, Circle
+export ImageActor, TextActor, ImageFileAnimActor, GIFAnimActor, WebpAnimActor, Actor, Line, Rect, Circle
 export SDL2
 
 
