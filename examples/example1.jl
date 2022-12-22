@@ -43,7 +43,8 @@ anim.y = 50
 anim.x = 10
 
 
-wanim = WebpAnimActor("swamp", "$(@__DIR__)/images/swamp.webp")
+webp_fn = "shatter.webp"
+wanim = WebpAnimActor(webp_fn, "$(@__DIR__)/images/$webp_fn")
 wanim.data[:next_frame] = true
 wanim.y = 100
 wanim.x = 100

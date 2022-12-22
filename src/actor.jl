@@ -174,10 +174,11 @@ function ImageFileAnimActor(anim_name::String, img_fns::Vector{String}; x=0, y=0
 end
 
 function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
-    surfaces = OrderedDict()
-    s = SpinLock()
-    
-    webp_txt = joinpath(tempdir(), "webp_info.txt")
+    if !isdir(tempdir() * "\\anim_$anim_name")
+        mkdir(tempdir() * "\\anim_$anim_name")
+    end
+
+    webp_txt = joinpath(tempdir(), "anim_$anim_name", "webp_info_$anim_name.txt")
     
     libwebp_jll.webpmux() do webpmux
         redirect_stdio(stdout=webp_txt) do
@@ -191,66 +192,119 @@ function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
     h = [ parse(Int32, split(ln)[5]) |> Int32 for ln in webp_info if occursin("Canvas size:", ln) ][1]
     n = [ parse(Int32, split(ln)[4]) |> Int32 for ln in webp_info if occursin("frames:", ln) ][1]
     
-    frame_data = webp_info[6:end-1]
-    frames_od = OrderedDict()
+    frame_data = webp_info[6:end]
+    frames = Dict()
     
-    for i in 1:length(frame_data)
-        frames_od[i] = Dict(
+    for i in 1:n
+        d = Dict(
             :width => parse(Int32, split(frame_data[i])[2]),
             :height => parse(Int32, split(frame_data[i])[3]),
             :x_offset => parse(Int32, split(frame_data[i])[5]),
             :y_offset => parse(Int32, split(frame_data[i])[6]),
             :duration => parse(Int32, split(frame_data[i])[7]),
+            :dispose => split(frame_data[i])[8],
         )
-    end
-    
-    frame_delays = [ Millisecond(v[:duration]) for (k,v) in frames_od ]
-    
-    # extracting frames from webp image and saving as pngs to tmp dir
-    @sync @threads for i in 1:n
-        tmp_png = joinpath(tempdir(), "frame_$i.png")
-        tmp_webp = joinpath(tempdir(), "frame_$i.webp")
-
-        libwebp_jll.webpmux() do webpmux
-            run(`$webpmux -get frame $i $webp_fn -o $tmp_webp`)
-        end
         
-        libwebp_jll.dwebp() do dwebp
-            run(`$dwebp -quiet $tmp_webp -o $tmp_png`)
-        end
-        #=
-        =#
+        frames[i] = d
     end
+    
+    frame_delays = [ Millisecond(v[:duration]) for (k,v) in sort(frames) ]
+
+    # exporting each webp frame as a keyframe
+    for i in 1:n
+        tmp_png = joinpath(tempdir(), "anim_$anim_name", "frame_$i.png")
+        tmp_webp = joinpath(tempdir(), "anim_$anim_name", "frame_$i.webp")
+        
+        if !isfile(tmp_png)
+            
+            if !isfile(tmp_webp)
+                libwebp_jll.webpmux() do webpmux
+                    run(`$webpmux -get frame $i $webp_fn -o $tmp_webp`)
+                end
+            end
+
+            libwebp_jll.dwebp() do dwebp
+                run(`$dwebp -quiet $tmp_webp -o $tmp_png`)
+            end
+
+            rm(tmp_webp)
+        end
+    end
+
+    surfaces = Dict()
     
     for i in 1:n
-        if i == 1
-            sf = SDL2.IMG_Load(joinpath(tempdir(), "frame_1.png"))
 
-            lock(s)
+        # handling key frame
+        if i == 1
+            sf = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
             surfaces[i] = sf
-            unlock(s)
+             
+        # handling frame dispose "none"
+        elseif frames[i-1][:dispose] == "none"
+            # creating empty surface to blit on
+            surfaces[i] = SDL2.SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0)
+            SDL2.SDL_FillRect(surfaces[i], C_NULL, 0x00000000)
+
+            # filling empty surface with previous frame
+            SDL2.SDL_BlitSurface(
+                surfaces[i-1],      # source surface
+                C_NULL,
+                surfaces[i],        # destination surface
+                Int32[ frames[i][:x_offset], frames[i][:y_offset], 0, 0 ]
+            )
+
+            # blitting current frame on top of previous frame
+            sf = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
+            SDL2.SDL_BlitSurface(
+                sf,
+                C_NULL,
+                surfaces[i],
+                Int32[ frames[i][:x_offset], frames[i][:y_offset], 0, 0 ]
+            )
+        
+        # handling frame dispose "background"
+        elseif frames[i-1][:dispose] == "background"
+            key_sf = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_1.png"))
+            sf = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
+            SDL2.SDL_BlitSurface(
+                key_sf,
+                C_NULL,
+                sf,
+                Int32[ frames[i][:x_offset], frames[i][:y_offset], 0, 0 ]
+            )
+            surfaces[i] = sf
+        
+        # handling frame dispose "replace"
+        elseif frames[i-1][:dispose] == "replace"
+            sf = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
+            surfaces[i] = sf
+        end
+        #=
+
+        elseif frames[i-1][:dispose] == "replace"
+            key_sf = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$(i-1).png"))
+            sf = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
+            SDL2.SDL_BlitSurface(
+                key_sf,
+                C_NULL,
+                sf,
+                Int32[ frames[i][:x_offset], frames[i][:y_offset], 0, 0 ]
+            )
+            surfaces[i] = sf
 
         else
-            key_sf = SDL2.IMG_Load(joinpath(tempdir(), "frame_1.png"))
-            frame_sf = SDL2.IMG_Load(joinpath(tempdir(), "frame_$i.png"))
-            
-            # blit frame onto key
+            sf = SDL2.IMG_Load(joinpath(tempdir(), "$anim_name-frame_$i.png"))
+            surfaces[i] = SDL2.SDL_CreateRGBSurface(0, w, h, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000)
+            SDL2.SDL_FillRect(surfaces[i], C_NULL, 0x00000000)
             SDL2.SDL_BlitSurface(
-                frame_sf,
+                sf,
                 C_NULL,
-                key_sf,
-                Int32[ 
-                    frames_od[i][:x_offset], 
-                    frames_od[i][:y_offset], 
-                    0,
-                    0
-                ]
+                surfaces[i],
+                Int32[ frames[i][:x_offset], frames[i][:y_offset], 0, 0 ]
             )
-            
-            lock(s)
-            surfaces[i] = key_sf
-            unlock(s)
         end
+        =#
     end
 
     w, h = Int32.(size(surfaces[1]))
@@ -258,10 +312,10 @@ function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
     a = Actor(
         randstring(10),
         anim_name,
-        [ values(surfaces)...],
+        [values(sort(surfaces))...],
         [],
         r,
-        [1, 1],
+        [1,1],
         C_NULL,
         0,
         255,
@@ -287,9 +341,7 @@ function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
     end
     
     return a
-end        
-#=
-=#
+end
 
 function draw(a::Actor)
     
