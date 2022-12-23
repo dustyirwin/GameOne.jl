@@ -235,16 +235,18 @@ function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
     
     for i in 1:n
 
-        # handling key frame
+        # handling all frames as key frames
+        surfaces[i] = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
+        
+        #=
         if i == 1
-            sf = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
-            surfaces[i] = sf
              
+        
         # handling frame dispose "none"
         elseif frames[i-1][:dispose] == "none"
             # creating empty surface to blit on
             surfaces[i] = SDL2.SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0)
-            SDL2.SDL_FillRect(surfaces[i], C_NULL, 0x00000000)
+            #SDL2.SDL_FillRect(surfaces[i], C_NULL, 0x00000000)  # fill with black color
 
             # filling empty surface with previous frame
             SDL2.SDL_BlitSurface(
@@ -255,9 +257,9 @@ function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
             )
 
             # blitting current frame on top of previous frame
-            sf = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
+            SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
             SDL2.SDL_BlitSurface(
-                sf,
+                SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png")),
                 C_NULL,
                 surfaces[i],
                 Int32[ frames[i][:x_offset], frames[i][:y_offset], 0, 0 ]
@@ -265,34 +267,19 @@ function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
         
         # handling frame dispose "background"
         elseif frames[i-1][:dispose] == "background"
-            key_sf = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_1.png"))
-            sf = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
+            surfaces[i] = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_1.png"))
             SDL2.SDL_BlitSurface(
-                key_sf,
+                SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png")),
                 C_NULL,
-                sf,
+                surfaces[i],
                 Int32[ frames[i][:x_offset], frames[i][:y_offset], 0, 0 ]
             )
-            surfaces[i] = sf
         
         # handling frame dispose "replace"
         elseif frames[i-1][:dispose] == "replace"
             sf = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
             surfaces[i] = sf
-        end
-        #=
-
-        elseif frames[i-1][:dispose] == "replace"
-            key_sf = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$(i-1).png"))
-            sf = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
-            SDL2.SDL_BlitSurface(
-                key_sf,
-                C_NULL,
-                sf,
-                Int32[ frames[i][:x_offset], frames[i][:y_offset], 0, 0 ]
-            )
-            surfaces[i] = sf
-
+        
         else
             sf = SDL2.IMG_Load(joinpath(tempdir(), "$anim_name-frame_$i.png"))
             surfaces[i] = SDL2.SDL_CreateRGBSurface(0, w, h, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000)
