@@ -167,6 +167,8 @@ function ImageFileAnimActor(anim_name::String, img_fns::Vector{String}; x=0, y=0
         )
     )
 
+# hello new changes!
+
     for (k, v) in kv
         setproperty!(a, k, v)
     end
@@ -174,8 +176,8 @@ function ImageFileAnimActor(anim_name::String, img_fns::Vector{String}; x=0, y=0
 end
 
 function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
-    if !isdir(tempdir() * "\\anim_$anim_name")
-        mkdir(tempdir() * "\\anim_$anim_name")
+    if !isdir(tempdir() * "/anim_$anim_name")
+        mkdir(tempdir() * "/anim_$anim_name")
     end
 
     webp_txt = joinpath(tempdir(), "anim_$anim_name", "webp_info_$anim_name.txt")
