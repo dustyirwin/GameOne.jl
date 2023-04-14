@@ -2,6 +2,7 @@ module GameOne
 
 using Reexport
 using SimpleDirectMediaLayer
+using SimpleDirectMediaLayer.LibSDL2
 using Base.Threads
 
 @reexport using Dates
@@ -13,8 +14,7 @@ using Base.Threads
 @reexport using libwebp_jll
 @reexport using DataStructures
 
-
-const SDL2 = SimpleDirectMediaLayer.LibSDL2
+const SDL2 = SimpleDirectMediaLayer
 
 export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,

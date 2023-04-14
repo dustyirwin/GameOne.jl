@@ -227,7 +227,8 @@ function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
                 run(`$dwebp -quiet $tmp_webp -o $tmp_png`)
             end
 
-            rm(tmp_webp)
+            # TESTING 
+            # rm(tmp_webp)
         end
     end
 
@@ -238,7 +239,7 @@ function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
         # handling all frames as key frames
         surfaces[i] = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
         
-        #=
+        #=  THIS IS NOT WORKING YET
         if i == 1
              
         
