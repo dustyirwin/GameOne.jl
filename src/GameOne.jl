@@ -21,6 +21,7 @@ export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique,
     getEventType, getTextInputEventChar, start_text_input, update_text_actor!, quitSDL
 export Game, Keys, Keymods, MouseButtons
 export ImageActor, TextActor, ImageFileAnimActor, GIFAnimActor, WebpAnimActor, Actor, Line, Rect, Circle
+export Line, Rect, Triangle, Circle
 export SDL2
 
 
@@ -52,37 +53,34 @@ mutable struct Game
     Game() = new()
 end
 
-
-# const EVENT_HANDLER_FN = Dict(
-#     MOUSEBUTTONDOWN => "on_mouse_down",
-#     MOUSEBUTTONUP => "on_mouse_up",
-#     MOUSEMOTION => "on_mouse_move",
-#     KEYDOWN => "on_key_down",
-#     KEYUP => "on_key_up",
-#     MUSIC_END => "on_music_end"
-# )
-
-
 const timer = WallTimer()
 const game = Ref{Game}()
 const playing = Ref{Bool}(false)
 const paused = Ref{Bool}(false)
 
-function __init__() end
+#function __init__() end
 
 function initscreen(gm::Module, name::String)
     h = getifdefined(gm, HEIGHTSYMBOL, 600)
     w = getifdefined(gm, WIDTHSYMBOL, 800)
-    color = getifdefined(gm, BACKSYMBOL, ARGB(colorant"white"))
-    s = Screen(name, w, h, color)
+    background = getifdefined(gm, BACKSYMBOL, ARGB(colorant"white"))
+    if !(background isa Colorant)
+        background = image_surface(background)
+    end
+    s = Screen(name, w, h, background)
     clear(s)
     return s
 end
 
-
 getifdefined(m, s, v) = isdefined(m, s) ? getfield(m, s) : v
 
+game_include(jlf::String) = Base.include(game[].game_module, jlf)
+
 mainloop(g::Ref{Game}) = mainloop(g[])
+
+pollEvent = let event = Ref{SDL_Event}()
+    () -> SDL_PollEvent(event)
+end
 
 function mainloop(g::Game)
     start!(timer)
@@ -91,7 +89,7 @@ function mainloop(g::Game)
         #Don't run if game is paused by system (resizing, lost focus, etc)
         while window_paused[] != 0
             _ = pollEvent!()
-            sleep(0.25)
+            sleep(0.5)
         end
 
         # Handle Events
@@ -109,17 +107,16 @@ function mainloop(g::Game)
             rethrow()
         end
 
-        #if (debug && debugText) renderFPS(renderer,last_10_frame_times) end
-        SDL2.SDL_RenderClear(g.screen.renderer)
+        clear(g.screen)
         Base.invokelatest(g.render_function, g)
-        SDL2.SDL_RenderPresent(g.screen.renderer)
+        SDL_RenderPresent(g.screen.renderer)
 
         dt = elapsed(timer)
         # Don't let the game proceed at fewer than this frames per second. If an
         # update takes too long, allow the game to actually slow, rather than
         # having too big of frames.
-        min_fps = 15.0
-        max_fps = 30.0
+        min_fps = 20.0
+        max_fps = 60.0
         dt = min(dt / 1e9, 1.0 / min_fps)
         start!(timer)
         Base.invokelatest(g.update_function, g, dt)
@@ -195,9 +192,24 @@ getMouseClickY(e) = bitcat(Int32, e[27:-1:24])
 getMouseMoveX(e) = bitcat(Int32, e[24:-1:21])
 getMouseMoveY(e) = bitcat(Int32, e[28:-1:25])
 
-function rungame(jlf::String)
+
+"""
+    `rungame(game_file::String)`
+    `rungame()`
+
+    The entry point to GameOne. This is the user-facing function that is used to start a game. 
+    The single argument method should be used from the REPL or main script. It takes the game source
+    file as it's only argument. 
+
+    The zero argument method should be used from the game source file itself when is being executed directly
+"""
+function rungame(jlf::String, external::Bool=true)
+    # The optional argument `external` is used to determine whether the zero or single argument version 
+    # has been called. End users should never have to use this argument directly. 
+    # external=true means rungame has been called from the REPl or run script, with the game file as input
+    # external=false means rungame has been called at the bottom of the game file itself
     global playing, paused
-    g = initgame(jlf::String)
+    g = initgame(jlf::String, external)
     try
         playing[] = paused[] = true
         mainloop(g)
@@ -210,39 +222,49 @@ function rungame(jlf::String)
     end
 end
 
-function initgame(jlf::String)
+function rungame()
+    rungame(abspath(PROGRAM_FILE), false)
+end
+
+function initgame(jlf::String, external::Bool)
     if !isfile(jlf)
         ArgumentError("File not found: $jlf")
     end
     name = titlecase(replace(basename(jlf), ".jl" => ""))
-    module_name = Symbol(name * "_" * randstring(5))
-    game_module = Module(module_name)
-    @debug "Initialised Anonymous Game Module" module_name
     initSDL()
     game[] = Game()
     scheduler[] = Scheduler()
     g = game[]
-    g.game_module = game_module
-    g.location = dirname(jlf)
     g.keyboard = Keyboard()
+    if external
+        module_name = Symbol(name * "_" * randstring(5))
+        game_module = Module(module_name)
+        @debug "Initialised Anonymous Game Module" module_name
+        g.game_module = game_module
+        g.location = dirname(jlf)
+    else
+        g.game_module = Main
+        g.location = pwd()
+    end
 
-    Base.include_string(game_module, "using GameOne")
-    Base.include_string(game_module, "import GameOne.draw")
-    Base.include_string(game_module, "using Colors")
-    Base.include(game_module, jlf)
+    if external
+        Base.include_string(g.game_module, "using GameOne")
+        Base.include_string(g.game_module, "import GameOne.draw")
+        Base.include_string(g.game_module, "using Colors")
+        Base.include(g.game_module, jlf)
+    end
 
-    g.update_function = getfn(game_module, :update, 2)
-    g.render_function = getfn(game_module, :draw, 1)
-    g.onkey_function = getfn(game_module, :on_key_down, 4)
-    g.onmouseup_function = getfn(game_module, :on_mouse_up, 3)
-    g.onmousedown_function = getfn(game_module, :on_mouse_down, 3)
-    g.onmousemove_function = getfn(game_module, :on_mouse_move, 2)
-    g.screen = initscreen(game_module, "animat::" * name)
+    g.update_function = getfn(g.game_module, :update, 2)
+    g.render_function = getfn(g.game_module, :draw, 1)
+    g.onkey_function = getfn(g.game_module, :on_key_down, 3)
+    g.onmouseup_function = getfn(g.game_module, :on_mouse_up, 3)
+    g.onmousedown_function = getfn(g.game_module, :on_mouse_down, 3)
+    g.onmousemove_function = getfn(g.game_module, :on_mouse_move, 2)
+    g.screen = initscreen(g.game_module, "GameOne::" * name)
     clear(g.screen)
     return g
 end
 
-game_include(jlf::String) = Base.include(game[].game_module, jlf)
 
 function getfn(m::Module, s::Symbol, maxargs = 3)
     @info "grabbing function $s in module $m"
@@ -350,7 +372,7 @@ function start_text_input(g::Game, terminal::Actor)
 end
 
 
-# H ving a QuitException is useful for testing, since an exception will simply
+# Having a QuitException is useful for testing, since an exception will simply
 # pause the interpreter. For release builds, the catch() block will call quitSDL().
 struct QuitException <: Exception end
 
@@ -386,12 +408,11 @@ function quitSDL(g::Game)
     # https://github.com/n0name/2D_Engine/issues/3
     @debug "Quitting the game"
     clear!(scheduler[])
-    SDL2.SDL_DelEventWatch(window_event_watcher_cfunc[], g.screen.window)
-    SDL2.SDL_DestroyRenderer(g.screen.renderer)
-    SDL2.SDL_DestroyWindow(g.screen.window)
+    SDL_DelEventWatch(window_event_watcher_cfunc[], g.screen.window);
+    SDL_DestroyRenderer(g.screen.renderer)
+    SDL_DestroyWindow(g.screen.window)
     #Run all finalisers
-    GC.gc()
-    GC.gc()
+    GC.gc();GC.gc();
     quitSDL()
 end
 

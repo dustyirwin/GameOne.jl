@@ -31,7 +31,7 @@ function ImageActor(img_name::String, img; x=0, y=0, kv...)
         [sf],
         [],
         r,
-        [1,1],
+        [1.,1.],
         C_NULL,
         0,
         255,
@@ -80,7 +80,7 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
         [fg],
         [],
         r,
-        [1, 1],
+        [1., 1.],
         C_NULL,
         0,
         255,
@@ -375,6 +375,11 @@ function draw(a::Actor)
         a.rotate_center,
         flip,
     )
+    #=
+    if length(a.textures) == 1
+        SDL2.SDL_DestroyTexture(a.textures[begin])
+    end
+    =#
 end
 
 function Base.setproperty!(s::Actor, p::Symbol, x)
@@ -442,7 +447,7 @@ function distance(a::Actor, tx, ty)
     myx, myy = a.pos
     dx = tx - myx
     dy = ty - myy
-    sqrt(dx * dx + dy * dy)
+    return sqrt(dx * dx + dy * dy)
 end
 
 atan2(y, x) = pi - pi/2 * (1 + sign(x)) * (1 - sign(y^2)) - pi/4 * (2 + sign(x)) * sign(y) -
@@ -465,10 +470,10 @@ function collide(c, d)
     a=rect(c)
     b=rect(d)
 
-    a.x < b.x + b.w &&
-    a.y < b.y + b.h &&
-    a.x + a.w > b.x &&
-    a.y + a.h > b.y
+    return a.x < b.x + b.w &&
+        a.y < b.y + b.h &&
+        a.x + a.w > b.x &&
+        a.y + a.h > b.y
 end
 
 rect(a::Actor) = a.position

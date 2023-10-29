@@ -43,7 +43,7 @@ anim.y = 50
 anim.x = 10
 
 
-webp_fn = "shatter.webp"
+webp_fn = "swamp.webp"
 wanim = WebpAnimActor(webp_fn, "$(@__DIR__)/images/$webp_fn")
 wanim.data[:next_frame] = true
 wanim.y = 100
