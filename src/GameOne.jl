@@ -18,9 +18,9 @@ const SDL2 = SimpleDirectMediaLayer
 
 export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
-    getEventType, getTextInputEventChar, start_text_input, update_text_actor!, quitSDL
+    getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL
 export Game, Keys, Keymods, MouseButtons
-export ImageActor, TextActor, ImageFileAnimActor, GIFAnimActor, WebpAnimActor, Actor, Line, Rect, Circle
+export Actor, ImageActor, TextActor, ImageFileAnimActor, GIFAnimActor, WebpAnimActor
 export Line, Rect, Triangle, Circle
 export SDL2
 
@@ -255,7 +255,7 @@ function initgame(jlf::String, external::Bool)
     end
 
     g.update_function = getfn(g.game_module, :update, 2)
-    g.render_function = getfn(g.game_module, :draw, 1)
+    g.render_function = getfn(g.game_module, :draw, 3)
     g.onkey_function = getfn(g.game_module, :on_key_down, 3)
     g.onmouseup_function = getfn(g.game_module, :on_mouse_up, 3)
     g.onmousedown_function = getfn(g.game_module, :on_mouse_down, 3)
@@ -403,7 +403,7 @@ function initSDL()
     end
 end
 
-function quitSDL(g::Game)
+function quitSDL(g)
     # Need to close the callback before quitting SDL to prevent it from hanging
     # https://github.com/n0name/2D_Engine/issues/3
     @debug "Quitting the game"
