@@ -1,5 +1,6 @@
 using Random
 using Dates
+using GameOne
 
 # Height of the game window
 HEIGHT = 600
@@ -26,6 +27,8 @@ alien = ImageActor("images/alien.png", load("$(@__DIR__)/images/alien.png"))
 terminal = TextActor(">", "$(@__DIR__)/fonts/OpenSans-Regular.ttf", outline_size=1, pt_size=35)
 terminal.alpha = 0
 
+#=
+=#
 label = TextActor(
     "this is some example text",
     "$(@__DIR__)/fonts/OpenSans-Regular.ttf",
@@ -33,7 +36,6 @@ label = TextActor(
     pt_size=24)
 label.x = 25
 label.y = 25
-
 
 #load a custom animation
 anim_fns = ["$(@__DIR__)/images/FireElem1/Visible$i.png" for i in 0:7]
@@ -129,7 +131,7 @@ function on_key_down(g, key, keymod)
         @info "Terminal Started!"
         terminal.alpha = 255
         draw(g)
-        SDL2.SDL_RenderPresent(g.screen.renderer)
+        SDL2.SDL_RenderPresent.([ s.renderer for s in g.screen ])
         update_text_actor!(terminal, ">")
         text = start_text_input(g, terminal)
         terminal.alpha = 150
