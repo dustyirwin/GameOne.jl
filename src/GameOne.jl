@@ -3,6 +3,8 @@ module GameOne
 using Reexport
 using Base.Threads
 
+import SimpleDirectMediaLayer
+
 @reexport using Dates
 @reexport using Random
 @reexport using Images
@@ -95,6 +97,7 @@ function mainloop(g::Game)
 
         try
             event_ref = Ref{SDL_Event}()
+            
             while Bool(SDL_PollEvent(event_ref))
                 e = event_ref[]
                 t = e.type
@@ -103,8 +106,6 @@ function mainloop(g::Game)
         catch e
             rethrow()
         end
-
-
 
         clear.(g.screen)
         Base.invokelatest(g.render_function, g)
@@ -153,26 +154,23 @@ end
 function handleKeyPress(g::Game, e, t)
     keySym = e.keysym.sym
     keyMod = e.keysym.mod
-    @debug "Keyboard" keySym, keyMod
-    try
-        if (e.type == SDL_KEYDOWN)
-            push!(g.keyboard, keySym)
-            Base.invokelatest(g.onkey_function, g, Keys.Key(keySym), Keymods.Keymod(keyMod))
-            
-        elseif (t == SDL_KEYUP)
-            delete!(g.keyboard, keySym)
-        end
-    catch e
-        @warn e exception = (e, catch_backtrace())
+    @info "Keyboard" keySym, keyMod
+    if (t == SDL_KEYDOWN)
+        push!(g.keyboard, keySym)
+        Base.invokelatest(g.onkey_function, g, keySym, keyMod)
+        
+    elseif (t == SDL_KEYUP)
+        delete!(g.keyboard, keySym)
     end
+
     #keyRepeat = (getKeyRepeat(e) != 0)
 end
 
 function handleMouseClick(g::Game, e, t)
     @debug "Mouse Button" button, x, y
-    if (e.type == SDL_MOUSEBUTTONUP)
+    if (t == SDL_MOUSEBUTTONUP)
         Base.invokelatest(g.onmouseup_function, g, (e.x, e.y), MouseButtons.MouseButton(e.button))
-    elseif (e.type == SDL_MOUSEBUTTONDOWN)
+    elseif (t == SDL_MOUSEBUTTONDOWN)
         Base.invokelatest(g.onmousedown_function, g, (e.x, e.y), MouseButtons.MouseButton(e.button))
     end
 end
@@ -185,13 +183,13 @@ end
 function handleWindowEvent(g::Game, e, t)
     # manage window focus
     for s in g.screen
-        if (s.window_id == e.window.windowID)
+        if (s.window_id == e.window.windowID) && (e.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
             s.has_focus = true
-            @info "Window focus lost on window $(e.window.windowID)"
+            @info "Window $(e.window.windowID) gained focus"
 
-        else
+        elseif (s.window_id == e.window.windowID) && (e.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
             s.has_focus = false
-            @info "Window focus gained on window $(e.window.windowID)"
+            @info "Window $(e.window.windowID) lost focus"
 
         end
     end

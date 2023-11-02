@@ -47,11 +47,11 @@ anim.y = 50
 anim.x = 10
 
 
-webp_fn = "swamp.webp"
+webp_fn = "Aura of Silence_001.webp"
 wanim = WebpAnimActor(webp_fn, "$(@__DIR__)/images/$webp_fn")
 wanim.data[:next_frame] = true
 wanim.y = 100
-wanim.x = 100
+wanim.x = 250
 
 
 # Start playing background music
@@ -60,11 +60,11 @@ wanim.x = 100
 
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
-    draw(alien, g.screen[begin])
-    draw(terminal, g.screen[begin])
-    draw(label, g.screen[begin])
     draw(anim, g.screen[begin])
     draw(wanim, g.screen[begin])
+    draw(alien, g.screen[begin])
+    draw(label, g.screen[begin])
+    draw(terminal, g.screen[begin])
 end
 
 
@@ -103,6 +103,7 @@ function update(g::Game)
         play_sound("examples/sounds/eep.wav")
     end
 
+    #=
     if g.keyboard.DOWN
         dy = 2
     elseif g.keyboard.UP
@@ -112,6 +113,7 @@ function update(g::Game)
     elseif g.keyboard.RIGHT
         dx = 2
     end
+    =#
 end
 
 # If the "space" key is pressed, change the displayed image to the "hurt" variant.

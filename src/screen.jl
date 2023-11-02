@@ -1,5 +1,4 @@
 
-
 @kwdef mutable struct Screen
     name::String = ""
     window
@@ -11,7 +10,7 @@
     has_focus::Bool = false
     full_screen::Bool = false
     minimized::Bool = false
-    shown::Bool = false
+    shown::Bool = true
 
     function Screen(name, w, h, background)
         win, renderer = makeWinRenderer(name, w, h)
