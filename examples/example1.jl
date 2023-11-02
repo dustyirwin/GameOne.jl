@@ -2,16 +2,18 @@ using Random
 using Dates
 using GameOne
 
-# Height of the game window
-HEIGHT = 600
 # Width of the game window
-WIDTH = 800
+SCREEN_WIDTH = [ 800, 400 ]
+# Height of the game window
+SCREEN_HEIGHT = [ 600, 300 ]
 # Background color of the game window
-BACKGROUND = colorant"purple"
+BACKGROUND = [colorant"purple", colorant"blue"]
+# Title of the game window
+SCREEN_NAME = [ "Main", "Secondary" ]
 
 # Globals to store the velocity of the actor
-dx = 2
-dy = 2
+global dx = 2
+global dy = 2
 
 
 function next_frame!(a::Actor)
@@ -58,13 +60,11 @@ wanim.x = 100
 
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
-    draw.([
-        alien,
-        terminal,
-        label,
-        anim,
-        wanim,
-    ])
+    draw(alien, g.screen[begin])
+    draw(terminal, g.screen[begin])
+    draw(label, g.screen[begin])
+    draw(anim, g.screen[begin])
+    draw(wanim, g.screen[begin])
 end
 
 

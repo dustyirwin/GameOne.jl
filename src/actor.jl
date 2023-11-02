@@ -332,12 +332,12 @@ function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
     return a
 end
 
-function draw(a::Actor)
+function draw(a::Actor, s::Screen=game[].screen[begin])
     
     if isempty(a.textures)
         
         for (i, sf) in enumerate(a.surfaces)
-            tx = SDL2.SDL_CreateTextureFromSurface(game[].screen.renderer, sf)
+            tx = SDL2.SDL_CreateTextureFromSurface(s.renderer, sf)
 
             if tx == C_NULL
                 @warn "Failed to create texture $i for $(a.label)! Fall back to CPU?"
@@ -367,7 +367,7 @@ function draw(a::Actor)
     end
 
     SDL2.SDL_RenderCopyEx(
-        game[].screen.renderer,
+        s.renderer,
         a.textures[begin],
         C_NULL,
         Ref(SDL2.SDL_Rect(Int32[ a.x, a.y, ceil(a.w * a.scale[1]), ceil(a.h * a.scale[2]) ]...)),

@@ -1,18 +1,4 @@
 
-# Window wrapper
-@kwdef mutable struct LWindow
-    name::String = ""
-    window::Union{Ptr{SDL_Window},Nothing} = nothing
-    renderer::Union{Ptr{SDL_Renderer},Nothing} = nothing
-    width::Cint = Cint(800)
-    height::Cint = Cint(600)
-    has_focus::Bool = false
-    full_screen::Bool = false
-    minimized::Bool = false
-    shown::Bool = false
-    window_id::Cint = Cint(0)
-end
-
 # -------- Opening a window ---------------
 # Forward reference for @cfunction
 function windowEventWatcher end

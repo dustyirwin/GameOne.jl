@@ -1,16 +1,36 @@
 
-struct Screen
+struct OldScreen
     window
     renderer
     height::Int
     width::Int
     background::Union{ARGB, Ptr{SDL_Surface}}
 
-    function Screen(name, w, h, background)
+    function OldScreen(name, w, h, background)
         win, renderer = makeWinRenderer(name, w, h)
         new(win, renderer, h, w, to_ARGB(background))
     end
 end
+
+@kwdef mutable struct Screen
+    name::String = ""
+    window
+    renderer
+    height::Int
+    width::Int
+    background::Union{ARGB,Ptr{SDL_Surface}}
+    window_id::Int
+    has_focus::Bool = false
+    full_screen::Bool = false
+    minimized::Bool = false
+    shown::Bool = false
+
+    function Screen(name, w, h, background)
+        win, renderer = makeWinRenderer(name, w, h)
+        new(name, win, renderer, h, w, to_ARGB(background), SDL_GetWindowID(win))
+    end
+end
+
 
 #non ARGB colorant is converted to ARGB
 #ARGB colorant is rerturned as is
@@ -176,7 +196,7 @@ function clear(s::Screen)
     fill(s, s.background)
 end
 
-clear() = clear(game[].screen)
+clear() = clear.(game[].screen)
 
 function Base.fill(s::Screen, c::Colorant)
     SDL_SetRenderDrawColor(
@@ -192,7 +212,8 @@ function Base.fill(s::Screen, sf::Ptr{SDL_Surface})
     SDL_DestroyTexture(texture)
 end
 
-draw(l::T, args...; kv...) where {T<:Geom} = draw(game[].screen, l, args...; kv...)
+# draws only on main screen...
+draw(l::T, args...; kv...) where {T<:Geom} = draw(game[].screen[1], l, args...; kv...)
 
 function draw(s::Screen, l::Line, c::Colorant=colorant"black")
     SDL_SetRenderDrawColor(

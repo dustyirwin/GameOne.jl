@@ -26,7 +26,8 @@ end
 const resource_ext = Dict(
     :images=>"[png|jpg|jpeg]",
     :sounds=>"[mp3|ogg|wav]",
-    :music=>"[mp3|ogg|wav]")
+    :music=>"[mp3|ogg|wav]"
+)
 
 function image_surface(img_path::String)
     sf = SDL2.IMG_Load(img_path)
@@ -99,7 +100,6 @@ function edit_distance(x, y)
 
     r[m+1, n+1]
 end
-
 
 function validate_name(name::String)
     if occursin(' ', name)
