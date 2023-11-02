@@ -131,7 +131,7 @@ function on_key_down(g, key, keymod)
         @info "Terminal Started!"
         terminal.alpha = 255
         draw(g)
-        SDL2.SDL_RenderPresent.([ s.renderer for s in g.screen ])
+        SDL_RenderPresent.([ s.renderer for s in g.screen ])
         update_text_actor!(terminal, ">")
         text = start_text_input(g, terminal)
         terminal.alpha = 150

@@ -87,13 +87,6 @@ try
                 @info "Window focus gained on window $(evt.window.windowID)"
             end
         end
-
-        #x + w > 1000 && (x = 1000 - w)
-        #x < 0 && (x = 0)
-        #y + h > 1000 && (y = 1000 - h)
-        #y < 0 && (y = 0)
-
-        #dest_refs[] = SDL_Rect(x, y, w, h)
         
         for (i,win,t) in zip(1:2, windows, texs)
             if win.has_focus
@@ -105,10 +98,6 @@ try
                 SDL_RenderPresent(win.renderer)
             end
         end
-
-        #dest = dest_ref[]
-        #x, y, w, h = dest.x, dest.y, dest.w, dest.h
-        #SDL_RenderPresent.([w.renderer for w in windows])
 
         SDL_Delay(1000 ÷ 60)
     end

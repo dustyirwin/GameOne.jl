@@ -2,9 +2,9 @@
 mutable struct Actor
     id::String
     label::String
-    surfaces::Vector{Ptr{SDL2.SDL_Surface}}
-    textures::Vector{Ptr{SDL2.SDL_Texture}}
-    position::SDL2.SDL_Rect
+    surfaces::Vector{Ptr{SDL_Surface}}
+    textures::Vector{Ptr{SDL_Texture}}
+    position::SDL_Rect
     scale::Vector{Float32}
     rotate_center::Union{Vector{Int32},Ptr{Nothing}}
     angle::Float64
@@ -15,16 +15,16 @@ end
 function ImageActor(img_name::String, img; x=0, y=0, kv...) 
     img = ARGB.(transpose(img))
     w, h = Int32.(size(img))
-    sf = SDL2.SDL_CreateRGBSurfaceWithFormatFrom(
+    sf = SDL_CreateRGBSurfaceWithFormatFrom(
         img,
         w,
         h,
         Int32(32),
         Int32(4w),
-        SDL2.SDL_PIXELFORMAT_ARGB32,
+        SDL_PIXELFORMAT_ARGB32,
     )
 
-    r = SDL2.SDL_Rect(x, y, w, h)
+    r = SDL_Rect(x, y, w, h)
     a = Actor(
         randstring(10),
         img_name,
@@ -59,16 +59,16 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
     font_color = Int[255, 255, 255, 255], outline_color = Int[0, 0, 0, 225],
     wrap_length = 800, outline_size = 0, kv...)
 
-    text_font = SDL2.TTF_OpenFont(font_path, pt_size)
-    fg = SDL2.TTF_RenderText_Blended_Wrapped(text_font, text, SDL2.SDL_Color(font_color...), UInt32(wrap_length))
+    text_font = TTF_OpenFont(font_path, pt_size)
+    fg = TTF_RenderText_Blended_Wrapped(text_font, text, SDL_Color(font_color...), UInt32(wrap_length))
     w, h = size(fg)
-    r = SDL2.SDL_Rect(x, y, w, h)
+    r = SDL_Rect(x, y, w, h)
     
     fg = if outline_size > 0
-        outline_font = SDL2.TTF_OpenFont(font_path, pt_size)
-        SDL2.TTF_SetFontOutline(outline_font, Int32(outline_size))
-        bg = SDL2.TTF_RenderText_Blended_Wrapped(outline_font, text, SDL2.SDL_Color(outline_color...), UInt32(wrap_length))
-        SDL2.SDL_UpperBlitScaled(fg, C_NULL, bg, Int32[outline_size,outline_size, w, h])
+        outline_font = TTF_OpenFont(font_path, pt_size)
+        TTF_SetFontOutline(outline_font, Int32(outline_size))
+        bg = TTF_RenderText_Blended_Wrapped(outline_font, text, SDL_Color(outline_color...), UInt32(wrap_length))
+        SDL_UpperBlitScaled(fg, C_NULL, bg, Int32[outline_size,outline_size, w, h])
         bg
     else
         fg
@@ -110,19 +110,19 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
 end
 
 function update_text_actor!(a::Actor, new_text::String)
-    font = SDL2.TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
+    font = TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
 
-    fg = SDL2.TTF_RenderText_Blended_Wrapped(
-        font, new_text, SDL2.SDL_Color(a.data[:font_color]...), UInt32(a.data[:wrap_length]))
+    fg = TTF_RenderText_Blended_Wrapped(
+        font, new_text, SDL_Color(a.data[:font_color]...), UInt32(a.data[:wrap_length]))
     
     w, h = size(fg)
     
     fg = if a.data[:outline_size] > 0
-        outline_font = SDL2.TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
-        SDL2.TTF_SetFontOutline(outline_font, Int32(a.data[:outline_size]))
-        bg = SDL2.TTF_RenderText_Blended_Wrapped(
-            outline_font, new_text, SDL2.SDL_Color(a.data[:outline_color]...), UInt32(a.data[:wrap_length]))
-        SDL2.SDL_UpperBlitScaled(fg, C_NULL, bg, Int32[a.data[:outline_size], a.data[:outline_size], w, h])
+        outline_font = TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
+        TTF_SetFontOutline(outline_font, Int32(a.data[:outline_size]))
+        bg = TTF_RenderText_Blended_Wrapped(
+            outline_font, new_text, SDL_Color(a.data[:outline_color]...), UInt32(a.data[:wrap_length]))
+        SDL_UpperBlitScaled(fg, C_NULL, bg, Int32[a.data[:outline_size], a.data[:outline_size], w, h])
         bg
     else
         fg
@@ -135,15 +135,15 @@ function update_text_actor!(a::Actor, new_text::String)
     return a
 end
 
-LoadBMP(src::String) = SDL2.SDL_LoadBMP_RW(src, 1)
+LoadBMP(src::String) = SDL_LoadBMP_RW(src, 1)
 
 function ImageFileAnimActor(anim_name::String, img_fns::Vector{String}; x=0, y=0, frame_delays=[], kv...)
     n = Int32.(length(img_fns))
     frame_delays = isempty(frame_delays) ? [ Millisecond(100) for _ in 1:n ] : frame_delays
-    surfaces = [ SDL2.IMG_Load(fn) for fn in img_fns ]
+    surfaces = [ IMG_Load(fn) for fn in img_fns ]
     w, h = Int32.(size(surfaces[begin]))
     
-    r = SDL2.SDL_Rect(x, y, w, h)
+    r = SDL_Rect(x, y, w, h)
     a = Actor(
         randstring(10),
         anim_name,
@@ -242,7 +242,7 @@ function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
     for i in 1:n
 
         # handling all frames as key frames
-        surfaces[i] = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
+        surfaces[i] = IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
         
         #=  THIS IS NOT WORKING YET
         if i == 1
@@ -251,11 +251,11 @@ function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
         # handling frame dispose "none"
         elseif frames[i-1][:dispose] == "none"
             # creating empty surface to blit on
-            surfaces[i] = SDL2.SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0)
-            #SDL2.SDL_FillRect(surfaces[i], C_NULL, 0x00000000)  # fill with black color
+            surfaces[i] = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0)
+            #SDL_FillRect(surfaces[i], C_NULL, 0x00000000)  # fill with black color
 
             # filling empty surface with previous frame
-            SDL2.SDL_BlitSurface(
+            SDL_BlitSurface(
                 surfaces[i-1],      # source surface
                 C_NULL,
                 surfaces[i],        # destination surface
@@ -263,9 +263,9 @@ function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
             )
 
             # blitting current frame on top of previous frame
-            SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
-            SDL2.SDL_BlitSurface(
-                SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png")),
+            IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
+            SDL_BlitSurface(
+                IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png")),
                 C_NULL,
                 surfaces[i],
                 Int32[ frames[i][:x_offset], frames[i][:y_offset], 0, 0 ]
@@ -273,9 +273,9 @@ function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
         
         # handling frame dispose "background"
         elseif frames[i-1][:dispose] == "background"
-            surfaces[i] = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_1.png"))
-            SDL2.SDL_BlitSurface(
-                SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png")),
+            surfaces[i] = IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_1.png"))
+            SDL_BlitSurface(
+                IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png")),
                 C_NULL,
                 surfaces[i],
                 Int32[ frames[i][:x_offset], frames[i][:y_offset], 0, 0 ]
@@ -283,14 +283,14 @@ function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
         
         # handling frame dispose "replace"
         elseif frames[i-1][:dispose] == "replace"
-            sf = SDL2.IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
+            sf = IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
             surfaces[i] = sf
         
         else
-            sf = SDL2.IMG_Load(joinpath(tempdir(), "$anim_name-frame_$i.png"))
-            surfaces[i] = SDL2.SDL_CreateRGBSurface(0, w, h, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000)
-            SDL2.SDL_FillRect(surfaces[i], C_NULL, 0x00000000)
-            SDL2.SDL_BlitSurface(
+            sf = IMG_Load(joinpath(tempdir(), "$anim_name-frame_$i.png"))
+            surfaces[i] = SDL_CreateRGBSurface(0, w, h, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000)
+            SDL_FillRect(surfaces[i], C_NULL, 0x00000000)
+            SDL_BlitSurface(
                 sf,
                 C_NULL,
                 surfaces[i],
@@ -301,7 +301,7 @@ function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
     end
 
     w, h = Int32.(size(surfaces[1]))
-    r = SDL2.SDL_Rect(x, y, w, h)
+    r = SDL_Rect(x, y, w, h)
     a = Actor(
         randstring(10),
         anim_name,
@@ -341,7 +341,7 @@ function draw(a::Actor, s::Screen=game[].screen[begin])
     if isempty(a.textures)
         
         for (i, sf) in enumerate(a.surfaces)
-            tx = SDL2.SDL_CreateTextureFromSurface(s.renderer, sf)
+            tx = SDL_CreateTextureFromSurface(s.renderer, sf)
 
             if tx == C_NULL
                 @warn "Failed to create texture $i for $(a.label)! Fall back to CPU?"
@@ -351,37 +351,37 @@ function draw(a::Actor, s::Screen=game[].screen[begin])
         end
 
         for sf in a.surfaces
-            SDL2.SDL_FreeSurface(sf)
+            SDL_FreeSurface(sf)
         end
     end
 
     if a.alpha < 255
-        SDL2.SDL_SetTextureBlendMode(a.textures[begin], SDL2.SDL_BLENDMODE_BLEND)
-        SDL2.SDL_SetTextureAlphaMod(a.textures[begin], a.alpha)
+        SDL_SetTextureBlendMode(a.textures[begin], SDL_BLENDMODE_BLEND)
+        SDL_SetTextureAlphaMod(a.textures[begin], a.alpha)
     end
 
     flip = if a.w < 0 && a.h < 0
-        SDL2.SDL_FLIP_BOTH
+        SDL_FLIP_BOTH
     elseif a.h < 0
-        SDL2.SDL_FLIP_VERTICAL
+        SDL_FLIP_VERTICAL
     elseif a.w < 0
-        SDL2.SDL_FLIP_HORIZONTAL
+        SDL_FLIP_HORIZONTAL
     else
-        SDL2.SDL_FLIP_NONE
+        SDL_FLIP_NONE
     end
 
-    SDL2.SDL_RenderCopyEx(
+    SDL_RenderCopyEx(
         s.renderer,
         a.textures[begin],
         C_NULL,
-        Ref(SDL2.SDL_Rect(Int32[ a.x, a.y, ceil(a.w * a.scale[1]), ceil(a.h * a.scale[2]) ]...)),
+        Ref(SDL_Rect(Int32[ a.x, a.y, ceil(a.w * a.scale[1]), ceil(a.h * a.scale[2]) ]...)),
         a.angle,
         a.rotate_center,
         flip,
     )
     #=
     if length(a.textures) == 1
-        SDL2.SDL_DestroyTexture(a.textures[begin])
+        SDL_DestroyTexture(a.textures[begin])
     end
     =#
 end
@@ -458,7 +458,7 @@ atan2(y, x) = pi - pi/2 * (1 + sign(x)) * (1 - sign(y^2)) - pi/4 * (2 + sign(x))
                             sign(x*y) * atan((abs(x) - abs(y)) / (abs(x) + abs(y)))
 
 
-function Base.size(s::Ptr{SDL2.SDL_Surface})
+function Base.size(s::Ptr{SDL_Surface})
     ss = unsafe_load(s)
     (ss.w, ss.h)
 end

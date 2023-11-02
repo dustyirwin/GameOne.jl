@@ -1,16 +1,4 @@
 
-struct OldScreen
-    window
-    renderer
-    height::Int
-    width::Int
-    background::Union{ARGB, Ptr{SDL_Surface}}
-
-    function OldScreen(name, w, h, background)
-        win, renderer = makeWinRenderer(name, w, h)
-        new(win, renderer, h, w, to_ARGB(background))
-    end
-end
 
 @kwdef mutable struct Screen
     name::String = ""
@@ -31,14 +19,12 @@ end
     end
 end
 
-
 #non ARGB colorant is converted to ARGB
 #ARGB colorant is rerturned as is
 # non colorant is returned as is (required since background is stored as an Union )
 to_ARGB(c) = c
 to_ARGB(c::ARGB) = c
 to_ARGB(c::Colorant) = ARGB(c)
-
 
 abstract type Geom end
 
@@ -99,8 +85,7 @@ mutable struct Circle <: Geom
     r::Int
 end
 
-
-Base.convert(T::Type{SDL2.SDL_Rect}, r::Rect) = SDL2.SDL_Rect(Cint.((r.x, r.y, r.w, r.h))...)
+Base.convert(T::Type{SDL_Rect}, r::Rect) = SDL_Rect(Cint.((r.x, r.y, r.w, r.h))...)
 
 function Base.setproperty!(s::Geom, p::Symbol, x)
     if hasfield(typeof(s), p)

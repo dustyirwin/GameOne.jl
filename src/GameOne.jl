@@ -1,8 +1,6 @@
 module GameOne
 
 using Reexport
-using SimpleDirectMediaLayer
-using SimpleDirectMediaLayer.LibSDL2
 using Base.Threads
 
 @reexport using Dates
@@ -13,8 +11,7 @@ using Base.Threads
 @reexport using Serialization
 @reexport using libwebp_jll
 @reexport using DataStructures
-
-const SDL2 = SimpleDirectMediaLayer
+@reexport using SimpleDirectMediaLayer.LibSDL2
 
 export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
@@ -22,7 +19,6 @@ export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique,
 export Game, Keys, Keymods, MouseButtons
 export Actor, ImageActor, TextActor, ImageFileAnimActor, GIFAnimActor, WebpAnimActor
 export Line, Rect, Triangle, Circle
-export SDL2
 
 
 include("keyboard.jl")
@@ -94,7 +90,9 @@ function mainloop(g::Game)
             sleep(0.5)
         end
 
+
         # Handle Events
+        event_ref = Ref{SDL_Event}()
         errorMsg = ""
 
         try
@@ -104,6 +102,13 @@ function mainloop(g::Game)
                 e, hadEvents = pollEvent!()
                 t = getEventType(e)
                 handleEvents!(g, e, t)
+
+                # window events need to be handled differently (to get window_id...)
+                evt = event_ref[]
+                evt_ty = evt.type
+                if (evt_ty == SDL_WINDOWEVENT)
+                    handleWindowEvent(g, evt)
+                end
             end
         catch e
             rethrow()
@@ -135,14 +140,17 @@ end
 function handleEvents!(g::Game, e, t)
     global playing, paused
 
-    if (t == SDL2.SDL_KEYDOWN || t == SDL2.SDL_KEYUP)
+    if (t == SDL_KEYDOWN || t == SDL_KEYUP)
         handleKeyPress(g::Game, e, t)
-    elseif (t == SDL2.SDL_MOUSEBUTTONUP || t == SDL2.SDL_MOUSEBUTTONDOWN)
+    
+    elseif (t == SDL_MOUSEBUTTONUP || t == SDL_MOUSEBUTTONDOWN)
         handleMouseClick(g::Game, e, t)
-        #TODO elseif (t == SDL2.MOUSEWHEEL); handleMouseScroll(e)
-    elseif (t == SDL2.SDL_MOUSEMOTION)
+        #TODO elseif (t == MOUSEWHEEL); handleMouseScroll(e)
+    
+    elseif (t == SDL_MOUSEMOTION)
         handleMousePan(g::Game, e, t)
-    elseif (t == SDL2.SDL_QUIT)
+    
+    elseif (t == SDL_QUIT)
         paused[] = playing[] = false
     end
 end
@@ -151,7 +159,7 @@ function handleKeyPress(g::Game, e, t)
     keySym = getKeySym(e)
     keyMod = getKeyMod(e)
     @debug "Keyboard" keySym, keyMod
-    if (t == SDL2.SDL_KEYDOWN)
+    if (t == SDL_KEYDOWN)
         push!(g.keyboard, keySym)
 
         # TODO: clean up keyboard errors... experiencing Argument Error: Invalid value for enum key: 1073741593 (audio volume up key)... and other un-mapped keys
@@ -161,7 +169,7 @@ function handleKeyPress(g::Game, e, t)
             @warn e exception = (e, catch_backtrace())
         end
 
-    elseif (t == SDL2.SDL_KEYUP)
+    elseif (t == SDL_KEYUP)
         delete!(g.keyboard, keySym)
     end
     #keyRepeat = (getKeyRepeat(e) != 0)
@@ -172,9 +180,9 @@ function handleMouseClick(g::Game, e, t)
     x = getMouseClickX(e)
     y = getMouseClickY(e)
     @debug "Mouse Button" button, x, y
-    if (t == SDL2.SDL_MOUSEBUTTONUP)
+    if (t == SDL_MOUSEBUTTONUP)
         Base.invokelatest(g.onmouseup_function, g, (x, y), MouseButtons.MouseButton(button))
-    elseif (t == SDL2.SDL_MOUSEBUTTONDOWN)
+    elseif (t == SDL_MOUSEBUTTONDOWN)
         Base.invokelatest(g.onmousedown_function, g, (x, y), MouseButtons.MouseButton(button))
     end
 end
@@ -184,6 +192,25 @@ function handleMousePan(g::Game, e, t)
     y = getMouseMoveY(e)
     @debug "Mouse Move" x, y
     Base.invokelatest(g.onmousemove_function, g, (x, y))
+end
+
+function handleWindowEvent(g::Game, e)
+    #event = unsafe_load(Ptr{SDL_WindowEvent}(pointer_from_objref(e)))
+    winevent = e.window.event
+    @info "Window event: $winevent"
+
+    # manage window focus
+    for s in g.screen
+        if (s.window_id == e.window.windowID) && (winevent == SDL_WINDOWEVENT_FOCUS_LOST || winevent == SDL_WINDOWEVENT_HIDDEN || winevent == SDL_WINDOWEVENT_MINIMIZED)
+            s.has_focus = false
+            @info "Window focus lost on window $(e.window.windowID)"
+
+        elseif (winevent == SDL_WINDOWEVENT_FOCUS_GAINED || winevent == SDL_WINDOWEVENT_SHOWN)
+            s.has_focus = true
+            @info "Window focus gained on window $(e.window.windowID)"
+
+        end
+    end
 end
 
 getKeySym(e) = bitcat(UInt32, e[24:-1:21])
@@ -302,7 +329,7 @@ end
 function start_text_input(g::Game, terminal::Actor)
     done = false
     comp = terminal.label
-    SDL2.SDL_StartTextInput()
+    SDL_StartTextInput()
 
     while !done
         event, success = pollEvent!()
@@ -316,9 +343,9 @@ function start_text_input(g::Game, terminal::Actor)
             key_sym = event_array[21]
             @info "key sym: $key_sym"
 
-            #SDL2.SDL_GetModState() |> string
+            #SDL_GetModState() |> string
 
-            if getEventType(event) == SDL2.SDL_TEXTINPUT
+            if getEventType(event) == SDL_TEXTINPUT
                 char = getTextInputEventChar(event)
                 comp *= char
                 comp = comp == ">`" ? ">" : comp
@@ -329,14 +356,14 @@ function start_text_input(g::Game, terminal::Actor)
                 #= Paste from clipboard
                 # KEYMODs: LCTRL = 4160 | RCTRL = 4096
 
-                #elseif event_type == SDL2.SDL_KEYDOWN && (SDL2.SDL_GetModState() |> string == "4160" || SDL2.SDL_GetModState() |> string == "4096") && (key_sym == "v" || key_sym == "V")
-                    comp = comp * "$(unsafe_string(SDL2.SDL_GetClipboardText()))"
+                #elseif event_type == SDL_KEYDOWN && (SDL_GetModState() |> string == "4160" || SDL_GetModState() |> string == "4096") && (key_sym == "v" || key_sym == "V")
+                    comp = comp * "$(unsafe_string(SDL_GetClipboardText()))"
                     update_text_actor!(terminal, comp)
                     =#
             elseif length(comp) > 1 && getEventType(event_array) == 768 && key_sym == 8  # "\b" backspace key
                 comp = comp[1:end-1]
                 update_text_actor!(terminal, comp)
-                #draw(g); SDL2.SDL_RenderPresent(g.screen.renderer)
+                #draw(g); SDL_RenderPresent(g.screen.renderer)
 
                 @info "BackspaceEvent: $(getEventType(event)) comp: $comp"
 
@@ -354,7 +381,7 @@ function start_text_input(g::Game, terminal::Actor)
                     update_text_actor!(terminal, comp)
                 end
 
-            elseif getEventType(event) == SDL2.SDL_KEYDOWN && key_sym == 13 #"\r" # return key
+            elseif getEventType(event) == SDL_KEYDOWN && key_sym == 13 #"\r" # return key
                 @info "QuitEvent: $(getEventType(event))"
                 @info "Composition: $comp"
 
@@ -368,14 +395,14 @@ function start_text_input(g::Game, terminal::Actor)
 
             # Update screen(s)
             for s in g.screen
-                SDL2.SDL_RenderClear(s.renderer)
+                SDL_RenderClear(s.renderer)
                 draw(g)
-                SDL2.SDL_RenderPresent(s.renderer)
+                SDL_RenderPresent(s.renderer)
             end
         end
     end
 
-    SDL2.SDL_StopTextInput()
+    SDL_StopTextInput()
     terminal.label = comp[2:end]
 end
 
@@ -385,29 +412,29 @@ end
 struct QuitException <: Exception end
 
 function getSDLError()
-    x = SDL2.SDL_GetError()
+    x = SDL_GetError()
     return unsafe_string(x)
 end
 
 function initSDL()
-    SDL2.SDL_GL_SetAttribute(SDL2.SDL_GL_MULTISAMPLEBUFFERS, 4)
-    SDL2.SDL_GL_SetAttribute(SDL2.SDL_GL_MULTISAMPLESAMPLES, 4)
-    r = SDL2.SDL_Init(UInt32(SDL2.SDL_INIT_VIDEO | SDL2.SDL_INIT_AUDIO))
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 4)
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4)
+    r = SDL_Init(UInt32(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
     if r != 0
         error("Unable to initialise SDL: $(getSDLError())")
     end
-    SDL2.TTF_Init()
+    TTF_Init()
 
-    mix_init_flags = SDL2.MIX_INIT_FLAC | SDL2.MIX_INIT_MP3 | SDL2.MIX_INIT_OGG
-    inited = SDL2.Mix_Init(Int32(mix_init_flags))
+    mix_init_flags = MIX_INIT_FLAC | MIX_INIT_MP3 | MIX_INIT_OGG
+    inited = Mix_Init(Int32(mix_init_flags))
     if inited & mix_init_flags != mix_init_flags
         @warn "Failed to initialise audio mixer properly. Sounds may not play correctly\n$(getSDLError())"
     end
 
-    device = SDL2.Mix_OpenAudio(Int32(22050), UInt16(SDL2.AUDIO_S16SYS), Int32(2), Int32(1024))
+    device = Mix_OpenAudio(Int32(22050), UInt16(AUDIO_S16SYS), Int32(2), Int32(1024))
     if device != 0
         @warn "No audio device available, sounds and music will not play.\n$(getSDLError())"
-        SDL2.Mix_CloseAudio()
+        Mix_CloseAudio()
     end
 end
 
@@ -427,12 +454,12 @@ function quitSDL(g)
 end
 
 function quitSDL()
-    SDL2.Mix_HaltMusic()
-    SDL2.Mix_HaltChannel(Int32(-1))
-    SDL2.Mix_CloseAudio()
-    SDL2.TTF_Quit()
-    SDL2.Mix_Quit()
-    SDL2.SDL_Quit()
+    Mix_HaltMusic()
+    Mix_HaltChannel(Int32(-1))
+    Mix_CloseAudio()
+    TTF_Quit()
+    Mix_Quit()
+    SDL_Quit()
 end
 
 function main()

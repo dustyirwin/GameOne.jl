@@ -1,7 +1,7 @@
 function pollEvent!()
     SDL_Event() = Array{UInt8}(zeros(56))
     e = SDL_Event()
-    success = (SDL2.SDL_PollEvent(e) != 0)
+    success = (SDL_PollEvent(e) != 0)
     e, success
 end
 
@@ -9,7 +9,7 @@ function getEventType(e::Array{UInt8})
     bitcat(UInt32, e[4:-1:1])
 end
 
-function getEventType(e::SDL2.SDL_Event)
+function getEventType(e::SDL_Event)
     bitcat(UInt32, e[4:-1:1])
 end
 
