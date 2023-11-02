@@ -34,13 +34,15 @@ include("screen.jl")
 include("actor.jl")
 
 
-#Magic variables
+# Magic variables to check for in the game module
 const HEIGHTSYMBOL = :SCREEN_HEIGHT
 const WIDTHSYMBOL = :SCREEN_WIDTH
+const SCREENSYMBOL = :SCREEN_NAME
 const BACKSYMBOL = :BACKGROUND
 
 mutable struct Game
-    screen::Screen
+    screen::Array{Screen}
+    screen_names::Array{String}
     location::String
     game_module::Module
     keyboard::Keyboard
@@ -60,12 +62,12 @@ const paused = Ref{Bool}(false)
 
 #function __init__() end
 
-function initscreen(gm::Module, name::String)
-    h = getifdefined(gm, HEIGHTSYMBOL, 600)
-    w = getifdefined(gm, WIDTHSYMBOL, 800)
-    background = getifdefined(gm, BACKSYMBOL, ARGB(colorant"white"))
+function initscreen(gm::Module, name::String, screen_num::Int=1)
+    h = getifdefined(gm, HEIGHTSYMBOL, repeat([600],screen_num))[screen_num]
+    w = getifdefined(gm, WIDTHSYMBOL, repeat([800], screen_num))[screen_num]
+    background = getifdefined(gm, BACKSYMBOL, repeat([ARGB(colorant"black")],screen_num))[screen_num]
     if !(background isa Colorant)
-        background = image_surface(background)
+        background = image_surface(background[screen_num])
     end
     s = Screen(name, w, h, background)
     clear(s)
@@ -107,9 +109,12 @@ function mainloop(g::Game)
             rethrow()
         end
 
-        clear(g.screen)
+        clear.(g.screen)
         Base.invokelatest(g.render_function, g)
-        SDL_RenderPresent(g.screen.renderer)
+
+        for s in g.screen
+            SDL_RenderPresent(s.renderer)
+        end
 
         dt = elapsed(timer)
         # Don't let the game proceed at fewer than this frames per second. If an
@@ -153,7 +158,7 @@ function handleKeyPress(g::Game, e, t)
         try
             Base.invokelatest(g.onkey_function, g, Keys.Key(keySym), Keymods.Keymod(keyMod))
         catch e
-            @error e exception = (e, catch_backtrace())
+            @warn e exception = (e, catch_backtrace())
         end
 
     elseif (t == SDL2.SDL_KEYUP)
@@ -254,14 +259,15 @@ function initgame(jlf::String, external::Bool)
         Base.include(g.game_module, jlf)
     end
 
+    g.screen_names = getifdefined(g.game_module, :SCREEN_NAME, ["Main", "Secondary"])
     g.update_function = getfn(g.game_module, :update, 2)
     g.render_function = getfn(g.game_module, :draw, 3)
     g.onkey_function = getfn(g.game_module, :on_key_down, 3)
     g.onmouseup_function = getfn(g.game_module, :on_mouse_up, 3)
     g.onmousedown_function = getfn(g.game_module, :on_mouse_down, 3)
     g.onmousemove_function = getfn(g.game_module, :on_mouse_move, 2)
-    g.screen = initscreen(g.game_module, "GameOne::" * name)
-    clear(g.screen)
+    g.screen = [ initscreen(g.game_module, name, i) for (i,name) in enumerate(g.screen_names) ]
+    clear.(g.screen)
     return g
 end
 
@@ -360,10 +366,12 @@ function start_text_input(g::Game, terminal::Actor)
                 done = true
             end
 
-            # Update screen
-            SDL2.SDL_RenderClear(g.screen.renderer)
-            draw(g)
-            SDL2.SDL_RenderPresent(g.screen.renderer)
+            # Update screen(s)
+            for s in g.screen
+                SDL2.SDL_RenderClear(s.renderer)
+                draw(g)
+                SDL2.SDL_RenderPresent(s.renderer)
+            end
         end
     end
 
@@ -408,9 +416,11 @@ function quitSDL(g)
     # https://github.com/n0name/2D_Engine/issues/3
     @debug "Quitting the game"
     clear!(scheduler[])
-    SDL_DelEventWatch(window_event_watcher_cfunc[], g.screen.window);
-    SDL_DestroyRenderer(g.screen.renderer)
-    SDL_DestroyWindow(g.screen.window)
+    for s in g.screen
+        SDL_DelEventWatch(window_event_watcher_cfunc[], s.window);
+        SDL_DestroyRenderer(s.renderer)
+        SDL_DestroyWindow(s.window)
+    end
     #Run all finalisers
     GC.gc();GC.gc();
     quitSDL()

@@ -7,7 +7,7 @@ SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16)
 
 @assert SDL_Init(SDL_INIT_EVERYTHING) == 0 "error initializing SDL: $(unsafe_string(SDL_GetError()))"
 
-@kwdef mutable struct LWindow
+@kwdef mutable struct SCreen
     name::String = ""
     window::Union{Ptr{SDL_Window}, Nothing}=nothing
     renderer::Union{Ptr{SDL_Renderer}, Nothing}=nothing
