@@ -90,29 +90,21 @@ function mainloop(g::Game)
             sleep(0.5)
         end
 
-
         # Handle Events
-        event_ref = Ref{SDL_Event}()
         errorMsg = ""
 
         try
-            hadEvents = true
-            e_time = 0
-            while hadEvents
-                e, hadEvents = pollEvent!()
-                t = getEventType(e)
+            event_ref = Ref{SDL_Event}()
+            while Bool(SDL_PollEvent(event_ref))
+                e = event_ref[]
+                t = e.type
                 handleEvents!(g, e, t)
-
-                # window events need to be handled differently (to get window_id...)
-                evt = event_ref[]
-                evt_ty = evt.type
-                if (evt_ty == SDL_WINDOWEVENT)
-                    handleWindowEvent(g, evt)
-                end
             end
         catch e
             rethrow()
         end
+
+
 
         clear.(g.screen)
         Base.invokelatest(g.render_function, g)
@@ -141,14 +133,17 @@ function handleEvents!(g::Game, e, t)
     global playing, paused
 
     if (t == SDL_KEYDOWN || t == SDL_KEYUP)
-        handleKeyPress(g::Game, e, t)
+        handleKeyPress(g::Game, e.key, t)
     
     elseif (t == SDL_MOUSEBUTTONUP || t == SDL_MOUSEBUTTONDOWN)
-        handleMouseClick(g::Game, e, t)
+        handleMouseClick(g::Game, e.button, t)
         #TODO elseif (t == MOUSEWHEEL); handleMouseScroll(e)
     
     elseif (t == SDL_MOUSEMOTION)
-        handleMousePan(g::Game, e, t)
+        handleMousePan(g::Game, e.motion, t)
+
+    elseif (t == SDL_WINDOWEVENT)
+        handleWindowEvent(g::Game, e, t)
     
     elseif (t == SDL_QUIT)
         paused[] = playing[] = false
@@ -156,57 +151,46 @@ function handleEvents!(g::Game, e, t)
 end
 
 function handleKeyPress(g::Game, e, t)
-    keySym = getKeySym(e)
-    keyMod = getKeyMod(e)
+    keySym = e.keysym.sym
+    keyMod = e.keysym.mod
     @debug "Keyboard" keySym, keyMod
-    if (t == SDL_KEYDOWN)
-        push!(g.keyboard, keySym)
-
-        # TODO: clean up keyboard errors... experiencing Argument Error: Invalid value for enum key: 1073741593 (audio volume up key)... and other un-mapped keys
-        try
+    try
+        if (e.type == SDL_KEYDOWN)
+            push!(g.keyboard, keySym)
             Base.invokelatest(g.onkey_function, g, Keys.Key(keySym), Keymods.Keymod(keyMod))
-        catch e
-            @warn e exception = (e, catch_backtrace())
+            
+        elseif (t == SDL_KEYUP)
+            delete!(g.keyboard, keySym)
         end
-
-    elseif (t == SDL_KEYUP)
-        delete!(g.keyboard, keySym)
+    catch e
+        @warn e exception = (e, catch_backtrace())
     end
     #keyRepeat = (getKeyRepeat(e) != 0)
 end
 
 function handleMouseClick(g::Game, e, t)
-    button = getMouseButtonClick(e)
-    x = getMouseClickX(e)
-    y = getMouseClickY(e)
     @debug "Mouse Button" button, x, y
-    if (t == SDL_MOUSEBUTTONUP)
-        Base.invokelatest(g.onmouseup_function, g, (x, y), MouseButtons.MouseButton(button))
-    elseif (t == SDL_MOUSEBUTTONDOWN)
-        Base.invokelatest(g.onmousedown_function, g, (x, y), MouseButtons.MouseButton(button))
+    if (e.type == SDL_MOUSEBUTTONUP)
+        Base.invokelatest(g.onmouseup_function, g, (e.x, e.y), MouseButtons.MouseButton(e.button))
+    elseif (e.type == SDL_MOUSEBUTTONDOWN)
+        Base.invokelatest(g.onmousedown_function, g, (e.x, e.y), MouseButtons.MouseButton(e.button))
     end
 end
 
 function handleMousePan(g::Game, e, t)
-    x = getMouseMoveX(e)
-    y = getMouseMoveY(e)
-    @debug "Mouse Move" x, y
-    Base.invokelatest(g.onmousemove_function, g, (x, y))
+    @debug "Mouse Move" e.x, e.y
+    Base.invokelatest(g.onmousemove_function, g, (e.x, e.y))
 end
 
-function handleWindowEvent(g::Game, e)
-    #event = unsafe_load(Ptr{SDL_WindowEvent}(pointer_from_objref(e)))
-    winevent = e.window.event
-    @info "Window event: $winevent"
-
+function handleWindowEvent(g::Game, e, t)
     # manage window focus
     for s in g.screen
-        if (s.window_id == e.window.windowID) && (winevent == SDL_WINDOWEVENT_FOCUS_LOST || winevent == SDL_WINDOWEVENT_HIDDEN || winevent == SDL_WINDOWEVENT_MINIMIZED)
-            s.has_focus = false
+        if (s.window_id == e.window.windowID)
+            s.has_focus = true
             @info "Window focus lost on window $(e.window.windowID)"
 
-        elseif (winevent == SDL_WINDOWEVENT_FOCUS_GAINED || winevent == SDL_WINDOWEVENT_SHOWN)
-            s.has_focus = true
+        else
+            s.has_focus = false
             @info "Window focus gained on window $(e.window.windowID)"
 
         end
