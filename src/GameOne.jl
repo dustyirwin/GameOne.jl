@@ -267,7 +267,7 @@ end
 
 
 function getfn(m::Module, s::Symbol, maxargs = 3)
-    @info "grabbing function $s in module $m"
+    @debug "grabbing function $s in module $m"
     if isdefined(m, s)
         fn = getfield(m, s)
         ms = copy(methods(fn).ms)
