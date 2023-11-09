@@ -1,24 +1,26 @@
 module GameOne
 
-using Reexport
-using Base.Threads
+import Reexport: @reexport
+
+@reexport import Base.Threads: @threads, Atomic
+@reexport import Colors: @colorant_str, ARGB, Colorant, red, green, blue, alpha
+@reexport import Dates: now, Millisecond
+@reexport import Random: rand, randstring
+@reexport import Images: load
+@reexport import Serialization: serialize, deserialize
+@reexport import libwebp_jll: webpmux, dwebp
+@reexport import OrderedCollections: OrderedDict
+@reexport import ShiftedArrays: circshift
+
+@reexport using SimpleDirectMediaLayer.LibSDL2
 
 import SimpleDirectMediaLayer
-
-@reexport using Dates
-@reexport using Random
-@reexport using Images
-@reexport using Logging
-@reexport using ShiftedArrays
-@reexport using Serialization
-@reexport using libwebp_jll
-@reexport using DataStructures
-@reexport using SimpleDirectMediaLayer.LibSDL2
+const SDL2 = SimpleDirectMediaLayer.LibSDL2
 
 export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
     getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL
-export Game, Keys, Keymods, MouseButtons
+export Game, Keys, KeyMods, MouseButton
 export Actor, ImageActor, TextActor, ImageFileAnimActor, GIFAnimActor, WebpAnimActor
 export Line, Rect, Triangle, Circle
 
@@ -61,7 +63,7 @@ const paused = Ref{Bool}(false)
 #function __init__() end
 
 function initscreen(gm::Module, name::String, screen_num::Int=1)
-    h = getifdefined(gm, HEIGHTSYMBOL, repeat([600],screen_num))[screen_num]
+    h = getifdefined(gm, HEIGHTSYMBOL, repeat([600], screen_num))[screen_num]
     w = getifdefined(gm, WIDTHSYMBOL, repeat([800], screen_num))[screen_num]
     background = getifdefined(gm, BACKSYMBOL, repeat([ARGB(colorant"black")],screen_num))[screen_num]
     if !(background isa Colorant)
@@ -88,7 +90,7 @@ function mainloop(g::Game)
     while (true)
         #Don't run if game is paused by system (resizing, lost focus, etc)
         while window_paused[] != 0
-            _ = pollEvent!()
+            _ = pollEvent()
             sleep(0.5)
         end
 
@@ -124,6 +126,7 @@ function mainloop(g::Game)
         start!(timer)
         Base.invokelatest(g.update_function, g, dt)
         tick!(scheduler[])
+        
         if (playing[] == false)
             throw(QuitException())
         end
@@ -183,11 +186,11 @@ end
 function handleWindowEvent(g::Game, e, t)
     # manage window focus
     for s in g.screen
-        if (s.window_id == e.window.windowID) && (e.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
+        if (s.window_id == e.window.windowID) && !s.has_focus
             s.has_focus = true
             @info "Window $(e.window.windowID) gained focus"
 
-        elseif (s.window_id == e.window.windowID) && (e.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
+        elseif s.has_focus
             s.has_focus = false
             @info "Window $(e.window.windowID) lost focus"
 
