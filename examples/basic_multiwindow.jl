@@ -1,13 +1,14 @@
 
 # ref: https://www.geeksforgeeks.org/sdl-library-in-c-c-with-examples/
 using SimpleDirectMediaLayer.LibSDL2
+using GameOne
 
 SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 16)
 SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16)
 
 @assert SDL_Init(SDL_INIT_EVERYTHING) == 0 "error initializing SDL: $(unsafe_string(SDL_GetError()))"
 
-@kwdef mutable struct SCreen
+@kwdef mutable struct Screen
     name::String = ""
     window::Union{Ptr{SDL_Window}, Nothing}=nothing
     renderer::Union{Ptr{SDL_Renderer}, Nothing}=nothing
@@ -20,22 +21,26 @@ SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16)
     window_id::Cint=Cint(0)
 end
 
-windows = []
+screen = []
 
 for i in 1:2
-    win = LWindow()
+    win = Screen()
     win.name = "Game$i"
     win.window = SDL_CreateWindow(win.name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, win.width, win.height, SDL_WINDOW_SHOWN)
     win.renderer = SDL_CreateRenderer(win.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC)
     win.window_id = SDL_GetWindowID(win.window)
     SDL_SetWindowResizable(win.window, SDL_TRUE)
-    push!(windows, win)
+    push!(screen, win)
 end
 
 surface1 = IMG_Load(joinpath(@__DIR__, "images", "alien.png"))
-texs = SDL_CreateTextureFromSurface.([w.renderer for w in windows], surface1)
-SDL_FreeSurface(surface1)
+surface2 = IMG_Load(joinpath(@__DIR__, "images", "alien_hurt.png"))
 
+texs = [ SDL_CreateTextureFromSurface(screen[i].renderer, surf) for (i,surf) in enumerate([surface1, surface2]) ]
+
+SDL_FreeSurface.([surface1, surface2])
+
+# getting texture bounding box width and height
 w_ref, h_ref = Ref{Cint}(0), Ref{Cint}(0)
 SDL_QueryTexture(texs[1], C_NULL, C_NULL, w_ref, h_ref)
 
@@ -75,27 +80,36 @@ try
                 else
                     break
                 end
-            elseif evt_ty == SDL_WINDOWEVENT
-                for w in windows
-                    if w.window_id == evt.window.windowID
-                        w.has_focus = true
-                    else
-                        w.has_focus = false
+            elseif evt_ty == SDL_MOUSEMOTION
+                for s in screen
+                    if s.has_focus && MouseButton.LEFT
+                        xs[ s.window_id ] = evt.motion.x
+                        ys[ s.window_id ] = evt.motion.y
                     end
                 end
 
-                @info "Window focus gained on window $(evt.window.windowID)"
+            elseif evt_ty == SDL_WINDOWEVENT
+                for s in screen
+                    if (s.window_id == evt.window.windowID)
+                        s.has_focus = true
+                        @info "Window $(evt.window.windowID) gained focus"
+                    else
+                        s.has_focus = false
+                        @info "Window $(evt.window.windowID) lost focus"
+                    end
+                end
             end
         end
         
-        for (i,win,t) in zip(1:2, windows, texs)
-            if win.has_focus
-                SDL_RenderClear(win.renderer)
+        for (i,s,t) in zip(1:length(screen), screen, texs)
+            
+            if s.has_focus
+                SDL_RenderClear(s.renderer)
                 dest_refs[i][] = SDL_Rect(xs[i], ys[i], w, h)
-                SDL_RenderCopy(win.renderer, t, C_NULL, dest_refs[i])
-                SDL_RenderPresent(win.renderer)
+                SDL_RenderCopy(s.renderer, t, C_NULL, dest_refs[i])
+                SDL_RenderPresent(s.renderer)
             else
-                SDL_RenderPresent(win.renderer)
+                SDL_RenderPresent(s.renderer)
             end
         end
 
@@ -103,7 +117,7 @@ try
     end
 finally
     SDL_DestroyTexture.(texs)
-    SDL_DestroyRenderer.([w.renderer for w in windows])
-    SDL_DestroyWindow.([w.window for w in windows])
+    SDL_DestroyRenderer.([s.renderer for s in screen])
+    SDL_DestroyWindow.([s.window for s in screen])
     SDL_Quit()
 end

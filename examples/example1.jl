@@ -1,5 +1,4 @@
-using Random
-using Dates
+
 using GameOne
 
 # Width of the game window
@@ -17,7 +16,7 @@ global dy = 2
 
 
 function next_frame!(a::Actor)
-    a.textures = circshift(a.textures, -1)
+    a.textures = GameOne.circshift(a.textures, -1)
     a.data[:then] = now()
     return a
 end
