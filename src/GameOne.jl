@@ -6,11 +6,9 @@ import Reexport: @reexport
 @reexport import Colors: FixedPointNumbers, @colorant_str, ARGB, Colorant, red, green, blue, alpha
 @reexport import Dates: now, Millisecond
 @reexport import Random: rand, randstring, shuffle, shuffle!
-@reexport import FileIO: load
-@reexport import Serialization: serialize, deserialize
+@reexport import ShiftedArrays: circshift
 @reexport import libwebp_jll: webpmux, dwebp
 @reexport import DataStructures: OrderedDict
-@reexport import ShiftedArrays: circshift
 
 @reexport using SimpleDirectMediaLayer.LibSDL2
 
@@ -21,7 +19,7 @@ export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
     getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL
 export Game, Keys, KeyMods, MouseButton
-export Actor, ImageActor, TextActor, ImageFileAnimActor, GIFAnimActor, WebpAnimActor
+export Actor, TextActor, ImageFileActor, ImageMemActor, WebpFileActor
 export Line, Rect, Triangle, Circle
 
 
@@ -41,8 +39,8 @@ const SCREENSYMBOL = :SCREEN_NAME
 const BACKSYMBOL = :BACKGROUND
 
 mutable struct Game
-    screen::Array{Screen}
-    screen_names::Array{String}
+    screen::Vector{Screen}
+    screen_names::Vector{String}
     location::String
     game_module::Module
     keyboard::Keyboard
@@ -354,14 +352,14 @@ function start_text_input(g::Game, terminal::Actor)
 
             elseif getEventType(event_array) == 768 && key_sym == 81
                 if haskey(terminal.data, :command_history) && length(terminal.data[:command_history]) > 0
-                    terminal.data[:command_history] = circshift(terminal.data[:command_history], 1)
+                    terminal.data[:command_history] = copy(GameOne.circshift(terminal.data[:command_history], 1))
                     comp = terminal.data[:command_history][begin]
                     update_text_actor!(terminal, comp)
                 end
 
             elseif getEventType(event_array) == 768 && key_sym == 82
                 if haskey(terminal.data, :command_history) && length(terminal.data[:command_history]) > 0
-                    terminal.data[:command_history] = circshift(terminal.data[:command_history], -1)
+                    terminal.data[:command_history] = copy(GameOne.circshift(terminal.data[:command_history], -1))
                     comp = terminal.data[:command_history][begin]
                     update_text_actor!(terminal, comp)
                 end
@@ -371,10 +369,10 @@ function start_text_input(g::Game, terminal::Actor)
                 @info "Composition: $comp"
 
                 if !haskey(terminal.data, :command_history)
-                    terminal.data[:command_history] = circshift([""], 0)
+                    terminal.data[:command_history] = copy(GameOne.circshift([""], 0))
                 end
                 
-                terminal.data[:command_history] = circshift([ Set([ terminal.data[:command_history]..., comp ])... ], 0)
+                terminal.data[:command_history] = copy(GameOne.circshift([ Set([ terminal.data[:command_history]..., comp ])... ], 0))
     
                 done = true
             end

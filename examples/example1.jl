@@ -1,5 +1,6 @@
 
 using GameOne
+using Images
 
 # Width of the game window
 SCREEN_WIDTH = [ 800, 400 ]
@@ -13,7 +14,8 @@ SCREEN_NAME = [ "Main", "Secondary" ]
 # Globals to store the velocity of the actor
 global dx = 2
 global dy = 2
-
+global dx2 = 3
+global dy2 = 3
 
 function next_frame!(a::Actor)
     a.textures = copy(GameOne.circshift(a.textures, -1))
@@ -22,7 +24,11 @@ function next_frame!(a::Actor)
 end
 
 # Create an `ImageActor` object from a PNG file
-alien = ImageActor("images/alien.png", load("$(@__DIR__)/images/alien.png"))
+alien = ImageFileActor("alien1", ["$(@__DIR__)/images/alien.png"])
+
+alien_hurt_img = load("$(@__DIR__)/images/alien_hurt.png")
+alien_ok_img = load("$(@__DIR__)/images/alien.png")
+alien2 = ImageMemActor("alien2", alien_hurt_img)
 
 # Create an `TextActor` object from an empty string for terminal use
 terminal = TextActor(">", "$(@__DIR__)/fonts/OpenSans-Regular.ttf", outline_size=1, pt_size=35)
@@ -40,14 +46,14 @@ label.y = 25
 
 #load a custom animation
 anim_fns = ["$(@__DIR__)/images/FireElem1/Visible$i.png" for i in 0:7]
-anim = ImageFileAnimActor("fe", anim_fns)
+anim = ImageFileActor("fe", anim_fns)
 anim.data[:next_frame] = true
 anim.y = 50
-anim.x = 10
+anim.x = 10 
 
 
 webp_fn = "Aura of Silence_001.webp"
-wanim = WebpAnimActor(webp_fn, "$(@__DIR__)/images/$webp_fn")
+wanim = WebpFileActor(webp_fn, "$(@__DIR__)/images/$webp_fn")
 wanim.data[:next_frame] = true
 wanim.y = 100
 wanim.x = 250
@@ -62,6 +68,7 @@ function draw(g::Game)
     draw(anim, g.screen[begin])
     draw(wanim, g.screen[begin])
     draw(alien, g.screen[begin])
+    draw(alien2, g.screen[begin])
     draw(label, g.screen[begin])
     draw(terminal, g.screen[begin])
 end
@@ -73,9 +80,11 @@ end
 # * if the up/down/left/right keys are pressed, we change the velocity to move the actor in the direction of the keypress
 
 function update(g::Game)
-    global dx, dy, anim, wanim
+    global dx, dy, dx2, dy2, anim, wanim
     alien.position.x += dx
     alien.position.y += dy
+    alien2.position.x += dx2
+    alien2.position.y += dy2
 
     if anim.data[:next_frame]
         if now() - anim.data[:then] > Millisecond(120)
@@ -89,20 +98,27 @@ function update(g::Game)
         end
     end
 
-    #=
-    =#
-
-    if alien.x > 400 - alien.w || alien.x < 2
+    if alien.x > 798 - alien.w || alien.x < 2
         dx = -dx
-        play_sound("examples/sounds/eep.wav")
+        play_sound(joinpath(@__DIR__, "sounds","eep.wav"))
     end
 
-    if alien.y > 400 - alien.h || alien.y < 2
+    if alien.y > 598 - alien.h || alien.y < 2
         dy = -dy
-        play_sound("examples/sounds/eep.wav")
+        play_sound(joinpath(@__DIR__, "sounds", "eep.wav"))
     end
 
-    #=
+    if alien2.x > 798 - alien2.w || alien2.x < 2
+        dx2 = -dx2
+        play_sound(joinpath(@__DIR__, "sounds", "eep.wav"))
+    end
+
+    if alien2.y > 598 - alien2.h || alien2.y < 2
+        dy2 = -dy2
+        play_sound(joinpath(@__DIR__, "sounds", "eep.wav"))
+    end
+
+
     if g.keyboard.DOWN
         dy = 2
     elseif g.keyboard.UP
@@ -112,6 +128,7 @@ function update(g::Game)
     elseif g.keyboard.RIGHT
         dx = 2
     end
+    #=
     =#
 end
 
@@ -157,3 +174,4 @@ function on_key_down(g, key, keymod)
 end
 
 
+#rungame()
