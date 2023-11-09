@@ -22,7 +22,7 @@ function next_frame!(a::Actor)
 end
 
 # Create an `ImageActor` object from a PNG file
-alien = ImageActor("images/alien.png", load("$(@__DIR__)/images/alien.png"))
+alien = ImagesActor("images/alien.png", ["$(@__DIR__)/images/alien.png"])
 
 # Create an `TextActor` object from an empty string for terminal use
 terminal = TextActor(">", "$(@__DIR__)/fonts/OpenSans-Regular.ttf", outline_size=1, pt_size=35)
@@ -40,10 +40,10 @@ label.y = 25
 
 #load a custom animation
 anim_fns = ["$(@__DIR__)/images/FireElem1/Visible$i.png" for i in 0:7]
-anim = ImageFileAnimActor("fe", anim_fns)
+anim = ImagesActor("fe", anim_fns)
 anim.data[:next_frame] = true
 anim.y = 50
-anim.x = 10
+anim.x = 10 
 
 
 webp_fn = "Aura of Silence_001.webp"

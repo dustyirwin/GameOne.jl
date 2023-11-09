@@ -12,49 +12,6 @@ mutable struct Actor
     data::Dict{Symbol,Any}
 end
 
-function ImageActor(img_name::String, img; x=0, y=0, kv...) 
-    img = ARGB.(transpose(img))
-    w, h = Int32.(size(img))
-    sf = SDL_CreateRGBSurfaceWithFormatFrom(
-        img,
-        w,
-        h,
-        Int32(32),
-        Int32(4w),
-        SDL_PIXELFORMAT_ARGB32,
-    )
-
-    r = SDL_Rect(x, y, w, h)
-    a = Actor(
-        randstring(10),
-        img_name,
-        [sf],
-        [],
-        r,
-        [1.,1.],
-        C_NULL,
-        0,
-        255,
-        Dict(
-            :anim => false,
-            :label=>img_name,
-            :img=>img,
-            :sz=>[w,h],
-            :fade_in=>false,           #  change to fade_in? remove anim-specific keys (add k,v when anim is run?)
-            :fade_out=>false,
-            :spin=>false,
-            :spin_cw=>true,
-            :shake=>false,
-            :mouse_offset=>Int32[0,0],
-        )
-    )
-
-    for (k, v) in kv
-        setproperty!(a, k, v)
-    end
-    return a
-end
-
 function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
     font_color = Int[255, 255, 255, 255], outline_color = Int[0, 0, 0, 225],
     wrap_length = 800, outline_size = 0, kv...)
@@ -139,7 +96,7 @@ end
 
 LoadBMP(src::String) = SDL_LoadBMP_RW(src, 1)
 
-function ImageFileAnimActor(anim_name::String, img_fns::Vector{String}; x=0, y=0, frame_delays=[], kv...)
+function ImagesActor(anim_name::String, img_fns::Vector{String}; x=0, y=0, frame_delays=[], kv...)
     n = Int32.(length(img_fns))
     frame_delays = isempty(frame_delays) ? [ Millisecond(100) for _ in 1:n ] : frame_delays
     surfaces = [ IMG_Load(fn) for fn in img_fns ]
