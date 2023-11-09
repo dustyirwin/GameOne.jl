@@ -24,10 +24,10 @@ function next_frame!(a::Actor)
 end
 
 # Create an `ImageActor` object from a PNG file
-alien = ImageFileActor("alien1", ["$(@__DIR__)/images/alien.png"])
+alien = ImageFilesActor("alien1", ["$(@__DIR__)/images/alien.png"])
 
 alien_hurt_img = load("$(@__DIR__)/images/alien_hurt.png")
-alien_ok_img = load("$(@__DIR__)/images/alien.png")
+alien_ok_img = ["$(@__DIR__)/images/alien.png"]
 alien2 = ImageMemActor("alien2", alien_hurt_img)
 
 # Create an `TextActor` object from an empty string for terminal use

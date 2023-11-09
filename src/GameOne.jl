@@ -353,12 +353,14 @@ function start_text_input(g::Game, terminal::Actor)
             elseif getEventType(event_array) == 768 && key_sym == 81
                 if haskey(terminal.data, :command_history) && length(terminal.data[:command_history]) > 0
                     terminal.data[:command_history] = copy(GameOne.circshift(terminal.data[:command_history], 1))
+                    terminal.data[:command_history] = copy(GameOne.circshift(terminal.data[:command_history], 1))
                     comp = terminal.data[:command_history][begin]
                     update_text_actor!(terminal, comp)
                 end
 
             elseif getEventType(event_array) == 768 && key_sym == 82
                 if haskey(terminal.data, :command_history) && length(terminal.data[:command_history]) > 0
+                    terminal.data[:command_history] = copy(GameOne.circshift(terminal.data[:command_history], -1))
                     terminal.data[:command_history] = copy(GameOne.circshift(terminal.data[:command_history], -1))
                     comp = terminal.data[:command_history][begin]
                     update_text_actor!(terminal, comp)
