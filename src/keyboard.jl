@@ -29,8 +29,6 @@ struct KeyHolder{T} end
 const Keys = KeyHolder{:SDLK_}()
 const KeyMods = KeyHolder{:KMOD_}()
 
-import SimpleDirectMediaLayer.LibSDL2
-const SDL2 = SimpleDirectMediaLayer.LibSDL2
 
 function Base.getproperty(k::KeyHolder{T}, s::Symbol) where {T}
     st = string(s)
@@ -39,7 +37,9 @@ function Base.getproperty(k::KeyHolder{T}, s::Symbol) where {T}
     end
     s = Symbol(T, st)
     try
-        return getproperty(SDL2, s)
+        if s != :SDLK_pressed
+            return getproperty(SDL2, s)
+        end
     catch
         @error "Unknown key: $s"
         return nothing
