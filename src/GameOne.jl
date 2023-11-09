@@ -2,14 +2,14 @@ module GameOne
 
 import Reexport: @reexport
 
-@reexport import Base.Threads: @threads, Atomic
-@reexport import Colors: @colorant_str, ARGB, Colorant, red, green, blue, alpha
+@reexport import Base.Threads: @threads, Atomic, SpinLock
+@reexport import Colors: FixedPointNumbers, @colorant_str, ARGB, Colorant, red, green, blue, alpha
 @reexport import Dates: now, Millisecond
-@reexport import Random: rand, randstring
+@reexport import Random: rand, randstring, shuffle, shuffle!
 @reexport import FileIO: load
 @reexport import Serialization: serialize, deserialize
 @reexport import libwebp_jll: webpmux, dwebp
-@reexport import OrderedCollections: OrderedDict
+@reexport import DataStructures: OrderedDict
 @reexport import ShiftedArrays: circshift
 
 @reexport using SimpleDirectMediaLayer.LibSDL2
@@ -353,14 +353,14 @@ function start_text_input(g::Game, terminal::Actor)
                 @info "BackspaceEvent: $(getEventType(event)) comp: $comp"
 
             elseif getEventType(event_array) == 768 && key_sym == 81
-                if haskey(terminal.data, :command_history)
+                if haskey(terminal.data, :command_history) && length(terminal.data[:command_history]) > 0
                     terminal.data[:command_history] = circshift(terminal.data[:command_history], 1)
                     comp = terminal.data[:command_history][begin]
                     update_text_actor!(terminal, comp)
                 end
 
             elseif getEventType(event_array) == 768 && key_sym == 82
-                if haskey(terminal.data, :command_history)
+                if haskey(terminal.data, :command_history) && length(terminal.data[:command_history]) > 0
                     terminal.data[:command_history] = circshift(terminal.data[:command_history], -1)
                     comp = terminal.data[:command_history][begin]
                     update_text_actor!(terminal, comp)
@@ -371,10 +371,11 @@ function start_text_input(g::Game, terminal::Actor)
                 @info "Composition: $comp"
 
                 if !haskey(terminal.data, :command_history)
-                    terminal.data[:command_history] = []
+                    terminal.data[:command_history] = circshift([""], 0)
                 end
-
-                push!(terminal.data[:command_history], comp)
+                
+                terminal.data[:command_history] = circshift([ Set([ terminal.data[:command_history]..., comp ])... ], 0)
+    
                 done = true
             end
 

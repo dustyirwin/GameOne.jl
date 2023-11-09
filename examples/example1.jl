@@ -16,7 +16,7 @@ global dy = 2
 
 
 function next_frame!(a::Actor)
-    a.textures = GameOne.circshift(a.textures, -1)
+    a.textures = copy(GameOne.circshift(a.textures, -1))
     a.data[:then] = now()
     return a
 end

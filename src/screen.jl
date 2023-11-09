@@ -220,7 +220,7 @@ function draw(s::Screen, r::Rect, c::Colorant=colorant"black"; fill=false)
     end
 end
 
-sdl_colors(c::Colorant) = sdl_colors(convert(ARGB{Colors.FixedPointNumbers.Normed{UInt8,8}}, c))
+sdl_colors(c::Colorant) = sdl_colors(convert(ARGB{FixedPointNumbers.Normed{UInt8,8}}, c))
 sdl_colors(c::ARGB) = Int.(reinterpret.((red(c), green(c), blue(c), alpha(c))))
 
 function draw(s::Screen, tr::Triangle, c::Colorant=colorant"black"; fill=false)
