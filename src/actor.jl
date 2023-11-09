@@ -74,6 +74,8 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
         fg
     end
 
+    TTF_CloseFont(text_font)
+
     a = Actor(
         randstring(10),
         text,
@@ -185,7 +187,7 @@ function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
 
     webp_txt = joinpath(tempdir(), "anim_$anim_name", "webp_info_$anim_name.txt")
     
-    libwebp_jll.webpmux() do webpmux
+    webpmux() do webpmux
         redirect_stdio(stdout=webp_txt) do
             run(`$webpmux -info $webp_fn`)
         end
@@ -223,12 +225,12 @@ function WebpAnimActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
         if !isfile(tmp_png)
             
             if !isfile(tmp_webp)
-                libwebp_jll.webpmux() do webpmux
+                webpmux() do webpmux
                     run(`$webpmux -get frame $i $webp_fn -o $tmp_webp`)
                 end
             end
 
-            libwebp_jll.dwebp() do dwebp
+            dwebp() do dwebp
                 run(`$dwebp -quiet $tmp_webp -o $tmp_png`)
             end
 
