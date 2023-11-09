@@ -6,7 +6,7 @@ import Reexport: @reexport
 @reexport import Colors: @colorant_str, ARGB, Colorant, red, green, blue, alpha
 @reexport import Dates: now, Millisecond
 @reexport import Random: rand, randstring
-@reexport import Images: load
+@reexport import FileIO: load
 @reexport import Serialization: serialize, deserialize
 @reexport import libwebp_jll: webpmux, dwebp
 @reexport import OrderedCollections: OrderedDict
