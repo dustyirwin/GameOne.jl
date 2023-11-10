@@ -68,20 +68,20 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
     return a
 end
 
-function update_text_actor!(a::Actor, new_text::String)
-    font = TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
+function update_text_actor!(a::Actor, new_text::String; font_path=a.data[:font_path], pt_size = a.data[:pt_size],
+    font_color = a.data[:font_color], outline_color = a.data[:outline_color], wrap_length = a.data[:wrap_length],
+    outline_size = a.data[:outline_size])
 
-    fg = TTF_RenderText_Blended_Wrapped(
-        font, new_text, SDL_Color(a.data[:font_color]...), UInt32(a.data[:wrap_length]))
-    
+    font = TTF_OpenFont(font_path, pt_size)
+    fg = TTF_RenderText_Blended_Wrapped(font, new_text, SDL_Color(font_color...), UInt32(wrap_length))
     w, h = size(fg)
     
     fg = if a.data[:outline_size] > 0
-        outline_font = TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
-        TTF_SetFontOutline(outline_font, Int32(a.data[:outline_size]))
+        outline_font = TTF_OpenFont(font_path, pt_size)
+        TTF_SetFontOutline(outline_font, Int32(outline_size))
         bg = TTF_RenderText_Blended_Wrapped(
-            outline_font, new_text, SDL_Color(a.data[:outline_color]...), UInt32(a.data[:wrap_length]))
-        SDL_UpperBlitScaled(fg, C_NULL, bg, Int32[a.data[:outline_size], a.data[:outline_size], w, h])
+            outline_font, new_text, SDL_Color(outline_color...), UInt32(wrap_length))
+        SDL_UpperBlitScaled(fg, C_NULL, bg, Int32[outline_size, outline_size, w, h])
         bg
     else
         fg
@@ -97,7 +97,7 @@ end
 LoadBMP(src::String) = SDL_LoadBMP_RW(src, 1)
 
 function ImageMemActor(img_name::String, img; x=0, y=0, kv...)
-    img = ARGB.(transpose(img))
+    img = ARGB.(img)
     w, h = Int32.(size(img))
     sf = SDL_CreateRGBSurfaceWithFormatFrom(
         img,
@@ -122,9 +122,9 @@ function ImageMemActor(img_name::String, img; x=0, y=0, kv...)
         Dict(
             :anim => false,
             :label=>img_name,
-            :img=>img,
+            :img=>img,              # required! Causes garbled image if not included?? Why?? Because sf is a pointer/reference?
             :sz=>[w,h],
-            :fade_in=>false,           #  change to fade_in? remove anim-specific keys (add k,v when anim is run?)
+            :fade_in=>false,        # change to fade_in? remove anim-specific keys (add k,v when anim is run?)
             :fade_out=>false,
             :spin=>false,
             :spin_cw=>true,
@@ -138,7 +138,6 @@ function ImageMemActor(img_name::String, img; x=0, y=0, kv...)
     end
     return a
 end
-
 
 function ImageFileActor(anim_name::String, img_fns::Vector{String}; x=0, y=0, frame_delays=[], kv...)
     n = Int32.(length(img_fns))

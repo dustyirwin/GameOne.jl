@@ -1,15 +1,14 @@
-
 using GameOne
 using Images
 
 # Width of the game window
-SCREEN_WIDTH = [ 800, 400 ]
+SCREEN_WIDTH = [800, 400]
 # Height of the game window
-SCREEN_HEIGHT = [ 600, 300 ]
+SCREEN_HEIGHT = [600, 300]
 # Background color of the game window
 BACKGROUND = [colorant"purple", colorant"blue"]
 # Title of the game window
-SCREEN_NAME = [ "Main", "Secondary" ]
+SCREEN_NAME = ["Main", "Secondary"]
 
 # Globals to store the velocity of the actor
 global dx = 2
@@ -49,7 +48,7 @@ anim_fns = ["$(@__DIR__)/images/FireElem1/Visible$i.png" for i in 0:7]
 anim = ImageFileActor("fe", anim_fns)
 anim.data[:next_frame] = true
 anim.y = 50
-anim.x = 10 
+anim.x = 10
 
 
 webp_fn = "Aura of Silence_001.webp"
@@ -100,7 +99,7 @@ function update(g::Game)
 
     if alien.x > 798 - alien.w || alien.x < 2
         dx = -dx
-        play_sound(joinpath(@__DIR__, "sounds","eep.wav"))
+        play_sound(joinpath(@__DIR__, "sounds", "eep.wav"))
     end
 
     if alien.y > 598 - alien.h || alien.y < 2
@@ -149,7 +148,7 @@ function on_key_down(g, key, keymod)
         @info "Terminal Started!"
         terminal.alpha = 255
         draw(g)
-        SDL_RenderPresent.([ s.renderer for s in g.screen ])
+        SDL_RenderPresent.([s.renderer for s in g.screen])
         update_text_actor!(terminal, ">")
         text = start_text_input(g, terminal)
         terminal.alpha = 150
