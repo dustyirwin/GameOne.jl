@@ -233,7 +233,7 @@ function rungame(jlf::String, external::Bool=true)
             @error e exception = (e, catch_backtrace())
         end
     finally
-        GameOne.quitSDL(game[])
+        GameOne.quitSDL(g)
     end
 end
 
@@ -280,7 +280,6 @@ function initgame(jlf::String, external::Bool)
     clear.(g.screen)
     return g
 end
-
 
 function getfn(m::Module, s::Symbol, maxargs = 3)
     @debug "grabbing function $s in module $m"
@@ -434,6 +433,7 @@ function quitSDL(g)
         SDL_DestroyRenderer(s.renderer)
         SDL_DestroyWindow(s.window)
     end
+    
     #Run all finalisers
     GC.gc();GC.gc();
     quitSDL()

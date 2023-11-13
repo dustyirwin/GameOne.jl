@@ -2,8 +2,8 @@
 mutable struct Actor
     id::String
     label::String
-    surfaces::Vector{Ptr{SDL_Surface}}
-    textures::Vector{Ptr{SDL_Texture}}
+    surfaces::Union{Vector{Ptr{SDL_Surface}}, Nothing}
+    textures::Union{Vector{Ptr{SDL_Texture}}, Nothing}
     position::SDL_Rect
     scale::Vector{Float32}
     rotate_center::Union{Vector{Int32},Ptr{Nothing}}
@@ -58,6 +58,7 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
             :wrap_length => wrap_length,
             :mouse_offset => Int32[0, 0],
             :font_color => font_color,
+            :type=>"text",
             )
         )
     
@@ -130,6 +131,7 @@ function ImageMemActor(img_name::String, img; x=0, y=0, kv...)
             :spin_cw=>true,
             :shake=>false,
             :mouse_offset=>Int32[0,0],
+            :type=>"imagemem",
         )
     )
 
@@ -157,7 +159,7 @@ function ImageFileActor(anim_name::String, img_fns::Vector{String}; x=0, y=0, fr
         0,
         255,
         Dict(
-            :anim => true,
+            :anim => false,
             :label => anim_name,
             :img_fns => img_fns,
             :sz => [w, h],
@@ -170,6 +172,7 @@ function ImageFileActor(anim_name::String, img_fns::Vector{String}; x=0, y=0, fr
             :next_frame => false,
             :frame_delays => frame_delays,
             :mouse_offset => Int32[0, 0],
+            :type => "imagefile",
         )
     )
 
@@ -317,7 +320,7 @@ function WebpFileActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
         Dict(
             :anim => true,
             :label => anim_name,
-            :img_fn => webp_fn,
+            :webp_fn => webp_fn,
             :sz => [w, h],
             :fade_in => false,
             :fade_out => false,
@@ -328,6 +331,7 @@ function WebpFileActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
             :next_frame => false,
             :frame_delays => frame_delays,
             :mouse_offset => Int32[0, 0],
+            :type => "imagewebp",
         )
     )
             
@@ -347,6 +351,7 @@ function draw(a::Actor, s::Screen=game[].screen[begin])
             
             if tx == C_NULL
                 @warn "Failed to create texture $i for $(a.label)! Fall back to CPU?"
+                break
             end
             
             push!(a.textures, tx)
