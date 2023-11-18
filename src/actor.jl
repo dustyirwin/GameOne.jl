@@ -26,6 +26,7 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
         TTF_SetFontOutline(outline_font, Int32(outline_size))
         bg = TTF_RenderText_Blended_Wrapped(outline_font, text, SDL_Color(outline_color...), UInt32(wrap_length))
         SDL_UpperBlitScaled(fg, C_NULL, bg, Int32[outline_size,outline_size, w, h])
+        TTF_CloseFont(outline_font)
         bg
     else
         fg
@@ -183,166 +184,7 @@ function ImageFileActor(anim_name::String, img_fns::Vector{String}; x=0, y=0, fr
     return a
 end
 
-function WebpFileActor(anim_name::String, webp_fn::String; x=0, y=0, kv...)
-    if !isdir(joinpath(tempdir(),"anim_$anim_name"))
-        mkdir(joinpath(tempdir(),"anim_$anim_name"))
-    end
-
-    webp_txt = joinpath(tempdir(), "anim_$anim_name", "webp_info_$anim_name.txt")
-    
-    webpmux() do webpmux
-        redirect_stdio(stdout=webp_txt) do
-            run(`$webpmux -info $webp_fn`)
-        end
-    end
-    
-    webp_info = readlines(webp_txt)
-
-    w = [ parse(Int32, split(ln)[3]) |> Int32 for ln in webp_info if occursin("Canvas size:", ln) ][1]
-    h = [ parse(Int32, split(ln)[5]) |> Int32 for ln in webp_info if occursin("Canvas size:", ln) ][1]
-    n = [ parse(Int32, split(ln)[4]) |> Int32 for ln in webp_info if occursin("frames:", ln) ][1]
-    
-    frame_data = webp_info[6:end]
-    frames = Dict()
-    
-    for i in 1:n
-        d = Dict(
-            :width => parse(Int32, split(frame_data[i])[2]),
-            :height => parse(Int32, split(frame_data[i])[3]),
-            :x_offset => parse(Int32, split(frame_data[i])[5]),
-            :y_offset => parse(Int32, split(frame_data[i])[6]),
-            :duration => parse(Int32, split(frame_data[i])[7]),
-            :dispose => split(frame_data[i])[8],
-        )
-        
-        frames[i] = d
-    end
-    
-    frame_delays = [ Millisecond(v[:duration]) for (k,v) in sort(frames) ]
-
-    # exporting each webp frame as a keyframe
-    for i in 1:n
-        tmp_png = joinpath(tempdir(), "anim_$anim_name", "frame_$i.png")
-        tmp_webp = joinpath(tempdir(), "anim_$anim_name", "frame_$i.webp")
-        
-        if !isfile(tmp_png)
-            
-            if !isfile(tmp_webp)
-                webpmux() do webpmux
-                    run(`$webpmux -get frame $i $webp_fn -o $tmp_webp`)
-                end
-            end
-
-            dwebp() do dwebp
-                run(`$dwebp -quiet $tmp_webp -o $tmp_png`)
-            end
-
-            # TESTING 
-            # rm(tmp_webp)
-        end
-    end
-
-    surfaces = Dict()
-    
-    for i in 1:n
-
-        # handling all frames as key frames
-        surfaces[i] = IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
-        
-        #=  THIS IS NOT WORKING YET
-        if i == 1
-             
-        
-        # handling frame dispose "none"
-        elseif frames[i-1][:dispose] == "none"
-            # creating empty surface to blit on
-            surfaces[i] = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0)
-            #SDL_FillRect(surfaces[i], C_NULL, 0x00000000)  # fill with black color
-
-            # filling empty surface with previous frame
-            SDL_BlitSurface(
-                surfaces[i-1],      # source surface
-                C_NULL,
-                surfaces[i],        # destination surface
-                Int32[ frames[i][:x_offset], frames[i][:y_offset], 0, 0 ]
-            )
-
-            # blitting current frame on top of previous frame
-            IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
-            SDL_BlitSurface(
-                IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png")),
-                C_NULL,
-                surfaces[i],
-                Int32[ frames[i][:x_offset], frames[i][:y_offset], 0, 0 ]
-            )
-        
-        # handling frame dispose "background"
-        elseif frames[i-1][:dispose] == "background"
-            surfaces[i] = IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_1.png"))
-            SDL_BlitSurface(
-                IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png")),
-                C_NULL,
-                surfaces[i],
-                Int32[ frames[i][:x_offset], frames[i][:y_offset], 0, 0 ]
-            )
-        
-        # handling frame dispose "replace"
-        elseif frames[i-1][:dispose] == "replace"
-            sf = IMG_Load(joinpath(tempdir(), "anim_$anim_name", "frame_$i.png"))
-            surfaces[i] = sf
-        
-        else
-            sf = IMG_Load(joinpath(tempdir(), "$anim_name-frame_$i.png"))
-            surfaces[i] = SDL_CreateRGBSurface(0, w, h, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000)
-            SDL_FillRect(surfaces[i], C_NULL, 0x00000000)
-            SDL_BlitSurface(
-                sf,
-                C_NULL,
-                surfaces[i],
-                Int32[ frames[i][:x_offset], frames[i][:y_offset], 0, 0 ]
-            )
-        end
-        =#
-    end
-
-    w, h = Int32.(size(surfaces[1]))
-    r = SDL_Rect(x, y, w, h)
-    a = Actor(
-        randstring(10),
-        anim_name,
-        [values(sort(surfaces))...],
-        [],
-        r,
-        [1,1],
-        C_NULL,
-        0,
-        255,
-        Dict(
-            :anim => true,
-            :label => anim_name,
-            :webp_fn => webp_fn,
-            :sz => [w, h],
-            :fade_in => false,
-            :fade_out => false,
-            :spin => false,
-            :spin_cw => true,
-            :shake => false,
-            :then => now(),
-            :next_frame => false,
-            :frame_delays => frame_delays,
-            :mouse_offset => Int32[0, 0],
-            :type => "imagewebp",
-        )
-    )
-            
-    for (k, v) in kv
-        setproperty!(a, k, v)
-    end
-    
-    return a
-end
-
-function draw(a::Actor, s::Screen=game[].screen[begin])
+function draw(a::Actor, s::Screen=game[].screen)
     
     if isempty(a.textures)
         
@@ -358,7 +200,6 @@ function draw(a::Actor, s::Screen=game[].screen[begin])
         end
         
         for sf in a.surfaces
-            #SDL_UnlockSurface(sf)
             SDL_FreeSurface(sf)
         end
     end

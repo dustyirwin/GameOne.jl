@@ -12,7 +12,6 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 ShiftedArrays = "1277b4bf-5013-50f5-be3d-901d8477a67a"
 SimpleDirectMediaLayer = "98e33af6-2ee5-5afd-9e75-cbc738b767c4"
-libwebp_jll = "c5f90fcd-3b7e-5836-afba-fc50a0988cb2"
 
 [compat]
 Colors = "0.10, 0.11, 0.12, 0.13"

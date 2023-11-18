@@ -7,7 +7,6 @@ import Reexport: @reexport
 @reexport import Dates: now, Millisecond
 @reexport import Random: rand, randstring, shuffle, shuffle!
 @reexport import ShiftedArrays: circshift
-@reexport import libwebp_jll: webpmux, dwebp
 @reexport import DataStructures: OrderedDict
 
 @reexport using SimpleDirectMediaLayer.LibSDL2
@@ -39,8 +38,7 @@ const SCREENSYMBOL = :SCREEN_NAME
 const BACKSYMBOL = :BACKGROUND
 
 mutable struct Game
-    screen::Vector{Screen}
-    screen_names::Vector{String}
+    screen::Screen
     location::String
     game_module::Module
     keyboard::Keyboard
@@ -60,12 +58,12 @@ const paused = Ref{Bool}(false)
 
 #function __init__() end
 
-function initscreen(gm::Module, name::String, screen_num::Int=1)
-    h = getifdefined(gm, HEIGHTSYMBOL, repeat([600], screen_num))[screen_num]
-    w = getifdefined(gm, WIDTHSYMBOL, repeat([800], screen_num))[screen_num]
-    background = getifdefined(gm, BACKSYMBOL, repeat([ARGB(colorant"black")],screen_num))[screen_num]
+function initscreen(gm::Module, name::String)
+    h = getifdefined(gm, HEIGHTSYMBOL, 600,)
+    w = getifdefined(gm, WIDTHSYMBOL, 800,)
+    background = getifdefined(gm, BACKSYMBOL, ARGB(colorant"black"))
     if !(background isa Colorant)
-        background = image_surface(background[screen_num])
+        background = image_surface(background)
     end
     s = Screen(name, w, h, background)
     clear(s)
@@ -107,12 +105,9 @@ function mainloop(g::Game)
             rethrow()
         end
 
-        clear.(g.screen)
+        clear(g.screen)
         Base.invokelatest(g.render_function, g)
-
-        for s in g.screen
-            SDL_RenderPresent(s.renderer)
-        end
+        SDL_RenderPresent(g.screen.renderer)
 
         dt = elapsed(timer)
         # Don't let the game proceed at fewer than this frames per second. If an
@@ -183,18 +178,17 @@ end
 
 function handleWindowEvent(g::Game, e, t)
     # manage window focus
-    for s in g.screen
-        if (s.window_id == e.window.windowID) && !s.has_focus
-            s.has_focus = true
-            @info "Window $(e.window.windowID) gained focus"
+    if (g.screen.window_id == e.window.windowID) && !g.screen.has_focus
+        g.screen.has_focus = true
+        @info "Window $(e.window.windowID) gained focus"
 
-        elseif s.has_focus
-            s.has_focus = false
-            @info "Window $(e.window.windowID) lost focus"
+    elseif g.screen.has_focus
+        g.screen.has_focus = false
+        @info "Window $(e.window.windowID) lost focus"
 
-        end
     end
 end
+
 
 getKeySym(e) = bitcat(UInt32, e[24:-1:21])
 getKeyRepeat(e) = bitcat(UInt8, e[14:-1:14])
@@ -269,15 +263,14 @@ function initgame(jlf::String, external::Bool)
         Base.include(g.game_module, jlf)
     end
 
-    g.screen_names = getifdefined(g.game_module, :SCREEN_NAME, ["Main", "Secondary"])
     g.update_function = getfn(g.game_module, :update, 2)
     g.render_function = getfn(g.game_module, :draw, 3)
     g.onkey_function = getfn(g.game_module, :on_key_down, 3)
     g.onmouseup_function = getfn(g.game_module, :on_mouse_up, 3)
     g.onmousedown_function = getfn(g.game_module, :on_mouse_down, 3)
     g.onmousemove_function = getfn(g.game_module, :on_mouse_move, 2)
-    g.screen = [ initscreen(g.game_module, name, i) for (i,name) in enumerate(g.screen_names) ]
-    clear.(g.screen)
+    g.screen = initscreen(g.game_module, name)
+    clear(g.screen)
     return g
 end
 
@@ -379,11 +372,9 @@ function start_text_input(g::Game, terminal::Actor)
             end
 
             # Update screen(s)
-            for s in g.screen
-                SDL_RenderClear(s.renderer)
-                draw(g)
-                SDL_RenderPresent(s.renderer)
-            end
+            SDL_RenderClear(g.screen.renderer)
+            draw(g)
+            SDL_RenderPresent(g.screen.renderer)
         end
     end
 
@@ -428,11 +419,9 @@ function quitSDL(g)
     # https://github.com/n0name/2D_Engine/issues/3
     @debug "Quitting the game"
     clear!(scheduler[])
-    for s in g.screen
-        SDL_DelEventWatch(window_event_watcher_cfunc[], s.window);
-        SDL_DestroyRenderer(s.renderer)
-        SDL_DestroyWindow(s.window)
-    end
+    SDL_DelEventWatch(window_event_watcher_cfunc[], g.screen.window)
+    SDL_DestroyRenderer(g.screen.renderer)
+    SDL_DestroyWindow(g.screen.window)
     
     #Run all finalisers
     GC.gc();GC.gc();

@@ -2,7 +2,7 @@
 
 julia_version = "1.10.0-rc1"
 manifest_format = "2.0"
-project_hash = "c86a36caa0cb8ce3d227aac0c46b9b7f4f94a202"
+project_hash = "3856a99b1952363f0fdd06950108baa2ea0cd602"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -360,7 +360,7 @@ uuid = "aaaaf01e-2457-52c6-9fe8-886f7267d736"
 version = "1.20.3+0"
 
 [[deps.GameOne]]
-deps = ["Colors", "DataStructures", "Dates", "Random", "Reexport", "Serialization", "ShiftedArrays", "SimpleDirectMediaLayer", "libwebp_jll"]
+deps = ["Colors", "DataStructures", "Dates", "Random", "Reexport", "Serialization", "ShiftedArrays", "SimpleDirectMediaLayer"]
 path = "C:\\Users\\dusty\\.julia\\dev\\GameOne"
 uuid = "9da27670-f782-11e9-1da1-f53579315bfe"
 version = "0.1.0"
@@ -1098,9 +1098,9 @@ version = "1.3.0"
 
 [[deps.Rotations]]
 deps = ["LinearAlgebra", "Quaternions", "Random", "StaticArrays"]
-git-tree-sha1 = "0783924e4a332493f72490253ba4e668aeba1d73"
+git-tree-sha1 = "792d8fd4ad770b6d517a13ebb8dadfcac79405b8"
 uuid = "6038ab10-8711-5258-84ad-4b1120ba62dc"
-version = "1.6.0"
+version = "1.6.1"
 
 [[deps.SBC_jll]]
 deps = ["Libdl", "Pkg", "libsndfile_jll"]
@@ -1161,9 +1161,9 @@ version = "2.0.0"
 
 [[deps.SimpleDirectMediaLayer]]
 deps = ["CEnum", "ColorTypes", "SDL2_image_jll", "SDL2_jll", "SDL2_mixer_jll", "SDL2_ttf_jll", "alsa_plugins_jll"]
-path = "../../SimpleDirectMediaLayer"
+git-tree-sha1 = "d42675612bace0108ae7a96eebc1682ab4bd9f9f"
 uuid = "98e33af6-2ee5-5afd-9e75-cbc738b767c4"
-version = "0.5.0"
+version = "0.4.0"
 
 [[deps.SimpleTraits]]
 deps = ["InteractiveUtils", "MacroTools"]

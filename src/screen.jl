@@ -180,7 +180,7 @@ function clear(s::Screen)
     fill(s, s.background)
 end
 
-clear() = clear.(game[].screen)
+clear() = clear(game[].screen)
 
 function Base.fill(s::Screen, c::Colorant)
     SDL_SetRenderDrawColor(
@@ -197,7 +197,7 @@ function Base.fill(s::Screen, sf::Ptr{SDL_Surface})
 end
 
 # draws only on main screen...
-draw(l::T, args...; kv...) where {T<:Geom} = draw(game[].screen[1], l, args...; kv...)
+draw(l::T, args...; kv...) where {T<:Geom} = draw(game[].screen, l, args...; kv...)
 
 function draw(s::Screen, l::Line, c::Colorant=colorant"black")
     SDL_SetRenderDrawColor(
