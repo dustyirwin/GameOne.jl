@@ -32,8 +32,6 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
         fg
     end
 
-    TTF_CloseFont(text_font)
-
     a = Actor(
         randstring(10),
         text,
@@ -62,6 +60,8 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
             :type=>"text",
             )
         )
+        
+    TTF_CloseFont(text_font)
     
     for (k, v) in kv
         setproperty!(a, k, v)
@@ -84,6 +84,7 @@ function update_text_actor!(a::Actor, new_text::String; font_path=a.data[:font_p
         bg = TTF_RenderText_Blended_Wrapped(
             outline_font, new_text, SDL_Color(outline_color...), UInt32(wrap_length))
         SDL_UpperBlitScaled(fg, C_NULL, bg, Int32[outline_size, outline_size, w, h])
+        TTF_CloseFont(outline_font)
         bg
     else
         fg
@@ -93,11 +94,15 @@ function update_text_actor!(a::Actor, new_text::String; font_path=a.data[:font_p
     a.w, a.h = size(a.surfaces[begin])
     a.textures = []
     a.label = new_text
+
+    TTF_CloseFont(font)
+
     return a
 end
 
 LoadBMP(src::String) = SDL_LoadBMP_RW(src, 1)
 
+#= Actor does not release memory! Why??
 function ImageMemActor(img_name::String, img; x=0, y=0, kv...)
     img = ARGB.(img)
     w, h = Int32.(size(img))
@@ -141,8 +146,9 @@ function ImageMemActor(img_name::String, img; x=0, y=0, kv...)
     end
     return a
 end
+=#
 
-function ImageFileActor(anim_name::String, img_fns::Vector{String}; x=0, y=0, frame_delays=[], kv...)
+function ImageFileActor(name::String, img_fns::Vector{String}; x=0, y=0, frame_delays=[], anim=false, webp_path=[], kv...)
     n = Int32.(length(img_fns))
     frame_delays = isempty(frame_delays) ? [ Millisecond(100) for _ in 1:n ] : frame_delays
     surfaces = [ IMG_Load(fn) for fn in img_fns ]
@@ -151,7 +157,7 @@ function ImageFileActor(anim_name::String, img_fns::Vector{String}; x=0, y=0, fr
     r = SDL_Rect(x, y, w, h)
     a = Actor(
         randstring(10),
-        anim_name,
+        name,
         surfaces,
         [],
         r,
@@ -160,9 +166,10 @@ function ImageFileActor(anim_name::String, img_fns::Vector{String}; x=0, y=0, fr
         0,
         255,
         Dict(
-            :anim => false,
-            :label => anim_name,
+            :anim => anim,
+            :label => name,
             :img_fns => img_fns,
+            :webp_path => webp_path,
             :sz => [w, h],
             :fade_in => false,
             :fade_out => false,
