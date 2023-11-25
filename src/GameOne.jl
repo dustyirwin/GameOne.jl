@@ -1,11 +1,12 @@
 module GameOne
 
-import Reexport: @reexport
+# Base imports
+import Base.Threads: @threads, Atomic, SpinLock
+import Colors: FixedPointNumbers, @colorant_str, ARGB, Colorant, red, green, blue, alpha
+import Dates: now, Millisecond
+import Random: rand, randstring, shuffle, shuffle!
 
-@reexport import Base.Threads: @threads, Atomic, SpinLock
-@reexport import Colors: FixedPointNumbers, @colorant_str, ARGB, Colorant, red, green, blue, alpha
-@reexport import Dates: now, Millisecond
-@reexport import Random: rand, randstring, shuffle, shuffle!
+import Reexport: @reexport
 @reexport import DataStructures: OrderedDict
 @reexport import SimpleDirectMediaLayer.LibSDL2: SDL_Event, SDL_Texture, SDL_DestroyTexture, SDL_ShowCursor, 
     SDL_SetWindowFullscreen, SDL_SetHint, SDL_HINT_RENDER_SCALE_QUALITY, SDL_RenderPresent, 
