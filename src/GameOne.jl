@@ -6,19 +6,36 @@ import Reexport: @reexport
 @reexport import Colors: FixedPointNumbers, @colorant_str, ARGB, Colorant, red, green, blue, alpha
 @reexport import Dates: now, Millisecond
 @reexport import Random: rand, randstring, shuffle, shuffle!
-@reexport import ShiftedArrays: circshift
 @reexport import DataStructures: OrderedDict
-
-@reexport using SimpleDirectMediaLayer.LibSDL2
+@reexport import SimpleDirectMediaLayer.LibSDL2: SDL_Event, SDL_Texture, SDL_DestroyTexture, SDL_ShowCursor, 
+    SDL_SetWindowFullscreen, SDL_SetHint, SDL_HINT_RENDER_SCALE_QUALITY, SDL_RenderPresent, 
+    SDL_HasIntersection, SDL_Rect, SDL_RenderFillRect, SDL_CreateTextureFromSurface, 
+    SDL_BlendMode, SDL_Surface, SDL_WINDOW_FULLSCREEN, IMG_Load, SDL_CreateRGBSurfaceWithFormatFrom,
+    SDL_PIXELFORMAT_ARGB32, SDL_UpperBlitScaled, SDL_FreeSurface, SDL_FLIP_NONE, SDL_FLIP_BOTH, SDL_FLIP_VERTICAL, 
+    SDL_FLIP_HORIZONTAL, SDL_RenderCopyEx, SDL_PollEvent, SDL_TEXTINPUT, SDL_KEYDOWN, SDL_KEYUP, SDL_MOUSEBUTTONDOWN, 
+    SDL_MOUSEBUTTONUP, SDL_GetError, SDL_INIT_VIDEO, SDL_INIT_AUDIO, SDL_WINDOWEVENT, SDL_QUIT, SDL_MOUSEMOTION, 
+    SDL_MOUSEWHEEL, SDL_GetClipboardText, SDL_GetError, SDL_StopTextInput, SDL_StartTextInput, SDL_GL_MULTISAMPLEBUFFERS, 
+    SDL_GL_MULTISAMPLESAMPLES,SDL_DestroyRenderer, SDL_DestroyWindow, SDL_GetWindowID, SDL_RenderDrawLine, 
+    SDL_RenderDrawPoint, SDL_WINDOWPOS_CENTERED, SDL_WINDOW_ALLOW_HIGHDPI, SDL_RENDERER_ACCELERATED, 
+    SDL_RENDERER_PRESENTVSYNC, SDL_RENDERER_TARGETTEXTURE, SDL_RENDERER_SOFTWARE, SDL_RENDERER_PRESENTVSYNC,
+    SDL_BLENDMODE_BLEND, SDL_SetTextureAlphaMod, SDL_GL_SetAttribute, SDL_Init, SDL_Color,
+    SDL_WINDOW_OPENGL, SDL_WINDOW_SHOWN, SDL_CreateWindow, SDL_SetWindowMinimumSize, SDL_SetTextureBlendMode,
+    SDL_CreateRenderer, SDL_SetRenderDrawBlendMode, SDL_SetRenderDrawColor, SDL_RenderClear, SDL_DelEventWatch,
+    SDL_GetWindowSize, SDL_GetWindowFlags, SDL_GetWindowSurface, SDL_Quit, SDL_RWFromFile,
+    MIX_INIT_FLAC, MIX_INIT_MP3, MIX_INIT_OGG, Mix_Init, Mix_OpenAudio, Mix_HaltMusic, Mix_HaltChannel, Mix_CloseAudio, 
+    Mix_Quit, Mix_LoadWAV_RW, AUDIO_S16SYS, Mix_PlayChannelTimed, Mix_PlayMusic, Mix_PlayingMusic, Mix_FreeChunk, 
+    Mix_FreeMusic, Mix_VolumeMusic, Mix_Volume, Mix_PausedMusic, Mix_ResumeMusic, Mix_LoadMUS, Mix_PauseMusic,
+    TTF_Quit, TTF_OpenFont, TTF_RenderText_Blended_Wrapped, TTF_SetFontOutline, TTF_CloseFont, TTF_Init
 
 import SimpleDirectMediaLayer
 const SDL2 = SimpleDirectMediaLayer.LibSDL2
 
+# GameOne exports
 export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
     getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL
 export Game, Keys, KeyMods, MouseButton
-export Actor, TextActor, ImageFileActor, ImageMemActor, WebpFileActor
+export Actor, TextActor, ImageFileActor, ImageMemActor 
 export Line, Rect, Triangle, Circle
 
 
@@ -150,7 +167,7 @@ end
 function handleKeyPress(g::Game, e, t)
     keySym = e.keysym.sym
     keyMod = e.keysym.mod
-    @info "Keyboard" keySym, keyMod
+    @debug "Keyboard" keySym, keyMod
     if (t == SDL_KEYDOWN)
         push!(g.keyboard, keySym)
         Base.invokelatest(g.onkey_function, g, keySym, keyMod)
@@ -180,11 +197,11 @@ function handleWindowEvent(g::Game, e, t)
     # manage window focus
     if (g.screen.window_id == e.window.windowID) && !g.screen.has_focus
         g.screen.has_focus = true
-        @info "Window $(e.window.windowID) gained focus"
+        @debug "Window $(e.window.windowID) gained focus"
 
     elseif g.screen.has_focus
         g.screen.has_focus = false
-        @info "Window $(e.window.windowID) lost focus"
+        @debug "Window $(e.window.windowID) lost focus"
 
     end
 end
@@ -313,10 +330,10 @@ function start_text_input(g::Game, terminal::Actor)
             event_array = UInt8.([Char(i) for i in event])
 
             event_type = getEventType(event_array)
-            @info "event type: $event_type"
+            @debug "event type: $event_type"
 
             key_sym = event_array[21]
-            @info "key sym: $key_sym"
+            @debug "key sym: $key_sym"
 
             #SDL_GetModState() |> string
 
@@ -326,7 +343,7 @@ function start_text_input(g::Game, terminal::Actor)
                 comp = comp == ">`" ? ">" : comp
 
                 update_text_actor!(terminal, comp)
-                @info "TextInputEvent: $(getEventType(event)) comp: $comp"
+                @debug "TextInputEvent: $(getEventType(event)) comp: $comp"
 
                 #= Paste from clipboard
                 # KEYMODs: LCTRL = 4160 | RCTRL = 4096
@@ -338,36 +355,33 @@ function start_text_input(g::Game, terminal::Actor)
             elseif length(comp) > 1 && getEventType(event_array) == 768 && key_sym == 8  # "\b" backspace key
                 comp = comp[1:end-1]
                 update_text_actor!(terminal, comp)
-                #draw(g); SDL_RenderPresent(g.screen.renderer)
 
-                @info "BackspaceEvent: $(getEventType(event)) comp: $comp"
+                @debug "BackspaceEvent: $(getEventType(event)) comp: $comp"
 
             elseif getEventType(event_array) == 768 && key_sym == 81
                 if haskey(terminal.data, :command_history) && length(terminal.data[:command_history]) > 0
-                    terminal.data[:command_history] = copy(GameOne.circshift(terminal.data[:command_history], 1))
-                    terminal.data[:command_history] = copy(GameOne.circshift(terminal.data[:command_history], 1))
+                    circshift!(terminal.data[:command_history], 1)
+                    circshift!(terminal.data[:command_history], 1)
                     comp = terminal.data[:command_history][begin]
                     update_text_actor!(terminal, comp)
                 end
 
             elseif getEventType(event_array) == 768 && key_sym == 82
                 if haskey(terminal.data, :command_history) && length(terminal.data[:command_history]) > 0
-                    terminal.data[:command_history] = copy(GameOne.circshift(terminal.data[:command_history], -1))
-                    terminal.data[:command_history] = copy(GameOne.circshift(terminal.data[:command_history], -1))
+                    circshift!(terminal.data[:command_history], -1)
+                    circshift!(terminal.data[:command_history], -1)
                     comp = terminal.data[:command_history][begin]
                     update_text_actor!(terminal, comp)
                 end
 
             elseif getEventType(event) == SDL_KEYDOWN && key_sym == 13 #"\r" # return key
-                @info "QuitEvent: $(getEventType(event))"
+                @debug "QuitEvent: $(getEventType(event))"
                 @info "Composition: $comp"
 
                 if !haskey(terminal.data, :command_history)
-                    terminal.data[:command_history] = copy(GameOne.circshift([""], 0))
+                    terminal.data[:command_history] = [""]
                 end
-                
-                terminal.data[:command_history] = copy(GameOne.circshift([ Set([ terminal.data[:command_history]..., comp ])... ], 0))
-    
+                    
                 done = true
             end
 

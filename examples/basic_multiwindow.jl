@@ -92,10 +92,10 @@ try
                 for s in screen
                     if (s.window_id == evt.window.windowID)
                         s.has_focus = true
-                        @info "Window $(evt.window.windowID) gained focus"
+                        @debug "Window $(evt.window.windowID) gained focus"
                     else
                         s.has_focus = false
-                        @info "Window $(evt.window.windowID) lost focus"
+                        @debug "Window $(evt.window.windowID) lost focus"
                     end
                 end
             end

@@ -209,7 +209,7 @@ function draw(a::Actor, s::Screen=game[].screen)
         SDL_SetTextureAlphaMod(a.textures[begin], a.alpha)
     end
 
-    flip = if a.w < 0 && a.h < 0
+    local flip = if a.w < 0 && a.h < 0
         SDL_FLIP_BOTH
     elseif a.h < 0
         SDL_FLIP_VERTICAL
@@ -218,6 +218,8 @@ function draw(a::Actor, s::Screen=game[].screen)
     else
         SDL_FLIP_NONE
     end
+
+    # clear renderer
 
     SDL_RenderCopyEx(
         s.renderer,
@@ -228,11 +230,6 @@ function draw(a::Actor, s::Screen=game[].screen)
         a.rotate_center,
         flip,
     )
-    #=
-    if length(a.textures) == 1
-        SDL_DestroyTexture(a.textures[begin])
-    end
-    =#
 end
 
 function Base.setproperty!(s::Actor, p::Symbol, x)

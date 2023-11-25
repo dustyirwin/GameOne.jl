@@ -4,6 +4,7 @@ tmp
 *.ttf
 *.gif
 *.png
+*.mem
 
 /Manifest.toml
 settings.json

@@ -1,3 +1,10 @@
+
+pwd()
+
+#cd("examples")
+#using Pkg
+#Pkg.activate(".")
+
 using GameOne
 using Images
 
@@ -17,7 +24,7 @@ global dx2 = 3
 global dy2 = 3
 
 function next_frame!(a::Actor)
-    a.textures = GameOne.circshift(a.textures, -1)
+    circshift!(a.textures, -1)
     a.data[:then] = now()
     return a
 end
@@ -29,11 +36,14 @@ alien_hurt_img = load("$(@__DIR__)/images/alien_hurt.png")
 alien_ok_img = ["$(@__DIR__)/images/alien.png"]
 alien2 = ImageMemActor("alien2", alien_hurt_img)
 
-# Create an `TextActor` object from an empty string for terminal use
-#terminal = TextActor(">", "$(@__DIR__)/fonts/OpenSans-Regular.ttf", outline_size=1, pt_size=35)
-#terminal.alpha = 0
+# sound effects
+eep_wav = joinpath(@__DIR__, "sounds", "eep.wav")
 
-#=
+# Create an `TextActor` object from an empty string for terminal use
+terminal = TextActor(">", "$(@__DIR__)/fonts/OpenSans-Regular.ttf", outline_size=1, pt_size=35)
+terminal.alpha = 0
+
+
 label = TextActor(
     "this is some example text",
     "$(@__DIR__)/fonts/OpenSans-Regular.ttf",
@@ -42,7 +52,7 @@ label = TextActor(
     )
 label.x = 25
 label.y = 25
-=#
+
     
 #load a custom animation
 anim_fns = ["$(@__DIR__)/images/FireElem1/Visible$i.png" for i in 0:7]
@@ -52,7 +62,7 @@ anim.y = 50
 anim.x = 10
 
 
-name = "Aura of Silence_001"
+name = "Plains_003"
 anim_dir = joinpath(tempdir(), "anim_$name")
 img_fns = [joinpath(anim_dir, fn) for fn in readdir(anim_dir) if occursin("png", fn)]
 
@@ -68,12 +78,16 @@ wanim.x = 250
 
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
+    SDL_RenderClear(g.screen.renderer)
+
     draw(anim, g.screen)
     draw(wanim, g.screen)
     draw(alien, g.screen)
     draw(alien2, g.screen)
-    #draw(label, g.screen[begin])
-    #draw(terminal, g.screen[begin])
+    draw(label, g.screen)
+    draw(terminal, g.screen)
+
+    SDL_RenderPresent(g.screen.renderer)
 end
 
 
@@ -91,34 +105,34 @@ function update(g::Game)
 
     if anim.data[:next_frame]
         if now() - anim.data[:then] > Millisecond(120)
-            anim = next_frame!(anim)
+            next_frame!(anim)
         end
     end
-
+    
     if wanim.data[:next_frame]
         if now() - wanim.data[:then] > Millisecond(120)
-            wanim = next_frame!(wanim)
+            next_frame!(wanim)
         end
     end
-
+   
     if alien.x > 798 - alien.w || alien.x < 2
         dx = -dx
-        play_sound(joinpath(@__DIR__, "sounds", "eep.wav"))
+        play_sound(eep_wav)
     end
 
     if alien.y > 598 - alien.h || alien.y < 2
         dy = -dy
-        play_sound(joinpath(@__DIR__, "sounds", "eep.wav"))
+        play_sound(eep_wav)
     end
 
     if alien2.x > 798 - alien2.w || alien2.x < 2
         dx2 = -dx2
-        play_sound(joinpath(@__DIR__, "sounds", "eep.wav"))
+        play_sound(eep_wav)
     end
 
     if alien2.y > 598 - alien2.h || alien2.y < 2
         dy2 = -dy2
-        play_sound(joinpath(@__DIR__, "sounds", "eep.wav"))
+        play_sound(eep_wav)
     end
 
 
