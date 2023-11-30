@@ -1,14 +1,18 @@
 module GameOne
 
-# Base imports
-import Base.Threads: @threads, Atomic, SpinLock
-import Colors: FixedPointNumbers, @colorant_str, ARGB, Colorant, red, green, blue, alpha
-import Dates: now, Millisecond
-import Random: rand, randstring, shuffle, shuffle!
+using Reexport: @reexport
 
-import Reexport: @reexport
-@reexport import DataStructures: OrderedDict
-@reexport import SimpleDirectMediaLayer.LibSDL2: SDL_Event, SDL_Texture, SDL_DestroyTexture, SDL_ShowCursor, 
+# Base imports
+@reexport using Reexport: @reexport
+@reexport using Logging: @debug, @info, @warn, @error, @logmsg
+@reexport using Colors: FixedPointNumbers, @colorant_str, ARGB, Colorant, red, green, blue, alpha
+@reexport using Base.Threads: @threads, Atomic, SpinLock
+@reexport using Dates: now, Millisecond
+@reexport using Random: rand, randstring, shuffle, shuffle!
+
+# GameOne imports
+@reexport using DataStructures: OrderedDict
+@reexport using SimpleDirectMediaLayer.LibSDL2: SDL_Event, SDL_Texture, SDL_DestroyTexture, SDL_ShowCursor, 
     SDL_SetWindowFullscreen, SDL_SetHint, SDL_HINT_RENDER_SCALE_QUALITY, SDL_RenderPresent, 
     SDL_HasIntersection, SDL_Rect, SDL_RenderFillRect, SDL_CreateTextureFromSurface, 
     SDL_BlendMode, SDL_Surface, SDL_WINDOW_FULLSCREEN, IMG_Load, SDL_CreateRGBSurfaceWithFormatFrom,

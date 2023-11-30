@@ -26,7 +26,7 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
         TTF_SetFontOutline(outline_font, Int32(outline_size))
         bg = TTF_RenderText_Blended_Wrapped(outline_font, text, SDL_Color(outline_color...), UInt32(wrap_length))
         SDL_UpperBlitScaled(fg, C_NULL, bg, Int32[outline_size,outline_size, w, h])
-        TTF_CloseFont(outline_font)
+        #TTF_CloseFont(outline_font)
         bg
     else
         fg
@@ -61,7 +61,7 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
             )
         )
         
-    TTF_CloseFont(text_font)
+    #TTF_CloseFont(text_font)
     
     for (k, v) in kv
         setproperty!(a, k, v)
@@ -84,7 +84,7 @@ function update_text_actor!(a::Actor, new_text::String; font_path=a.data[:font_p
         bg = TTF_RenderText_Blended_Wrapped(
             outline_font, new_text, SDL_Color(outline_color...), UInt32(wrap_length))
         SDL_UpperBlitScaled(fg, C_NULL, bg, Int32[outline_size, outline_size, w, h])
-        TTF_CloseFont(outline_font)
+        #TTF_CloseFont(outline_font)
         bg
     else
         fg
@@ -95,7 +95,7 @@ function update_text_actor!(a::Actor, new_text::String; font_path=a.data[:font_p
     a.textures = []
     a.label = new_text
 
-    TTF_CloseFont(font)
+    #TTF_CloseFont(font)
 
     return a
 end
