@@ -148,7 +148,7 @@ function ImageMemActor(img_name::String, img; x=0, y=0, kv...)
 end
 =#
 
-function ImageFileActor(name::String, img_fns::Vector{String}; x=0, y=0, frame_delays=[], anim=false, webp_path=[], kv...)
+function ImageFileActor(name::String, img_fns::Vector{String}; x=0, y=0, frame_delays=[], anim=false, webp_path="", kv...)
     n = Int32.(length(img_fns))
     frame_delays = isempty(frame_delays) ? [ Millisecond(100) for _ in 1:n ] : frame_delays
     surfaces = [ IMG_Load(fn) for fn in img_fns ]
