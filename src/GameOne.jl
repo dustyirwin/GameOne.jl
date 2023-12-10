@@ -3,12 +3,12 @@ module GameOne
 using Reexport: @reexport
 
 # Base imports
-@reexport using Reexport: @reexport
 @reexport using Logging: @debug, @info, @warn, @error, @logmsg
 @reexport using Colors: FixedPointNumbers, @colorant_str, ARGB, Colorant, red, green, blue, alpha
-@reexport using Base.Threads: @threads, Atomic, SpinLock
+@reexport using Base.Threads: @threads, @spawn, Atomic, SpinLock
 @reexport using Dates: now, Millisecond
 @reexport using Random: rand, randstring, shuffle, shuffle!
+@reexport using DataStructures: OrderedDict, counter
 
 # GameOne imports
 @reexport using DataStructures: OrderedDict
@@ -398,7 +398,7 @@ function start_text_input(g::Game, terminal::Actor)
     end
 
     SDL_StopTextInput()
-    terminal.label = comp[2:end]
+    terminal.label = replace(comp, ">" => "")
 end
 
 
