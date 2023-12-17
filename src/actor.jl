@@ -12,7 +12,7 @@ mutable struct Actor
     data::Dict{Symbol,Any}
 end
 
-function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
+function TextActor(text::String, font_path::String, id=randstring(16); x = 0, y = 0, pt_size = 24,
     font_color = Int[255, 255, 255, 255], outline_color = Int[0, 0, 0, 225],
     wrap_length = 800, outline_size = 0, kv...)
 
@@ -33,7 +33,7 @@ function TextActor(text::String, font_path::String; x = 0, y = 0, pt_size = 24,
     end
 
     a = Actor(
-        randstring(10),
+        id,
         text,
         [fg],
         [],
@@ -148,7 +148,7 @@ function ImageMemActor(img_name::String, img; x=0, y=0, kv...)
 end
 =#
 
-function ImageFileActor(name::String, img_fns::Vector{String}; x=0, y=0, frame_delays=[], anim=false, webp_path="", kv...)
+function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16); x=0, y=0, frame_delays=[], anim=false, webp_path="", kv...)
     n = Int32.(length(img_fns))
     frame_delays = isempty(frame_delays) ? [ Millisecond(100) for _ in 1:n ] : frame_delays
     surfaces = [ IMG_Load(fn) for fn in img_fns ]
@@ -156,7 +156,7 @@ function ImageFileActor(name::String, img_fns::Vector{String}; x=0, y=0, frame_d
     
     r = SDL_Rect(x, y, w, h)
     a = Actor(
-        randstring(10),
+        id,
         name,
         surfaces,
         [],
@@ -183,7 +183,6 @@ function ImageFileActor(name::String, img_fns::Vector{String}; x=0, y=0, frame_d
             :type => "imagefile",
         )
     )
-
 
     for (k, v) in kv
         setproperty!(a, k, v)

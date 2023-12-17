@@ -107,7 +107,7 @@ end
 
 "Run a single scheduled action if due"
 function tick(x::OnceScheduled, elapsed, s=scheduler[])
-    if x.time <= elapsed && x.action.value != nothing
+    if x.time <= elapsed && x.action.value !== nothing
         @debug "Running single scheduled function" x.action.value
         Base.invokelatest(x.action.value)
         filter!(x, s)
@@ -116,7 +116,7 @@ end
 
 "Run a repeated scheduled action if due. If run, this method will add a new scheduled action to the scheduler"
 function tick(x::RepeatScheduled, elapsed, s=scheduler[])
-    if x.time <= elapsed && x.action.value != nothing
+    if x.time <= elapsed && x.action.value !== nothing
         @debug "Running repeated scheduled function" x.action.value
         Base.invokelatest(x.action.value)
         filter!(x, s)
@@ -126,7 +126,7 @@ end
 
 "Run a contingent schduled action if due. If run, and not stopped, add a new scheduled action to the scheduler"
 function tick(x::ContingentScheduled, elapsed, s=scheduler[])
-    if x.time <= elapsed && x.action.value != nothing
+    if x.time <= elapsed && x.action.value !== nothing
         @debug "Running contingent scheduled function" x.action.value
         r = Base.invokelatest(x.action.value)
         filter!(x, s)

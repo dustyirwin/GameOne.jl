@@ -363,18 +363,9 @@ function start_text_input(g::Game, terminal::Actor)
 
                 @debug "BackspaceEvent: $(getEventType(event)) comp: $comp"
 
-            elseif getEventType(event_array) == 768 && key_sym == 81
+            elseif getEventType(event_array) == 768 && (key_sym == 82 || key_sym == 81)
                 if haskey(terminal.data, :command_history) && length(terminal.data[:command_history]) > 0
-                    circshift!(terminal.data[:command_history], 1)
-                    circshift!(terminal.data[:command_history], 1)
-                    comp = terminal.data[:command_history][begin]
-                    update_text_actor!(terminal, comp)
-                end
-
-            elseif getEventType(event_array) == 768 && key_sym == 82
-                if haskey(terminal.data, :command_history) && length(terminal.data[:command_history]) > 0
-                    circshift!(terminal.data[:command_history], -1)
-                    circshift!(terminal.data[:command_history], -1)
+                    circshift!(terminal.data[:command_history], key_sym == 82 ? -1 : 1)
                     comp = terminal.data[:command_history][begin]
                     update_text_actor!(terminal, comp)
                 end
@@ -398,7 +389,7 @@ function start_text_input(g::Game, terminal::Actor)
     end
 
     SDL_StopTextInput()
-    terminal.label = replace(comp, ">" => "")
+    terminal.label = comp
 end
 
 
