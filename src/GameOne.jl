@@ -70,6 +70,7 @@ mutable struct Game
     onmousedown_function::Function
     onmouseup_function::Function
     onmousemove_function::Function
+    state::Dict
     Game() = new()
 end
 
