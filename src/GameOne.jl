@@ -9,6 +9,7 @@ using Reexport: @reexport
 @reexport using Dates: now, Millisecond
 @reexport using Random: rand, randstring, shuffle, shuffle!
 @reexport using DataStructures: OrderedDict, counter
+@reexport using Sockets
 
 # GameOne imports
 @reexport using DataStructures: OrderedDict
@@ -71,6 +72,7 @@ mutable struct Game
     onmouseup_function::Function
     onmousemove_function::Function
     state::Dict
+    socket::Union{TCPSocket,Nothing}
     Game() = new()
 end
 
@@ -235,13 +237,13 @@ getMouseMoveY(e) = bitcat(Int32, e[28:-1:25])
 
     The zero argument method should be used from the game source file itself when is being executed directly
 """
-function rungame(jlf::String, external::Bool=true)
+function rungame(jlf::String, external::Bool=true; socket::Union{TCPSocket,Nothing}=nothing)
     # The optional argument `external` is used to determine whether the zero or single argument version 
     # has been called. End users should never have to use this argument directly. 
     # external=true means rungame has been called from the REPl or run script, with the game file as input
     # external=false means rungame has been called at the bottom of the game file itself
     global playing, paused
-    g = initgame(jlf::String, external)
+    g = initgame(jlf::String, external, socket)
     try
         playing[] = paused[] = true
         mainloop(g)
@@ -293,6 +295,7 @@ function initgame(jlf::String, external::Bool)
     g.onmousedown_function = getfn(g.game_module, :on_mouse_down, 3)
     g.onmousemove_function = getfn(g.game_module, :on_mouse_move, 2)
     g.screen = initscreen(g.game_module, name)
+    g.socket = socket
     clear(g.screen)
     return g
 end
