@@ -12,7 +12,6 @@ using Reexport: @reexport
 @reexport using Sockets
 
 # GameOne imports
-@reexport using DataStructures: OrderedDict
 @reexport using SimpleDirectMediaLayer.LibSDL2: SDL_Event, SDL_Texture, SDL_DestroyTexture, SDL_ShowCursor, 
     SDL_SetWindowFullscreen, SDL_SetHint, SDL_HINT_RENDER_SCALE_QUALITY, SDL_RenderPresent, 
     SDL_HasIntersection, SDL_Rect, SDL_RenderFillRect, SDL_CreateTextureFromSurface, 
@@ -71,8 +70,8 @@ mutable struct Game
     onmousedown_function::Function
     onmouseup_function::Function
     onmousemove_function::Function
-    state::Dict
-    socket::Union{TCPSocket,Nothing}
+    state::Vector{Dict{String,Dict}}
+    socket::Vector{TCPSocket}
     Game() = new()
 end
 
@@ -81,7 +80,6 @@ const game = Ref{Game}()
 const playing = Ref{Bool}(false)
 const paused = Ref{Bool}(false)
 
-#function __init__() end
 
 function initscreen(gm::Module, name::String)
     h = getifdefined(gm, HEIGHTSYMBOL, 600,)
@@ -243,7 +241,7 @@ function rungame(jlf::String, external::Bool=true; socket::Union{TCPSocket,Nothi
     # external=true means rungame has been called from the REPl or run script, with the game file as input
     # external=false means rungame has been called at the bottom of the game file itself
     global playing, paused
-    g = initgame(jlf::String, external, socket)
+    g = initgame(jlf::String, external; socket=socket)
     try
         playing[] = paused[] = true
         mainloop(g)
@@ -260,7 +258,7 @@ function rungame()
     rungame(abspath(PROGRAM_FILE), false)
 end
 
-function initgame(jlf::String, external::Bool)
+function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=nothing)
     if !isfile(jlf)
         ArgumentError("File not found: $jlf")
     end
@@ -269,7 +267,11 @@ function initgame(jlf::String, external::Bool)
     game[] = Game()
     scheduler[] = Scheduler()
     g = game[]
+    
+    g.state[begin] = Dict()
+    g.socket[begin] = socket
     g.keyboard = Keyboard()
+
     if external
         module_name = Symbol(name * "_" * randstring(5))
         game_module = Module(module_name)
@@ -295,7 +297,6 @@ function initgame(jlf::String, external::Bool)
     g.onmousedown_function = getfn(g.game_module, :on_mouse_down, 3)
     g.onmousemove_function = getfn(g.game_module, :on_mouse_move, 2)
     g.screen = initscreen(g.game_module, name)
-    g.socket = socket
     clear(g.screen)
     return g
 end
