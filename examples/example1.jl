@@ -5,8 +5,8 @@ pwd()
 #using Pkg
 #Pkg.activate(".")
 
-using GameOne
 using Images
+using GameOne
 
 # Width of the game window
 SCREEN_WIDTH = 800
@@ -29,12 +29,15 @@ function next_frame!(a::Actor)
     return a
 end
 
+
+
 # Create an `ImageActor` object from a PNG file
-alien = ImageFileActor("alien1", ["$(@__DIR__)/images/alien.png"])
+#alien = ImageFileActor("alien1", [joinpath(@__DIR__,"images","alien.png")])
+alien = ImageFileActor("alien1", [joinpath("examples", "images", "alien.png")])
 
 alien_hurt_img = load("$(@__DIR__)/images/alien_hurt.png")
 alien_ok_img = ["$(@__DIR__)/images/alien.png"]
-alien2 = ImageMemActor("alien2", alien_hurt_img)
+#alien2 = ImageMemActor("alien2", alien_hurt_img)
 
 # sound effects
 eep_wav = joinpath(@__DIR__, "sounds", "eep.wav")
@@ -62,28 +65,18 @@ anim.y = 50
 anim.x = 10
 
 
-name = "Plains_003"
-anim_dir = joinpath(tempdir(), "anim_$name")
-img_fns = [joinpath(anim_dir, fn) for fn in readdir(anim_dir) if occursin("png", fn)]
-
-wanim = ImageFileActor(name, img_fns)
-wanim.data[:next_frame] = true
-wanim.y = 100
-wanim.x = 250
-
-
 # Start playing background music
 
-#play_music("examples/music/radetzky_ogg")
+play_music("examples/music/radetzky_ogg")
 
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
     SDL_RenderClear(g.screen.renderer)
 
     draw(anim, g.screen)
-    draw(wanim, g.screen)
+    #draw(wanim, g.screen)
     draw(alien, g.screen)
-    draw(alien2, g.screen)
+    #draw(alien2, g.screen)
     draw(label, g.screen)
     draw(terminal, g.screen)
 
@@ -100,8 +93,6 @@ function update(g::Game)
     global dx, dy, dx2, dy2, anim, wanim
     alien.position.x += dx
     alien.position.y += dy
-    alien2.position.x += dx2
-    alien2.position.y += dy2
 
     if anim.data[:next_frame]
         if now() - anim.data[:then] > Millisecond(120)
@@ -109,32 +100,16 @@ function update(g::Game)
         end
     end
     
-    if wanim.data[:next_frame]
-        if now() - wanim.data[:then] > Millisecond(120)
-            next_frame!(wanim)
-        end
-    end
-   
+    
     if alien.x > 798 - alien.w || alien.x < 2
         dx = -dx
         play_sound(eep_wav)
     end
-
+    
     if alien.y > 598 - alien.h || alien.y < 2
         dy = -dy
         play_sound(eep_wav)
     end
-
-    if alien2.x > 798 - alien2.w || alien2.x < 2
-        dx2 = -dx2
-        play_sound(eep_wav)
-    end
-
-    if alien2.y > 598 - alien2.h || alien2.y < 2
-        dy2 = -dy2
-        play_sound(eep_wav)
-    end
-
 
     if g.keyboard.DOWN
         dy = 2
