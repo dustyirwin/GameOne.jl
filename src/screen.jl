@@ -8,7 +8,7 @@
     background::Union{ARGB,Ptr{SDL_Surface}}
     window_id::Int
     has_focus::Bool = false
-    full_screen::Bool = false
+    full_screen::Bool = true
     minimized::Bool = false
     shown::Bool = true
 

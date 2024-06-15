@@ -21,16 +21,24 @@ using Reexport: @reexport
     SDL_MOUSEBUTTONUP, SDL_GetError, SDL_INIT_VIDEO, SDL_INIT_AUDIO, SDL_WINDOWEVENT, SDL_QUIT, SDL_MOUSEMOTION, 
     SDL_MOUSEWHEEL, SDL_GetClipboardText, SDL_GetError, SDL_StopTextInput, SDL_StartTextInput, SDL_GL_MULTISAMPLEBUFFERS, 
     SDL_GL_MULTISAMPLESAMPLES,SDL_DestroyRenderer, SDL_DestroyWindow, SDL_GetWindowID, SDL_RenderDrawLine, 
-    SDL_RenderDrawPoint, SDL_WINDOWPOS_CENTERED, SDL_WINDOW_ALLOW_HIGHDPI, SDL_RENDERER_ACCELERATED, 
-    SDL_RENDERER_PRESENTVSYNC, SDL_RENDERER_TARGETTEXTURE, SDL_RENDERER_SOFTWARE, SDL_RENDERER_PRESENTVSYNC,
+    SDL_RenderDrawPoint, SDL_WINDOWPOS_CENTERED, SDL_WINDOW_ALLOW_HIGHDPI, SDL_RENDERER_ACCELERATED, SDL_WINDOW_ALLOW_HIGHDPI,
+    SDL_RENDERER_PRESENTVSYNC, SDL_RENDERER_TARGETTEXTURE, SDL_RENDERER_SOFTWARE, 
     SDL_BLENDMODE_BLEND, SDL_SetTextureAlphaMod, SDL_GL_SetAttribute, SDL_Init, SDL_Color,
-    SDL_WINDOW_OPENGL, SDL_WINDOW_SHOWN, SDL_CreateWindow, SDL_SetWindowMinimumSize, SDL_SetTextureBlendMode,
+    SDL_WINDOW_OPENGL, SDL_WINDOW_SHOWN, SDL_CreateWindow, SDL_SetWindowMinimumSize, SDL_SetWindowResizable, SDL_WINDOW_RESIZABLE,
+    SDL_WINDOW_MOUSE_FOCUS, SDL_WINDOW_FOREIGN, SDL_WINDOW_ALWAYS_ON_TOP, SDL_WINDOW_SKIP_TASKBAR, SDL_WINDOW_UTILITY, SDL_WINDOW_TOOLTIP,
+    SDL_WINDOW_INPUT_FOCUS,SDL_WINDOW_MOUSE_FOCUS,SDL_WINDOW_FOREIGN,SDL_WINDOW_ALWAYS_ON_TOP,SDL_WINDOW_SKIP_TASKBAR,SDL_WINDOW_UTILITY,
+    SDL_WINDOW_TOOLTIP,SDL_WINDOW_POPUP_MENU,
+    SDL_WINDOW_METAL,SDL_WINDOW_VULKAN,SDL_WINDOW_HIDDEN,SDL_WINDOW_BORDERLESS,
+    SDL_WINDOW_FULLSCREEN_DESKTOP,SDL_WINDOW_FULLSCREEN,SDL_WINDOW_OPENGL,
+    
+    SDL_SetTextureBlendMode,
     SDL_CreateRenderer, SDL_SetRenderDrawBlendMode, SDL_SetRenderDrawColor, SDL_RenderClear, SDL_DelEventWatch,
     SDL_GetWindowSize, SDL_GetWindowFlags, SDL_GetWindowSurface, SDL_Quit, SDL_RWFromFile,
     MIX_INIT_FLAC, MIX_INIT_MP3, MIX_INIT_OGG, Mix_Init, Mix_OpenAudio, Mix_HaltMusic, Mix_HaltChannel, Mix_CloseAudio, 
     Mix_Quit, Mix_LoadWAV_RW, AUDIO_S16SYS, Mix_PlayChannelTimed, Mix_PlayMusic, Mix_PlayingMusic, Mix_FreeChunk, 
     Mix_FreeMusic, Mix_VolumeMusic, Mix_Volume, Mix_PausedMusic, Mix_ResumeMusic, Mix_LoadMUS, Mix_PauseMusic,
-    TTF_Quit, TTF_OpenFont, TTF_RenderText_Blended_Wrapped, TTF_SetFontOutline, TTF_CloseFont, TTF_Init
+    TTF_Quit, TTF_OpenFont, TTF_RenderText_Blended_Wrapped, TTF_SetFontOutline, TTF_CloseFont, TTF_Init,
+    SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, SDL_HINT_RENDER_VSYNC, SDL_HINT_RENDER_DRIVER, SDL_HINT_RENDER_DIRECT3D_THREADSAFE
 
 import SimpleDirectMediaLayer
 const SDL2 = SimpleDirectMediaLayer.LibSDL2
@@ -42,6 +50,8 @@ export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique,
 export Game, Keys, KeyMods, MouseButton
 export Actor, TextActor, ImageFileActor, ImageMemActor 
 export Line, Rect, Triangle, Circle
+
+
 
 
 include("keyboard.jl")
@@ -85,11 +95,14 @@ function initscreen(gm::Module, name::String)
     h = getifdefined(gm, HEIGHTSYMBOL, 600,)
     w = getifdefined(gm, WIDTHSYMBOL, 800,)
     background = getifdefined(gm, BACKSYMBOL, ARGB(colorant"black"))
+
     if !(background isa Colorant)
         background = image_surface(background)
     end
+
     s = Screen(name, w, h, background)
     clear(s)
+    
     return s
 end
 
@@ -262,14 +275,18 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
     if !isfile(jlf)
         ArgumentError("File not found: $jlf")
     end
+
+    # setting up hints for SDL to run on Mac
+    SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal")
+    SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1")
+    SDL_SetHint(SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0")
+
     name = titlecase(replace(basename(jlf), ".jl" => ""))
     initSDL()
     game[] = Game()
     scheduler[] = Scheduler()
     g = game[]
     
-    g.state[begin] = Dict()
-    g.socket[begin] = socket
     g.keyboard = Keyboard()
 
     if external
@@ -297,7 +314,10 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
     g.onmousedown_function = getfn(g.game_module, :on_mouse_down, 3)
     g.onmousemove_function = getfn(g.game_module, :on_mouse_move, 2)
     g.screen = initscreen(g.game_module, name)
+    
     clear(g.screen)
+    
+
     return g
 end
 

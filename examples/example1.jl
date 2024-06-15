@@ -18,8 +18,8 @@ BACKGROUND = colorant"black"
 SCREEN_NAME = "Main"
 
 # Globals to store the velocity of the actor
-global dx = 2
-global dy = 2
+global dx = 3
+global dy = 3
 global dx2 = 3
 global dy2 = 3
 
@@ -28,8 +28,6 @@ function next_frame!(a::Actor)
     a.data[:then] = now()
     return a
 end
-
-
 
 # Create an `ImageActor` object from a PNG file
 #alien = ImageFileActor("alien1", [joinpath(@__DIR__,"images","alien.png")])
@@ -59,7 +57,7 @@ label.y = 25
     
 #load a custom animation
 anim_fns = ["$(@__DIR__)/images/FireElem1/Visible$i.png" for i in 0:7]
-anim = ImageFileActor("fe", anim_fns)
+anim = ImageFileActor("fireelem", anim_fns)
 anim.data[:next_frame] = true
 anim.y = 50
 anim.x = 10
@@ -71,7 +69,7 @@ play_music("examples/music/radetzky_ogg")
 
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
-    SDL_RenderClear(g.screen.renderer)
+    #SDL_RenderClear(g.screen.renderer)
 
     draw(anim, g.screen)
     #draw(wanim, g.screen)
@@ -80,7 +78,7 @@ function draw(g::Game)
     draw(label, g.screen)
     draw(terminal, g.screen)
 
-    SDL_RenderPresent(g.screen.renderer)
+    #SDL_RenderPresent(g.screen.renderer)
 end
 
 
@@ -99,7 +97,6 @@ function update(g::Game)
             next_frame!(anim)
         end
     end
-    
     
     if alien.x > 798 - alien.w || alien.x < 2
         dx = -dx
@@ -120,10 +117,8 @@ function update(g::Game)
     elseif g.keyboard.RIGHT
         dx = 2
     end
-    #=
-    =#
 end
-
+1
 # If the "space" key is pressed, change the displayed image to the "hurt" variant.
 # Also schedule an event to change it back to normal after one second.
 # We define functions to change the image for the actor. These functions are called 
