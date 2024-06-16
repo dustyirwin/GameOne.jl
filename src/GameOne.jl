@@ -10,6 +10,11 @@ using Reexport: @reexport
 @reexport using Random: rand, randstring, shuffle, shuffle!
 @reexport using DataStructures: OrderedDict, counter
 @reexport using Sockets
+@reexport using CImGui
+@reexport using CImGui.CSyntax
+@reexport using CImGui.CSyntax.CStatic
+@reexport using CImGui: ImVec2, ImVec4, IM_COL32, ImS32, ImU32, ImS64, ImU64, LibCImGui
+@reexport using CImGui.LibCImGui
 
 # GameOne imports
 @reexport using SimpleDirectMediaLayer.LibSDL2: SDL_Event, SDL_Texture, SDL_DestroyTexture, SDL_ShowCursor, 
@@ -42,8 +47,10 @@ using Reexport: @reexport
 
 import SimpleDirectMediaLayer
 const SDL2 = SimpleDirectMediaLayer.LibSDL2
+global const BackendPlatformUserData = Ref{Any}(C_NULL)
 
 # GameOne exports
+export SDL2, BackendPlatformUserData
 export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
     getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL
@@ -52,7 +59,9 @@ export Actor, TextActor, ImageFileActor, ImageMemActor
 export Line, Rect, Triangle, Circle
 
 
-
+# ImGuiSDLBackend
+include("imgui_impl_sdl2.jl")
+include("imgui_impl_sdlrenderer2.jl")
 
 include("keyboard.jl")
 include("timer.jl")
