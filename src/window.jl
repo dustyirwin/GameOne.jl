@@ -13,16 +13,14 @@ function makeWinRenderer(title = "GameOne", w=1920, h=1080)
     win = SDL_CreateWindow(title,
         Int32(SDL_WINDOWPOS_CENTERED), 
         Int32(SDL_WINDOWPOS_CENTERED), Int32(w), Int32(h),
-        UInt32(SDL_WINDOW_METAL|SDL_WINDOW_ALLOW_HIGHDPI|SDL_WINDOW_SHOWN
-        )
+        UInt32(SDL_WINDOW_METAL|SDL_WINDOW_SHOWN)
     );
+    
     SDL_SetWindowMinimumSize(win, Int32(w), Int32(h))
     SDL_SetWindowResizable(win, SDL2.SDL_bool(true))
     
     window_event_watcher_cfunc[] = @cfunction(windowEventWatcher, Cint, (Ptr{Nothing}, Ptr{SDL_Event}))
-
     renderer = SDL_CreateRenderer(win, Int32(-1), UInt32(SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC))
-
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND)
 
     return win,renderer
