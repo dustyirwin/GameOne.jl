@@ -13,10 +13,10 @@ using Reexport: @reexport
 @reexport using CImGui
 @reexport using CImGui.CSyntax
 @reexport using CImGui.CSyntax.CStatic
-@reexport using CImGui: ImVec2, ImVec4, IM_COL32, ImS32, ImU32, ImS64, ImU64, LibCImGui
-@reexport using CImGui.LibCImGui
+@reexport using CImGui: ImVec2, ImVec4, IM_COL32, ImS32, ImU32, ImS64, ImU64, lib
+@reexport using CImGui.lib
 
-# GameOne imports
+# SDL2 imports
 @reexport using SimpleDirectMediaLayer.LibSDL2: SDL_Event, SDL_Texture, SDL_DestroyTexture, SDL_ShowCursor, 
     SDL_SetWindowFullscreen, SDL_SetHint, SDL_HINT_RENDER_SCALE_QUALITY, SDL_RenderPresent, 
     SDL_HasIntersection, SDL_Rect, SDL_RenderFillRect, SDL_CreateTextureFromSurface, 
@@ -32,8 +32,7 @@ using Reexport: @reexport
     SDL_WINDOW_OPENGL, SDL_WINDOW_SHOWN, SDL_CreateWindow, SDL_SetWindowMinimumSize, SDL_SetWindowResizable, SDL_WINDOW_RESIZABLE,
     SDL_WINDOW_MOUSE_FOCUS, SDL_WINDOW_FOREIGN, SDL_WINDOW_ALWAYS_ON_TOP, SDL_WINDOW_SKIP_TASKBAR, SDL_WINDOW_UTILITY, SDL_WINDOW_TOOLTIP,
     SDL_WINDOW_INPUT_FOCUS,SDL_WINDOW_MOUSE_FOCUS,SDL_WINDOW_FOREIGN,SDL_WINDOW_ALWAYS_ON_TOP,SDL_WINDOW_SKIP_TASKBAR,SDL_WINDOW_UTILITY,
-    SDL_WINDOW_TOOLTIP,SDL_WINDOW_POPUP_MENU,
-    SDL_WINDOW_METAL,SDL_WINDOW_VULKAN,SDL_WINDOW_HIDDEN,SDL_WINDOW_BORDERLESS,
+    SDL_WINDOW_TOOLTIP,SDL_WINDOW_POPUP_MENU, SDL_WINDOW_METAL,SDL_WINDOW_VULKAN,SDL_WINDOW_HIDDEN,SDL_WINDOW_BORDERLESS,
     SDL_WINDOW_FULLSCREEN_DESKTOP,SDL_WINDOW_FULLSCREEN,SDL_WINDOW_OPENGL,
     
     SDL_SetTextureBlendMode,
