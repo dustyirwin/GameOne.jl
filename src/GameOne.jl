@@ -19,8 +19,8 @@ using Reexport: @reexport
 # SDL2 imports
 @reexport using SimpleDirectMediaLayer.LibSDL2: SDL_Event, SDL_Texture, SDL_DestroyTexture, SDL_ShowCursor, 
     SDL_SetWindowFullscreen, SDL_SetHint, SDL_HINT_RENDER_SCALE_QUALITY, SDL_RenderPresent, 
-    SDL_HasIntersection, SDL_Rect, SDL_RenderFillRect, SDL_CreateTextureFromSurface, 
-    SDL_BlendMode, SDL_Surface, SDL_WINDOW_FULLSCREEN, IMG_Load, SDL_CreateRGBSurfaceWithFormatFrom,
+    SDL_HasIntersection, SDL_Rect, SDL_RenderFillRect, SDL_CreateTextureFromSurface, SDL_TEXTUREACCESS_TARGET,
+    SDL_BlendMode, SDL_Surface, SDL_WINDOW_FULLSCREEN, IMG_Load, SDL_SetRenderTarget,
     SDL_PIXELFORMAT_ARGB32, SDL_UpperBlitScaled, SDL_FreeSurface, SDL_FLIP_NONE, SDL_FLIP_BOTH, SDL_FLIP_VERTICAL, 
     SDL_FLIP_HORIZONTAL, SDL_RenderCopyEx, SDL_PollEvent, SDL_TEXTINPUT, SDL_KEYDOWN, SDL_KEYUP, SDL_MOUSEBUTTONDOWN, 
     SDL_MOUSEBUTTONUP, SDL_GetError, SDL_INIT_VIDEO, SDL_INIT_AUDIO, SDL_WINDOWEVENT, SDL_QUIT, SDL_MOUSEMOTION, 
@@ -35,9 +35,9 @@ using Reexport: @reexport
     SDL_WINDOW_TOOLTIP,SDL_WINDOW_POPUP_MENU, SDL_WINDOW_METAL,SDL_WINDOW_VULKAN,SDL_WINDOW_HIDDEN,SDL_WINDOW_BORDERLESS,
     SDL_WINDOW_FULLSCREEN_DESKTOP,SDL_WINDOW_FULLSCREEN,SDL_WINDOW_OPENGL,
     
-    SDL_SetTextureBlendMode,
-    SDL_CreateRenderer, SDL_SetRenderDrawBlendMode, SDL_SetRenderDrawColor, SDL_RenderClear, SDL_DelEventWatch,
-    SDL_GetWindowSize, SDL_GetWindowFlags, SDL_GetWindowSurface, SDL_Quit, SDL_RWFromFile,
+    SDL_SetTextureBlendMode, SDL_CreateRGBSurface, SDL_CreateRGBSurfaceWithFormat, SDL_CreateRGBSurfaceWithFormatFrom,
+    SDL_CreateRenderer, SDL_CreateTexture, SDL_SetRenderDrawBlendMode, SDL_SetRenderDrawColor, SDL_RenderClear, SDL_DelEventWatch,
+    SDL_GetWindowSize, SDL_GetWindowFlags, SDL_GetWindowSurface, SDL_Quit, SDL_RWFromFile, SDL_RenderCopy, SDL_RenderDrawRect,
     MIX_INIT_FLAC, MIX_INIT_MP3, MIX_INIT_OGG, Mix_Init, Mix_OpenAudio, Mix_HaltMusic, Mix_HaltChannel, Mix_CloseAudio, 
     Mix_Quit, Mix_LoadWAV_RW, AUDIO_S16SYS, Mix_PlayChannelTimed, Mix_PlayMusic, Mix_PlayingMusic, Mix_FreeChunk, 
     Mix_FreeMusic, Mix_VolumeMusic, Mix_Volume, Mix_PausedMusic, Mix_ResumeMusic, Mix_LoadMUS, Mix_PauseMusic,
@@ -98,15 +98,16 @@ const game = Ref{Game}()
 const playing = Ref{Bool}(false)
 const paused = Ref{Bool}(false)
 
-
 function initscreen(gm::Module, name::String)
     h = getifdefined(gm, HEIGHTSYMBOL, 600,)
     w = getifdefined(gm, WIDTHSYMBOL, 800,)
-    background = getifdefined(gm, BACKSYMBOL, ARGB(colorant"black"))
+    background = getifdefined(gm, BACKSYMBOL, SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0))
 
+    #= disabling loading background as an image (will always be black)
     if !(background isa Colorant)
         background = image_surface(background)
     end
+    =#
 
     s = Screen(name, w, h, background)
     clear(s)
@@ -124,49 +125,145 @@ pollEvent = let event = Ref{SDL_Event}()
     () -> SDL_PollEvent(event)
 end
 
+
+ver = pointer(SDL2.SDL_version[SDL2.SDL_version(0,0,0)])
+SDL2.SDL_GetVersion(ver)
+global sdlVersion = string(unsafe_load(ver).major, ".", unsafe_load(ver).minor, ".", unsafe_load(ver).patch)
+println("SDL version: ", sdlVersion)
+sdlVersion = parse(Int32, replace(sdlVersion, "." => ""))
+
 function mainloop(g::Game)
     start!(timer)
+    
+    sdlRenderer = g.screen.renderer
+    window = g.screen.window
 
-    while (true)
-        #Don't run if game is paused by system (resizing, lost focus, etc)
-        while window_paused[] != 0
-            _ = pollEvent()
-            sleep(0.5)
-        end
+    if sdlRenderer == C_NULL
+        @error "Failed to create SDL renderer: $(SDL_GetError())"
+    end
 
-        # Handle Events
-        errorMsg = ""
+    ctx = CImGui.CreateContext()
+        
+    io = CImGui.GetIO()
+    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable | CImGui.ImGuiConfigFlags_NavEnableKeyboard | CImGui.ImGuiConfigFlags_NavEnableGamepad
 
-        try
+    io.BackendPlatformUserData = C_NULL
+    ImGui_ImplSDL2_InitForSDLRenderer(window, sdlRenderer)
+    ImGui_ImplSDLRenderer2_Init(sdlRenderer)
+    
+    # setup Dear ImGui style #Todo: Make this a setting
+    CImGui.StyleColorsDark()
+    # CImGui.StyleColorsClassic()
+    # CImGui.StyleColorsLight()
+    
+    showDemoWindow = true
+    showAnotherWindow = false
+    clear_color = Cfloat[0.45, 0.55, 0.60, 0.01]
+
+    quit = false
+    menu_active = true
+    try
+        while !quit
+            #Don't run if game is paused by system (resizing, lost focus, etc)
+            while window_paused[] != 0
+                _ = pollEvent()
+                sleep(0.5)
+            end
+
+            # Handle Events
+            errorMsg = ""
+
             event_ref = Ref{SDL_Event}()
             
             while Bool(SDL_PollEvent(event_ref))
-                e = event_ref[]
-                t = e.type
-                handleEvents!(g, e, t)
+                evt = event_ref[]
+                ImGui_ImplSDL2_ProcessEvent(evt, sdlVersion)
+                evt_ty = evt.type
+
+                @info "evt_ty: $evt_ty evt.key.keysym.sym: $(evt.key.keysym.sym)"
+                
+                if evt_ty == SDL2.SDL_QUIT
+                    quit = true
+                    break
+
+                # handle menu enter key
+                @info evt == SDL2.SDL_KEYDOWN && evt.key.keysym.sym == SDL2.SDLK_ESCAPE
+
+                elseif evt == SDL2.SDL_KEYDOWN && evt.key.keysym.sym == SDL2.SDLK_ESCAPE
+                    menu_active = !menu_active
+                    
+                else
+                    handleEvents!(g, evt, evt_ty)
+                end
             end
-        catch e
-            rethrow()
-        end
+            
+            #     // start imgui frame
+            ImGui_ImplSDLRenderer2_NewFrame()
+            ImGui_ImplSDL2_NewFrame();
+            CImGui.NewFrame()
 
-        clear(g.screen)
-        Base.invokelatest(g.render_function, g)
-        SDL_RenderPresent(g.screen.renderer)
+            # Creating the "dockspace" that covers the whole window. This allows the child windows to automatically resize.
+            #lib.igDockSpaceOverViewport(C_NULL, ImGuiDockNodeFlags_PassthruCentralNode, C_NULL, C_NULL) 
+            @c CImGui.ShowDemoWindow(Ref{Bool}(showDemoWindow))
 
-        dt = elapsed(timer)
-        # Don't let the game proceed at fewer than this frames per second. If an
-        # update takes too long, allow the game to actually slow, rather than
-        # having too big of frames.
-        min_fps = 20.0
-        max_fps = 60.0
-        dt = min(dt / 1e9, 1.0 / min_fps)
-        start!(timer)
-        Base.invokelatest(g.update_function, g, dt)
-        tick!(scheduler[])
-        
-        if (playing[] == false)
-            throw(QuitException())
+            @cstatic begin
+                CImGui.Begin("Welcome to Animat")  
+                CImGui.Text("This is proprietary software, please do not distribute.")
+                CImGui.NewLine()
+                CImGui.End()
+            end
+
+            #`SDL2.SDL_RenderClear(sdlRenderer);
+            Base.invokelatest(g.render_function, g)
+            
+            # create SDL texture from g.screen.Background
+            sdl_tx = SDL_CreateTextureFromSurface(sdlRenderer, g.screen.background)
+            
+            #=SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 255, 255)
+            
+            clear(g.screen)
+
+            @cstatic begin
+                CImGui.Begin("Game Window")  
+                CImGui.Image(sdl_tx, ImVec2(800, 600))
+                CImGui.End()
+            end
+            =#
+
+            CImGui.Render()
+
+            SDL2.SDL_RenderSetScale(sdlRenderer, unsafe_load(io.DisplayFramebufferScale.x), unsafe_load(io.DisplayFramebufferScale.y));
+            #SDL2.SDL_SetRenderDrawColor(sdlRenderer, (UInt8)(round(clear_color[1] * 255)), (UInt8)(round(clear_color[2] * 255)), (UInt8)(round(clear_color[3] * 255)), (UInt8)(round(clear_color[4] * 255)));
+            SDL2.SDL_RenderClear(sdlRenderer);
+            ImGui_ImplSDLRenderer2_RenderDrawData(CImGui.GetDrawData(), sdlRenderer);
+            SDL_RenderPresent(sdlRenderer)
+
+            dt = elapsed(timer)
+            # Don't let the game proceed at fewer than this frames per second. If an
+            # update takes too long, allow the game to actually slow, rather than
+            # having too big of frames.
+            min_fps = 20.0
+            max_fps = 60.0
+            dt = min(dt / 1e9, 1.0 / min_fps)
+            start!(timer)
+            Base.invokelatest(g.update_function, g, dt)
+            tick!(scheduler[])
+
+            if (playing[] == false)
+                throw(QuitException())
+            end
         end
+    catch err
+        @warn "Error in renderloop!" exception=err
+        Base.show_backtrace(stderr, catch_backtrace())
+    finally
+        ImGui_ImplSDLRenderer2_Shutdown();
+        ImGui_ImplSDL2_Shutdown();
+
+        CImGui.DestroyContext(ctx)
+        SDL2.SDL_DestroyRenderer(sdlRenderer);
+        SDL2.SDL_DestroyWindow(window);
+        SDL2.SDL_Quit()
     end
 end
 
@@ -186,8 +283,8 @@ function handleEvents!(g::Game, e, t)
     elseif (t == SDL_WINDOWEVENT)
         handleWindowEvent(g::Game, e, t)
     
-    elseif (t == SDL_QUIT)
-        paused[] = playing[] = false
+    #elseif (t == SDL_QUIT)
+    #    paused[] = playing[] = false
     end
 end
 
@@ -325,7 +422,6 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
     
     clear(g.screen)
     
-
     return g
 end
 

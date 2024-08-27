@@ -250,7 +250,7 @@ function ImGui_ImplSDL2_InitForSDLRenderer(window, renderer)
     return ImGui_ImplSDL2_Init(window, renderer)
 end
 
-function ImGui_ImplSDL2_ProcessEvent(event)
+function ImGui_ImplSDL2_ProcessEvent(event, sdlVersion)
     io = CImGui.GetIO()
     bd = ImGui_ImplSDL2_GetBackendData()
     if event.type == SDL2.SDL_MOUSEMOTION

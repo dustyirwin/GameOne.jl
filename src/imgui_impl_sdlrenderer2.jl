@@ -30,7 +30,7 @@ end
 
 function ImGui_ImplSDLRenderer2_Shutdown()
     bd = ImGui_ImplSDLRenderer2_GetBackendData()
-#    @assert bd != C_NULL # "No renderer backend to shutdown, or already shutdown?"
+    #@assert bd != C_NULL # "No renderer backend to shutdown, or already shutdown?"
     io = CImGui.GetIO()
 
     ImGui_ImplSDLRenderer2_DestroyDeviceObjects()
@@ -40,7 +40,7 @@ function ImGui_ImplSDLRenderer2_Shutdown()
     io.BackendFlags &= ~ImGuiBackendFlags_RendererHasVtxOffset
 end
 
-function ImGui_ImplSDLRenderer2_SetupRenderState()
+function ImGui_ImplSDLRenderer2_SetupRenderState(sdlRenderer)
     bd = ImGui_ImplSDLRenderer2_GetBackendData()
     # Clear out any viewports and cliprect set by the user
     # FIXME: Technically speaking there are lots of other things we could backup/setup/restore during our render process.
@@ -68,7 +68,7 @@ Base.@kwdef mutable struct BackupSDLRendererState
     ClipRect::SDL2.SDL_Rect = SDL2.SDL_Rect(0, 0, 0, 0)
 end
 
-function ImGui_ImplSDLRenderer2_RenderDrawData(draw_data)
+function ImGui_ImplSDLRenderer2_RenderDrawData(draw_data, sdlRenderer)
     bd = ImGui_ImplSDLRenderer2_GetBackendData()
 
     # If there's a scale factor set by the user, use that instead
@@ -96,7 +96,7 @@ function ImGui_ImplSDLRenderer2_RenderDrawData(draw_data)
     clip_scale = render_scale
 
     # Render command lists
-    ImGui_ImplSDLRenderer2_SetupRenderState()
+    ImGui_ImplSDLRenderer2_SetupRenderState(sdlRenderer)
     data = unsafe_load(draw_data)
     GC.@preserve cmd_lists = unsafe_wrap(Vector{Ptr{CImGui.ImDrawList}}, data.CmdLists.Data, data.CmdListsCount)
     for cmd_list in cmd_lists # struct  CImGui.ImDrawList
@@ -236,10 +236,11 @@ end
 function ImGui_ImplSDLRenderer2_DestroyFontsTexture()
     io = CImGui.GetIO()
     bd = ImGui_ImplSDLRenderer2_GetBackendData()
-    if bd.FontTexture != C_NULL
+
+    if !isnothing(bd[]) && bd[].FontTexture != C_NULL
         io.Fonts.SetTexID(0)
-        SDL2.SDL_DestroyTexture(bd.FontTexture)
-        bd.FontTexture = C_NULL
+        SDL2.SDL_DestroyTexture(bd[].FontTexture)
+        bd[].FontTexture = C_NULL
     end
 end
 

@@ -41,18 +41,20 @@ alien_ok_img = ["$(@__DIR__)/images/alien.png"]
 eep_wav = joinpath(@__DIR__, "sounds", "eep.wav")
 
 # Create an `TextActor` object from an empty string for terminal use
-terminal = TextActor(">", "$(@__DIR__)/fonts/OpenSans-Regular.ttf", outline_size=1, pt_size=35)
-terminal.alpha = 0
+#terminal = TextActor(">", "$(@__DIR__)/fonts/OpenSans-Regular.ttf", outline_size=1, pt_size=35)
+#terminal.alpha = 0
 
 
+#=
 label = TextActor(
     "this is some example text",
     "$(@__DIR__)/fonts/OpenSans-Regular.ttf",
     outline_size=1,
     pt_size=24
     )
-label.x = 25
+#label.x = 25
 label.y = 25
+=#
 
     
 #load a custom animation
@@ -75,10 +77,10 @@ function draw(g::Game)
     #draw(wanim, g.screen)
     draw(alien, g.screen)
     #draw(alien2, g.screen)
-    draw(label, g.screen)
-    draw(terminal, g.screen)
+    #draw(label, g.screen)
+    #draw(terminal, g.screen)
 
-    #SDL_RenderPresent(g.screen.renderer)
+    SDL_RenderPresent(g.screen.renderer)
 end
 
 
@@ -118,7 +120,7 @@ function update(g::Game)
         dx = 2
     end
 end
-1
+
 # If the "space" key is pressed, change the displayed image to the "hurt" variant.
 # Also schedule an event to change it back to normal after one second.
 # We define functions to change the image for the actor. These functions are called 
