@@ -157,8 +157,8 @@ function mainloop(g::Game)
     # CImGui.StyleColorsLight()
     
     showDemoWindow = true
-    showAnotherWindow = false
-    clear_color = Cfloat[0.45, 0.55, 0.60, 0.01]
+    showAnotherWindow = true
+    clear_color = Cfloat[0.45, 0.55, 0.60, 0.15]
 
     quit = false
     menu_active = true
@@ -197,7 +197,12 @@ function mainloop(g::Game)
                 end
             end
             
-            #     // start imgui frame
+            # draw SDL window
+            SDL2.SDL_RenderClear(sdlRenderer);
+            Base.invokelatest(g.render_function, g)
+            SDL2.SDL_RenderClear(sdlRenderer);
+            
+            # start imgui frame
             ImGui_ImplSDLRenderer2_NewFrame()
             ImGui_ImplSDL2_NewFrame();
             CImGui.NewFrame()
@@ -213,30 +218,14 @@ function mainloop(g::Game)
                 CImGui.End()
             end
 
-            #`SDL2.SDL_RenderClear(sdlRenderer);
-            Base.invokelatest(g.render_function, g)
-            
-            # create SDL texture from g.screen.Background
-            sdl_tx = SDL_CreateTextureFromSurface(sdlRenderer, g.screen.background)
-            
-            #=SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 255, 255)
-            
-            clear(g.screen)
-
-            @cstatic begin
-                CImGui.Begin("Game Window")  
-                CImGui.Image(sdl_tx, ImVec2(800, 600))
-                CImGui.End()
-            end
-            =#
-
             CImGui.Render()
-
+            
             SDL2.SDL_RenderSetScale(sdlRenderer, unsafe_load(io.DisplayFramebufferScale.x), unsafe_load(io.DisplayFramebufferScale.y));
             #SDL2.SDL_SetRenderDrawColor(sdlRenderer, (UInt8)(round(clear_color[1] * 255)), (UInt8)(round(clear_color[2] * 255)), (UInt8)(round(clear_color[3] * 255)), (UInt8)(round(clear_color[4] * 255)));
-            SDL2.SDL_RenderClear(sdlRenderer);
             ImGui_ImplSDLRenderer2_RenderDrawData(CImGui.GetDrawData(), sdlRenderer);
+
             SDL_RenderPresent(sdlRenderer)
+            #SDL2.SDL_RenderClear(sdlRenderer);
 
             dt = elapsed(timer)
             # Don't let the game proceed at fewer than this frames per second. If an

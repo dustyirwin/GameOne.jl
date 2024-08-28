@@ -9,9 +9,9 @@ using Images
 using GameOne
 
 # Width of the game window
-SCREEN_WIDTH = 800
+SCREEN_WIDTH = 1920
 # Height of the game window
-SCREEN_HEIGHT = 600
+SCREEN_HEIGHT = 1080
 # Background color of the game window
 BACKGROUND = colorant"black"
 # Title of the game window
