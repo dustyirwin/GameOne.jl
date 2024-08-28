@@ -88,6 +88,7 @@ mutable struct Game
     onmousedown_function::Function
     onmouseup_function::Function
     onmousemove_function::Function
+    imgui_function::Function
     state::Vector{Dict{String,Dict}}
     socket::Vector{TCPSocket}
     Game() = new()
@@ -103,12 +104,10 @@ function initscreen(gm::Module, name::String)
     w = getifdefined(gm, WIDTHSYMBOL, 800,)
     background = getifdefined(gm, BACKSYMBOL, SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0))
 
-    #= disabling loading background as an image (will always be black)
-    if !(background isa Colorant)
-        background = image_surface(background)
-    end
-    =#
-
+    #if !(background isa Colorant)
+    #    background = image_surface(background)
+    #end
+    
     s = Screen(name, w, h, background)
     clear(s)
     
@@ -132,22 +131,23 @@ global sdlVersion = string(unsafe_load(ver).major, ".", unsafe_load(ver).minor, 
 println("SDL version: ", sdlVersion)
 sdlVersion = parse(Int32, replace(sdlVersion, "." => ""))
 
+
 function mainloop(g::Game)
     start!(timer)
     
     sdlRenderer = g.screen.renderer
     window = g.screen.window
-
+    
     if sdlRenderer == C_NULL
         @error "Failed to create SDL renderer: $(SDL_GetError())"
     end
-
+    
+    # create the ImGui context
     ctx = CImGui.CreateContext()
-        
     io = CImGui.GetIO()
+    io.BackendPlatformUserData = C_NULL
     io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable | CImGui.ImGuiConfigFlags_NavEnableKeyboard | CImGui.ImGuiConfigFlags_NavEnableGamepad
 
-    io.BackendPlatformUserData = C_NULL
     ImGui_ImplSDL2_InitForSDLRenderer(window, sdlRenderer)
     ImGui_ImplSDLRenderer2_Init(sdlRenderer)
     
@@ -157,11 +157,11 @@ function mainloop(g::Game)
     # CImGui.StyleColorsLight()
     
     showDemoWindow = true
-    showAnotherWindow = true
+    showAnotherWindow = false
     clear_color = Cfloat[0.45, 0.55, 0.60, 0.15]
 
     quit = false
-    menu_active = true
+    
     try
         while !quit
             #Don't run if game is paused by system (resizing, lost focus, etc)
@@ -186,11 +186,8 @@ function mainloop(g::Game)
                     quit = true
                     break
 
-                # handle menu enter key
-                @info evt == SDL2.SDL_KEYDOWN && evt.key.keysym.sym == SDL2.SDLK_ESCAPE
-
                 elseif evt == SDL2.SDL_KEYDOWN && evt.key.keysym.sym == SDL2.SDLK_ESCAPE
-                    menu_active = !menu_active
+                    g.screen.menu_active = !g.screen.menu_active
                     
                 else
                     handleEvents!(g, evt, evt_ty)
@@ -200,7 +197,8 @@ function mainloop(g::Game)
             # draw SDL window
             SDL2.SDL_RenderClear(sdlRenderer);
             Base.invokelatest(g.render_function, g)
-            SDL2.SDL_RenderClear(sdlRenderer);
+            #SDL2.SDL_RenderClear(sdlRenderer);
+            
             
             # start imgui frame
             ImGui_ImplSDLRenderer2_NewFrame()
@@ -208,15 +206,9 @@ function mainloop(g::Game)
             CImGui.NewFrame()
 
             # Creating the "dockspace" that covers the whole window. This allows the child windows to automatically resize.
-            #lib.igDockSpaceOverViewport(C_NULL, ImGuiDockNodeFlags_PassthruCentralNode, C_NULL, C_NULL) 
-            @c CImGui.ShowDemoWindow(Ref{Bool}(showDemoWindow))
-
-            @cstatic begin
-                CImGui.Begin("Welcome to Animat")  
-                CImGui.Text("This is proprietary software, please do not distribute.")
-                CImGui.NewLine()
-                CImGui.End()
-            end
+            #`lib.igDockSpaceOverViewport(C_NULL, ImGuiDockNodeFlags_PassthruCentralNode, C_NULL, C_NULL) 
+            
+            invokelatest(g.imgui_function)
 
             CImGui.Render()
             
@@ -401,6 +393,7 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
         Base.include(g.game_module, jlf)
     end
 
+    g.imgui_function = getfn(g.game_module, :imgui, 1)
     g.update_function = getfn(g.game_module, :update, 2)
     g.render_function = getfn(g.game_module, :draw, 3)
     g.onkey_function = getfn(g.game_module, :on_key_down, 3)

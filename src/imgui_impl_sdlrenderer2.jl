@@ -237,10 +237,10 @@ function ImGui_ImplSDLRenderer2_DestroyFontsTexture()
     io = CImGui.GetIO()
     bd = ImGui_ImplSDLRenderer2_GetBackendData()
 
-    if !isnothing(bd[]) && bd[].FontTexture != C_NULL
+    if !isnothing(bd) && bd.FontTexture != C_NULL
         io.Fonts.SetTexID(0)
-        SDL2.SDL_DestroyTexture(bd[].FontTexture)
-        bd[].FontTexture = C_NULL
+        SDL2.SDL_DestroyTexture(bd.FontTexture)
+        bd.FontTexture = C_NULL
     end
 end
 

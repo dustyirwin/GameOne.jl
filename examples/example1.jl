@@ -23,6 +23,21 @@ global dy = 3
 global dx2 = 3
 global dy2 = 3
 
+function imgui()
+
+    @c CImGui.ShowDemoWindow(Ref{Bool}(true))
+
+    # create a new ImGUI.jl window with the given title and a welcome message
+
+    @cstatic begin
+        CImGui.Begin("Welcome to Animat")  
+        CImGui.Text("This is proprietary software, please do not distribute.")
+        CImGui.NewLine()
+        CImGui.End()
+    end
+end
+
+
 function next_frame!(a::Actor)
     circshift!(a.textures, -1)
     a.data[:then] = now()

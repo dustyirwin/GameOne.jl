@@ -5,12 +5,13 @@
     renderer
     height::Int
     width::Int
-    background::Ptr{SDL_Surface}
+    background::Union{ARGB,Ptr{SDL_Surface}}
     window_id::Int
     has_focus::Bool = false
     full_screen::Bool = true
     minimized::Bool = false
     shown::Bool = true
+    menu_active::Bool = true
 
     function Screen(name, w, h, background)
         win, renderer = makeWinRenderer(name, w, h)
