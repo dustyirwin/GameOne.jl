@@ -23,20 +23,25 @@ global dy = 3
 global dx2 = 3
 global dy2 = 3
 
-function imgui()
+function imgui(g::Game)
 
     @c CImGui.ShowDemoWindow(Ref{Bool}(true))
 
     # create a new ImGUI.jl window with the given title and a welcome message
 
     @cstatic begin
-        CImGui.Begin("Welcome to Animat")  
-        CImGui.Text("This is proprietary software, please do not distribute.")
+        CImGui.Begin("Demotime!")  
+        CImGui.Text("This is some text!")
         CImGui.NewLine()
+        
+        if CImGui.Button("Close")
+            @info "Triggered!"
+            #@info "fieldnames(g): $(fieldnames(g))"
+        end
+
         CImGui.End()
     end
 end
-
 
 function next_frame!(a::Actor)
     circshift!(a.textures, -1)
@@ -95,7 +100,7 @@ function draw(g::Game)
     #draw(label, g.screen)
     #draw(terminal, g.screen)
 
-    SDL_RenderPresent(g.screen.renderer)
+    #SDL_RenderPresent(g.screen.renderer)
 end
 
 

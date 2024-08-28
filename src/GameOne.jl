@@ -208,7 +208,7 @@ function mainloop(g::Game)
             # Creating the "dockspace" that covers the whole window. This allows the child windows to automatically resize.
             #`lib.igDockSpaceOverViewport(C_NULL, ImGuiDockNodeFlags_PassthruCentralNode, C_NULL, C_NULL) 
             
-            invokelatest(g.imgui_function)
+            Base.invokelatest(g.imgui_function, g)
 
             CImGui.Render()
             
@@ -393,7 +393,7 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
         Base.include(g.game_module, jlf)
     end
 
-    g.imgui_function = getfn(g.game_module, :imgui, 1)
+    g.imgui_function = getfn(g.game_module, :imgui, 2)
     g.update_function = getfn(g.game_module, :update, 2)
     g.render_function = getfn(g.game_module, :draw, 3)
     g.onkey_function = getfn(g.game_module, :on_key_down, 3)
