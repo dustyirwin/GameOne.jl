@@ -9,9 +9,9 @@ using Images
 using GameOne
 
 # Width of the game window
-SCREEN_WIDTH = 1920
+SCREEN_WIDTH = 800
 # Height of the game window
-SCREEN_HEIGHT = 1080
+SCREEN_HEIGHT = 600
 # Background color of the game window
 BACKGROUND = colorant"black"
 # Title of the game window
@@ -23,25 +23,101 @@ global dy = 3
 global dx2 = 3
 global dy2 = 3
 
-function imgui(g::Game)
 
-    @c CImGui.ShowDemoWindow(Ref{Bool}(true))
-
-    # create a new ImGUI.jl window with the given title and a welcome message
-
-    @cstatic begin
-        CImGui.Begin("Demotime!")  
-        CImGui.Text("This is some text!")
-        CImGui.NewLine()
-        
-        if CImGui.Button("Close")
-            @info "Triggered!"
-            #@info "fieldnames(g): $(fieldnames(g))"
+function text_input_with_hint_single_line(name::String, hint::String, filters = CImGui.ImGuiInputTextFlags_None)
+    currentText = ""
+    @cstatic buf=""*"\0"^128 begin
+        CImGui.InputTextWithHint(name, hint, buf, length(buf), filters)
+        for characterIndex = eachindex(buf)
+            if Int32(buf[characterIndex]) == 0 # The end of the buffer will be recognized as a 0
+                currentText =  characterIndex == 1 ? "" : String(SubString(buf, 1, characterIndex - 1))
+                break
+            end
         end
 
-        CImGui.End()
+        return currentText
     end
 end
+
+"""
+    HelpMarker(msg::AbstractString)
+
+A port of the `HelpMarker()` function from the Dear ImGui demo. This will draw a
+grayed out '(?)' text on the screen with `msg` as the tooltip.
+"""
+function HelpMarker(msg::AbstractString)
+    TextDisabled("(?)")
+
+    if IsItemHovered() && BeginTooltip()
+        PushTextWrapPos(GetFontSize() * 35.0)
+        TextUnformatted(msg)
+        PopTextWrapPos()
+        EndTooltip()
+    end
+end
+
+function imgui(g::Game)
+    
+    @c CImGui.ShowDemoWindow(Ref{Bool}(true))
+
+    show_login = true
+    username = ""
+    password = ""
+
+    if g.imgui_settings["show_login"] 
+        if CImGui.Begin("Login")
+            CImGui.SetWindowSize((280,140))
+            
+            @cstatic u=""*"\0"^128 p=""*"\0"^128 begin
+                # Widget labels CANNOT match any other label in widget?
+                if CImGui.InputTextWithHint(" ", "   <username>    ", u, length(u))  
+                    @info u
+                end
+                
+                CImGui.NewLine()
+
+                # Widget text labels CANNOT match any other label in widget?
+                if CImGui.InputTextWithHint("  ", "   <password>    ", p, length(p), CImGui.ImGuiInputTextFlags_Password)
+                    @info p
+                end
+
+                username = rstrip(string(u),'\0')
+                password = rstrip(string(p),'\0')
+            end
+
+            CImGui.NewLine()
+
+            if CImGui.Button("Login")
+                println("Username: ", username, " username_length: ", length(username))
+                println("Password: ", password, " password_length: ", length(password))
+                
+                # Add your authentication logic here
+
+                if "beep" == username && "boop" == password
+                    println("Login successful")
+                    play_sound(harp)
+                    g.imgui_settings["show_login"]  = false
+                    window_paused[] = false
+                else
+                    println("Login failed")
+                    play_sound(cat_growl)
+                end
+                #
+
+            end
+        
+            CImGui.SameLine()
+
+            if CImGui.Button("Sign Up")
+                println("Sign Up button clicked")
+                # Add your sign up logic here
+            end
+
+            CImGui.End()
+        end
+    end
+end
+
 
 function next_frame!(a::Actor)
     circshift!(a.textures, -1)
@@ -58,7 +134,9 @@ alien_ok_img = ["$(@__DIR__)/images/alien.png"]
 #alien2 = ImageMemActor("alien2", alien_hurt_img)
 
 # sound effects
-eep_wav = joinpath(@__DIR__, "sounds", "eep.wav")
+eep_wav = joinpath(@__DIR__, "sounds", "283201-RubberBallBouncing7.wav")
+cat_growl = joinpath(@__DIR__, "sounds", "39 Tom Cat Growling, Individual Grow.wav")
+harp = joinpath(@__DIR__, "sounds", "harp-glissando-descending-short-103886.mp3")
 
 # Create an `TextActor` object from an empty string for terminal use
 #terminal = TextActor(">", "$(@__DIR__)/fonts/OpenSans-Regular.ttf", outline_size=1, pt_size=35)
@@ -87,7 +165,7 @@ anim.x = 10
 
 # Start playing background music
 
-play_music("examples/music/radetzky_ogg")
+play_music("$(@__DIR__)/examples/music/radetzky_ogg")
 
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
@@ -111,33 +189,38 @@ end
 
 function update(g::Game)
     global dx, dy, dx2, dy2, anim, wanim
-    alien.position.x += dx
-    alien.position.y += dy
 
-    if anim.data[:next_frame]
-        if now() - anim.data[:then] > Millisecond(120)
-            next_frame!(anim)
+    if Bool(window_paused[])
+        nothing
+    else
+        alien.position.x += dx
+        alien.position.y += dy
+
+        if anim.data[:next_frame]
+            if now() - anim.data[:then] > Millisecond(120)
+                next_frame!(anim)
+            end
         end
-    end
-    
-    if alien.x > 798 - alien.w || alien.x < 2
-        dx = -dx
-        play_sound(eep_wav)
-    end
-    
-    if alien.y > 598 - alien.h || alien.y < 2
-        dy = -dy
-        play_sound(eep_wav)
+        
+        if alien.x > SCREEN_WIDTH - alien.w || alien.x < 2
+            dx = -dx
+            play_sound(eep_wav)
+        end
+        
+        if alien.y > SCREEN_HEIGHT - alien.h || alien.y < 2
+            dy = -dy
+            play_sound(eep_wav)
+        end
     end
 
     if g.keyboard.DOWN
-        dy = 2
+        dy = 1
     elseif g.keyboard.UP
-        dy = -2
+        dy = -1
     elseif g.keyboard.LEFT
-        dx = -2
+        dx = -1
     elseif g.keyboard.RIGHT
-        dx = 2
+        dx = 1
     end
 end
 
@@ -181,6 +264,5 @@ function on_key_down(g, key, keymod)
         =#
     end
 end
-
 
 #rungame()

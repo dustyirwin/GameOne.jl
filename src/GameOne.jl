@@ -52,7 +52,7 @@ global const BackendPlatformUserData = Ref{Any}(C_NULL)
 export SDL2, BackendPlatformUserData
 export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
-    getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL
+    window_paused, getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL
 export Game, Keys, KeyMods, MouseButton
 export Actor, TextActor, ImageFileActor, ImageMemActor 
 export Line, Rect, Triangle, Circle
@@ -89,7 +89,8 @@ mutable struct Game
     onmouseup_function::Function
     onmousemove_function::Function
     imgui_function::Function
-    state::Vector{Dict{String,Dict}}
+    imgui_settings::Dict{String,Any}
+    state::Vector{Dict{String,Any}}
     socket::Vector{TCPSocket}
     Game() = new()
 end
@@ -165,10 +166,10 @@ function mainloop(g::Game)
     try
         while !quit
             #Don't run if game is paused by system (resizing, lost focus, etc)
-            while window_paused[] != 0
-                _ = pollEvent()
-                sleep(0.5)
-            end
+            #while window_paused[] != 0
+            #    _ = pollEvent()
+            #    sleep(0.5)
+            #end
 
             # Handle Events
             errorMsg = ""
@@ -180,7 +181,7 @@ function mainloop(g::Game)
                 ImGui_ImplSDL2_ProcessEvent(evt, sdlVersion)
                 evt_ty = evt.type
 
-                @info "evt_ty: $evt_ty evt.key.keysym.sym: $(evt.key.keysym.sym)"
+                @debug "evt_ty: $evt_ty evt.key.keysym.sym: $(evt.key.keysym.sym)"
                 
                 if evt_ty == SDL2.SDL_QUIT
                     quit = true
@@ -194,12 +195,14 @@ function mainloop(g::Game)
                 end
             end
             
-            # draw SDL window
+
+            # clearing out renderer for new frame
             SDL2.SDL_RenderClear(sdlRenderer);
-            Base.invokelatest(g.render_function, g)
-            #SDL2.SDL_RenderClear(sdlRenderer);
+            if window_paused[] == 0
+                Base.invokelatest(g.render_function, g)
+            end           
             
-            
+
             # start imgui frame
             ImGui_ImplSDLRenderer2_NewFrame()
             ImGui_ImplSDL2_NewFrame();
@@ -208,16 +211,20 @@ function mainloop(g::Game)
             # Creating the "dockspace" that covers the whole window. This allows the child windows to automatically resize.
             #`lib.igDockSpaceOverViewport(C_NULL, ImGuiDockNodeFlags_PassthruCentralNode, C_NULL, C_NULL) 
             
+            # run custom imgui function
             Base.invokelatest(g.imgui_function, g)
 
+            # Draw imgui objects to imgui renderer
             CImGui.Render()
             
             SDL2.SDL_RenderSetScale(sdlRenderer, unsafe_load(io.DisplayFramebufferScale.x), unsafe_load(io.DisplayFramebufferScale.y));
             #SDL2.SDL_SetRenderDrawColor(sdlRenderer, (UInt8)(round(clear_color[1] * 255)), (UInt8)(round(clear_color[2] * 255)), (UInt8)(round(clear_color[3] * 255)), (UInt8)(round(clear_color[4] * 255)));
+            
+            # copy imgui render data to sdlrenderer
             ImGui_ImplSDLRenderer2_RenderDrawData(CImGui.GetDrawData(), sdlRenderer);
 
+            # present rendered image to screen
             SDL_RenderPresent(sdlRenderer)
-            #SDL2.SDL_RenderClear(sdlRenderer);
 
             dt = elapsed(timer)
             # Don't let the game proceed at fewer than this frames per second. If an
@@ -400,8 +407,12 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
     g.onmouseup_function = getfn(g.game_module, :on_mouse_up, 3)
     g.onmousedown_function = getfn(g.game_module, :on_mouse_down, 3)
     g.onmousemove_function = getfn(g.game_module, :on_mouse_move, 2)
+    g.state = Vector{Dict{String,Dict}}([Dict("imgui"=>Dict("username"=>"", "password"=>""))])
     g.screen = initscreen(g.game_module, name)
-    
+    g.imgui_settings = Dict(
+        "show_login"=>true, 
+        "show_games"=>true
+    )
     clear(g.screen)
     
     return g
