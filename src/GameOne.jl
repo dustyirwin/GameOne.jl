@@ -246,7 +246,7 @@ function mainloop(g::Game)
         Base.show_backtrace(stderr, catch_backtrace())
     finally
         ImGui_ImplSDLRenderer2_Shutdown();
-        ImGui_ImplSDL2_Shutdown();
+        #ImGui_ImplSDL2_Shutdown();
 
         CImGui.DestroyContext(ctx)
         SDL2.SDL_DestroyRenderer(sdlRenderer);

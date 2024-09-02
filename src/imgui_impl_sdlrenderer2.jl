@@ -33,11 +33,11 @@ function ImGui_ImplSDLRenderer2_Shutdown()
     #@assert bd != C_NULL # "No renderer backend to shutdown, or already shutdown?"
     io = CImGui.GetIO()
 
-    ImGui_ImplSDLRenderer2_DestroyDeviceObjects()
+    #ImGui_ImplSDLRenderer2_DestroyDeviceObjects()
 
     io.BackendRendererName = C_NULL
     io.BackendRendererUserData = C_NULL
-    io.BackendFlags &= ~ImGuiBackendFlags_RendererHasVtxOffset
+    #io.BackendFlags &= ~ImGuiBackendFlags_RendererHasVtxOffset
 end
 
 function ImGui_ImplSDLRenderer2_SetupRenderState(sdlRenderer)
@@ -236,12 +236,9 @@ end
 function ImGui_ImplSDLRenderer2_DestroyFontsTexture()
     io = CImGui.GetIO()
     bd = ImGui_ImplSDLRenderer2_GetBackendData()
-
-    if !isnothing(bd) && bd.FontTexture != C_NULL
-        io.Fonts.SetTexID(0)
-        SDL2.SDL_DestroyTexture(bd.FontTexture)
-        bd.FontTexture = C_NULL
-    end
+    io.Fonts.SetTexID(0)
+    SDL2.SDL_DestroyTexture(bd.FontTexture)
+    bd.FontTexture = C_NULL
 end
 
 function ImGui_ImplSDLRenderer2_CreateDeviceObjects()

@@ -108,7 +108,6 @@ function ImGui_ImplSDL2_Init(window, renderer)
     return true
 end
 
-
 function ImGui_ImplSDL2_SetClipboardText(text)
     SDL2.SDL_SetClipboardText(text)
 end
