@@ -8,6 +8,7 @@ tmp
 *.jls
 
 /archive
+/examples/sounds
 
 /Manifest.toml
 settings.json

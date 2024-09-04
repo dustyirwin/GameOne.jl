@@ -56,7 +56,7 @@ export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique,
 export Game, Keys, KeyMods, MouseButton
 export Actor, TextActor, ImageFileActor, ImageMemActor 
 export Line, Rect, Triangle, Circle
-
+export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init
 
 # ImGuiSDLBackend
 include("imgui_impl_sdl2.jl")
@@ -139,10 +139,6 @@ function mainloop(g::Game)
     sdlRenderer = g.screen.renderer
     window = g.screen.window
     
-    if sdlRenderer == C_NULL
-        @error "Failed to create SDL renderer: $(SDL_GetError())"
-    end
-    
     # create the ImGui context
     ctx = CImGui.CreateContext()
     io = CImGui.GetIO()
@@ -186,15 +182,11 @@ function mainloop(g::Game)
                 if evt_ty == SDL2.SDL_QUIT
                     quit = true
                     break
-
-                elseif evt == SDL2.SDL_KEYDOWN && evt.key.keysym.sym == SDL2.SDLK_ESCAPE
-                    g.screen.menu_active = !g.screen.menu_active
                     
                 else
                     handleEvents!(g, evt, evt_ty)
                 end
             end
-            
 
             # clearing out renderer for new frame
             SDL2.SDL_RenderClear(sdlRenderer);
@@ -202,7 +194,6 @@ function mainloop(g::Game)
                 Base.invokelatest(g.render_function, g)
             end           
             
-
             # start imgui frame
             ImGui_ImplSDLRenderer2_NewFrame()
             ImGui_ImplSDL2_NewFrame();
@@ -411,7 +402,8 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
     g.screen = initscreen(g.game_module, name)
     g.imgui_settings = Dict(
         "show_login"=>true, 
-        "show_games"=>true
+        "show_games"=>true,
+        "show_console"=>false,
     )
     clear(g.screen)
     
@@ -443,75 +435,6 @@ function getfn(m::Module, s::Symbol, maxargs = 3)
     else
         return (x...) -> nothing
     end
-end
-
-function start_text_input(g::Game, terminal::Actor)
-    done = false
-    comp = terminal.label
-    SDL_StartTextInput()
-
-    while !done
-        event, success = pollEvent!()
-
-        if success
-            event_array = UInt8.([Char(i) for i in event])
-
-            event_type = getEventType(event_array)
-            @debug "event type: $event_type"
-
-            key_sym = event_array[21]
-            @debug "key sym: $key_sym"
-
-            #SDL_GetModState() |> string
-
-            if getEventType(event) == SDL_TEXTINPUT
-                char = getTextInputEventChar(event)
-                comp *= char
-                comp = comp == ">`" ? ">" : comp
-
-                update_text_actor!(terminal, comp)
-                @debug "TextInputEvent: $(getEventType(event)) comp: $comp"
-
-                #= Paste from clipboard
-                # KEYMODs: LCTRL = 4160 | RCTRL = 4096
-
-                #elseif event_type == SDL_KEYDOWN && (SDL_GetModState() |> string == "4160" || SDL_GetModState() |> string == "4096") && (key_sym == "v" || key_sym == "V")
-                    comp = comp * "$(unsafe_string(SDL_GetClipboardText()))"
-                    update_text_actor!(terminal, comp)
-                    =#
-            elseif length(comp) > 1 && getEventType(event_array) == 768 && key_sym == 8  # "\b" backspace key
-                comp = comp[1:end-1]
-                update_text_actor!(terminal, comp)
-
-                @debug "BackspaceEvent: $(getEventType(event)) comp: $comp"
-
-            elseif getEventType(event_array) == 768 && (key_sym == 82 || key_sym == 81)
-                if haskey(terminal.data, :command_history) && length(terminal.data[:command_history]) > 0
-                    circshift!(terminal.data[:command_history], key_sym == 82 ? -1 : 1)
-                    comp = terminal.data[:command_history][begin]
-                    update_text_actor!(terminal, comp)
-                end
-
-            elseif getEventType(event) == SDL_KEYDOWN && key_sym == 13 #"\r" # return key
-                @debug "QuitEvent: $(getEventType(event))"
-                @info "Composition: $comp"
-
-                if !haskey(terminal.data, :command_history)
-                    terminal.data[:command_history] = [""]
-                end
-                    
-                done = true
-            end
-
-            # Update screen(s)
-            SDL_RenderClear(g.screen.renderer)
-            draw(g)
-            SDL_RenderPresent(g.screen.renderer)
-        end
-    end
-
-    SDL_StopTextInput()
-    terminal.label = comp
 end
 
 

@@ -5,7 +5,7 @@ pwd()
 #using Pkg
 #Pkg.activate(".")
 
-using Images
+#using Images
 using GameOne
 
 # Width of the game window
@@ -58,7 +58,7 @@ end
 
 function imgui(g::Game)
     
-    @c CImGui.ShowDemoWindow(Ref{Bool}(true))
+    #@c CImGui.ShowDemoWindow(Ref{Bool}(true))
 
     show_login = true
     username = ""
@@ -97,13 +97,12 @@ function imgui(g::Game)
                     println("Login successful")
                     play_sound(harp)
                     g.imgui_settings["show_login"]  = false
+                    g.imgui_settings["show_console"] = true
                     window_paused[] = false
                 else
                     println("Login failed")
                     play_sound(cat_growl)
                 end
-                #
-
             end
         
             CImGui.SameLine()
@@ -116,8 +115,58 @@ function imgui(g::Game)
             CImGui.End()
         end
     end
-end
 
+    command_text = "Welcome to the console!\n"
+    response_text = ""
+    command_history = []
+
+    if g.imgui_settings["show_console"]
+        
+        if CImGui.Begin("Console")
+            CImGui.SetWindowSize((280,140))
+            
+            @cstatic txt=""*"\0"^512  begin
+                # Widget labels CANNOT match any other label in widget?
+                if CImGui.InputTextWithHint(" ", "  <command>  ", txt, length(txt))  
+                    println(txt)
+                end
+
+                command_text = rstrip(string(txt),'\0')
+                CImGui.Text(command_text)
+            end
+            
+            CImGui.NewLine()
+            
+            if CImGui.Button("Run")
+                println("Run button clicked")
+                # Add your run logic here
+                
+                try
+                    io = IOBuffer()
+                    ex = Meta.parse(command_text)
+                    @info "command_text: $command_text"
+                    show(IOContext(io, :limit => true, :displaysize => (500, 250)), "text/plain", eval(g.game_module, ex))
+                    response_text = String(take!(io))
+                    @info "response_text: $response_text"
+                    push!(command_history, command_text)
+                catch e
+                    @warn e
+                end
+            end
+
+            CImGui.SameLine()
+            
+            if CImGui.Button("Clear")
+                println("Clear button clicked")
+                # Add your clear logic here
+                command_text = ""
+            end
+            
+
+            CImGui.End()
+        end
+    end
+end
 
 function next_frame!(a::Actor)
     circshift!(a.textures, -1)
@@ -129,8 +178,8 @@ end
 #alien = ImageFileActor("alien1", [joinpath(@__DIR__,"images","alien.png")])
 alien = ImageFileActor("alien1", [joinpath("examples", "images", "alien.png")])
 
-alien_hurt_img = load("$(@__DIR__)/images/alien_hurt.png")
-alien_ok_img = ["$(@__DIR__)/images/alien.png"]
+#alien_hurt_img = load("$(@__DIR__)/images/alien_hurt.png")
+#alien_ok_img = ["$(@__DIR__)/images/alien.png"]
 #alien2 = ImageMemActor("alien2", alien_hurt_img)
 
 # sound effects
@@ -169,16 +218,8 @@ play_music("$(@__DIR__)/examples/music/radetzky_ogg")
 
 # The draw function is called by the framework. All we do here is draw the Actor
 function draw(g::Game)
-    #SDL_RenderClear(g.screen.renderer)
-
-    draw(anim, g.screen)
-    #draw(wanim, g.screen)
-    draw(alien, g.screen)
-    #draw(alien2, g.screen)
-    #draw(label, g.screen)
-    #draw(terminal, g.screen)
-
-    #SDL_RenderPresent(g.screen.renderer)
+    draw(anim)
+    draw(alien)
 end
 
 
@@ -233,7 +274,7 @@ end
 alien_hurt() = alien.image = "images/alien_hurt.png"
 alien_normal() = alien.image = "images/alien.png"
 
-#command_history = ["@show alien.label"]
+#=command_history = ["@show alien.label"]
 
 function on_key_down(g, key, keymod)
     # start terminal and accept input text to be parsed and executed by
@@ -265,4 +306,7 @@ function on_key_down(g, key, keymod)
     end
 end
 
-#rungame()
+if !isempty(Base.PROGRAM_FILE)
+    rungame()
+end
+=#
