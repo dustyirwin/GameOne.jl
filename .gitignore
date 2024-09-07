@@ -7,5 +7,9 @@ tmp
 *.mem
 *.jls
 
+/archive
+/examples/sounds
+
 /Manifest.toml
 settings.json
+imgui.ini

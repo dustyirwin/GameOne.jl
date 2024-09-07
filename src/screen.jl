@@ -11,10 +11,12 @@
     full_screen::Bool = true
     minimized::Bool = false
     shown::Bool = true
+    menu_active::Bool = true
 
     function Screen(name, w, h, background)
         win, renderer = makeWinRenderer(name, w, h)
-        new(name, win, renderer, h, w, to_ARGB(background), SDL_GetWindowID(win))
+        surface = SDL_CreateRGBSurface(w, h, 32, 0, 255, 255, 255, 0)
+        new(name, win, renderer, h, w, surface, SDL_GetWindowID(win))
     end
 end
 

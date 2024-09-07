@@ -10,12 +10,17 @@ using Reexport: @reexport
 @reexport using Random: rand, randstring, shuffle, shuffle!
 @reexport using DataStructures: OrderedDict, counter
 @reexport using Sockets
+@reexport using CImGui
+@reexport using CImGui.CSyntax
+@reexport using CImGui.CSyntax.CStatic
+@reexport using CImGui: ImVec2, ImVec4, IM_COL32, ImS32, ImU32, ImS64, ImU64, lib
+@reexport using CImGui.lib
 
-# GameOne imports
+# SDL2 imports
 @reexport using SimpleDirectMediaLayer.LibSDL2: SDL_Event, SDL_Texture, SDL_DestroyTexture, SDL_ShowCursor, 
     SDL_SetWindowFullscreen, SDL_SetHint, SDL_HINT_RENDER_SCALE_QUALITY, SDL_RenderPresent, 
-    SDL_HasIntersection, SDL_Rect, SDL_RenderFillRect, SDL_CreateTextureFromSurface, 
-    SDL_BlendMode, SDL_Surface, SDL_WINDOW_FULLSCREEN, IMG_Load, SDL_CreateRGBSurfaceWithFormatFrom,
+    SDL_HasIntersection, SDL_Rect, SDL_RenderFillRect, SDL_CreateTextureFromSurface, SDL_TEXTUREACCESS_TARGET,
+    SDL_BlendMode, SDL_Surface, SDL_WINDOW_FULLSCREEN, IMG_Load, SDL_SetRenderTarget,
     SDL_PIXELFORMAT_ARGB32, SDL_UpperBlitScaled, SDL_FreeSurface, SDL_FLIP_NONE, SDL_FLIP_BOTH, SDL_FLIP_VERTICAL, 
     SDL_FLIP_HORIZONTAL, SDL_RenderCopyEx, SDL_PollEvent, SDL_TEXTINPUT, SDL_KEYDOWN, SDL_KEYUP, SDL_MOUSEBUTTONDOWN, 
     SDL_MOUSEBUTTONUP, SDL_GetError, SDL_INIT_VIDEO, SDL_INIT_AUDIO, SDL_WINDOWEVENT, SDL_QUIT, SDL_MOUSEMOTION, 
@@ -27,13 +32,12 @@ using Reexport: @reexport
     SDL_WINDOW_OPENGL, SDL_WINDOW_SHOWN, SDL_CreateWindow, SDL_SetWindowMinimumSize, SDL_SetWindowResizable, SDL_WINDOW_RESIZABLE,
     SDL_WINDOW_MOUSE_FOCUS, SDL_WINDOW_FOREIGN, SDL_WINDOW_ALWAYS_ON_TOP, SDL_WINDOW_SKIP_TASKBAR, SDL_WINDOW_UTILITY, SDL_WINDOW_TOOLTIP,
     SDL_WINDOW_INPUT_FOCUS,SDL_WINDOW_MOUSE_FOCUS,SDL_WINDOW_FOREIGN,SDL_WINDOW_ALWAYS_ON_TOP,SDL_WINDOW_SKIP_TASKBAR,SDL_WINDOW_UTILITY,
-    SDL_WINDOW_TOOLTIP,SDL_WINDOW_POPUP_MENU,
-    SDL_WINDOW_METAL,SDL_WINDOW_VULKAN,SDL_WINDOW_HIDDEN,SDL_WINDOW_BORDERLESS,
+    SDL_WINDOW_TOOLTIP,SDL_WINDOW_POPUP_MENU, SDL_WINDOW_METAL,SDL_WINDOW_VULKAN,SDL_WINDOW_HIDDEN,SDL_WINDOW_BORDERLESS,
     SDL_WINDOW_FULLSCREEN_DESKTOP,SDL_WINDOW_FULLSCREEN,SDL_WINDOW_OPENGL,
     
-    SDL_SetTextureBlendMode,
-    SDL_CreateRenderer, SDL_SetRenderDrawBlendMode, SDL_SetRenderDrawColor, SDL_RenderClear, SDL_DelEventWatch,
-    SDL_GetWindowSize, SDL_GetWindowFlags, SDL_GetWindowSurface, SDL_Quit, SDL_RWFromFile,
+    SDL_SetTextureBlendMode, SDL_CreateRGBSurface, SDL_CreateRGBSurfaceWithFormat, SDL_CreateRGBSurfaceWithFormatFrom,
+    SDL_CreateRenderer, SDL_CreateTexture, SDL_SetRenderDrawBlendMode, SDL_SetRenderDrawColor, SDL_RenderClear, SDL_DelEventWatch,
+    SDL_GetWindowSize, SDL_GetWindowFlags, SDL_GetWindowSurface, SDL_Quit, SDL_RWFromFile, SDL_RenderCopy, SDL_RenderDrawRect,
     MIX_INIT_FLAC, MIX_INIT_MP3, MIX_INIT_OGG, Mix_Init, Mix_OpenAudio, Mix_HaltMusic, Mix_HaltChannel, Mix_CloseAudio, 
     Mix_Quit, Mix_LoadWAV_RW, AUDIO_S16SYS, Mix_PlayChannelTimed, Mix_PlayMusic, Mix_PlayingMusic, Mix_FreeChunk, 
     Mix_FreeMusic, Mix_VolumeMusic, Mix_Volume, Mix_PausedMusic, Mix_ResumeMusic, Mix_LoadMUS, Mix_PauseMusic,
@@ -42,17 +46,22 @@ using Reexport: @reexport
 
 import SimpleDirectMediaLayer
 const SDL2 = SimpleDirectMediaLayer.LibSDL2
+global const BackendPlatformUserData = Ref{Any}(C_NULL)
 
 # GameOne exports
+export SDL2, BackendPlatformUserData
 export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
-    getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL
+    window_paused, getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL,
+    image_surface
 export Game, Keys, KeyMods, MouseButton
 export Actor, TextActor, ImageFileActor, ImageMemActor 
 export Line, Rect, Triangle, Circle
+export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init
 
-
-
+# ImGuiSDLBackend
+include("imgui_impl_sdl2.jl")
+include("imgui_impl_sdlrenderer2.jl")
 
 include("keyboard.jl")
 include("timer.jl")
@@ -80,7 +89,9 @@ mutable struct Game
     onmousedown_function::Function
     onmouseup_function::Function
     onmousemove_function::Function
-    state::Vector{Dict{String,Dict}}
+    imgui_function::Function
+    imgui_settings::Dict{String,Any}
+    state::Vector{Dict{String,Any}}
     socket::Vector{TCPSocket}
     Game() = new()
 end
@@ -90,16 +101,15 @@ const game = Ref{Game}()
 const playing = Ref{Bool}(false)
 const paused = Ref{Bool}(false)
 
-
 function initscreen(gm::Module, name::String)
     h = getifdefined(gm, HEIGHTSYMBOL, 600,)
     w = getifdefined(gm, WIDTHSYMBOL, 800,)
-    background = getifdefined(gm, BACKSYMBOL, ARGB(colorant"black"))
+    background = getifdefined(gm, BACKSYMBOL, SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0))
 
-    if !(background isa Colorant)
-        background = image_surface(background)
-    end
-
+    #if !(background isa Colorant)
+    #    background = image_surface(background)
+    #end
+    
     s = Screen(name, w, h, background)
     clear(s)
     
@@ -116,49 +126,118 @@ pollEvent = let event = Ref{SDL_Event}()
     () -> SDL_PollEvent(event)
 end
 
+
+ver = pointer(SDL2.SDL_version[SDL2.SDL_version(0,0,0)])
+SDL2.SDL_GetVersion(ver)
+global sdlVersion = string(unsafe_load(ver).major, ".", unsafe_load(ver).minor, ".", unsafe_load(ver).patch)
+println("SDL version: ", sdlVersion)
+sdlVersion = parse(Int32, replace(sdlVersion, "." => ""))
+
+
 function mainloop(g::Game)
     start!(timer)
+    
+    sdlRenderer = g.screen.renderer
+    window = g.screen.window
+    
+    # create the ImGui context
+    ctx = CImGui.CreateContext()
+    io = CImGui.GetIO()
+    io.BackendPlatformUserData = C_NULL
+    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable
+    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_ViewportsEnable 
+    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_NavEnableKeyboard
+    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_NavEnableGamepad
 
-    while (true)
-        #Don't run if game is paused by system (resizing, lost focus, etc)
-        while window_paused[] != 0
-            _ = pollEvent()
-            sleep(0.5)
-        end
+    ImGui_ImplSDL2_InitForSDLRenderer(window, sdlRenderer)
+    ImGui_ImplSDLRenderer2_Init(sdlRenderer)
+    
+    quit = false
+    
+    try
+        while !quit
+            #Don't run if game is paused by system (resizing, lost focus, etc)
+            #while window_paused[] != 0
+            #    _ = pollEvent()
+            #    sleep(0.5)
+            #end
 
-        # Handle Events
-        errorMsg = ""
+            # Handle Events
+            errorMsg = ""
 
-        try
             event_ref = Ref{SDL_Event}()
             
             while Bool(SDL_PollEvent(event_ref))
-                e = event_ref[]
-                t = e.type
-                handleEvents!(g, e, t)
+                evt = event_ref[]
+                ImGui_ImplSDL2_ProcessEvent(evt, sdlVersion)
+                evt_ty = evt.type
+
+                @debug "evt_ty: $evt_ty evt.key.keysym.sym: $(evt.key.keysym.sym)"
+                
+                if evt_ty == SDL2.SDL_QUIT
+                    quit = true
+                    break
+                    
+                else
+                    handleEvents!(g, evt, evt_ty)
+                end
             end
-        catch e
-            rethrow()
-        end
 
-        clear(g.screen)
-        Base.invokelatest(g.render_function, g)
-        SDL_RenderPresent(g.screen.renderer)
+            # clearing out renderer for new frame
+            SDL2.SDL_RenderClear(sdlRenderer);
+            if window_paused[] == 0
+                Base.invokelatest(g.render_function, g)
+            end           
+            
+            # start imgui frame
+            ImGui_ImplSDLRenderer2_NewFrame()
+            ImGui_ImplSDL2_NewFrame();
+            CImGui.NewFrame()
 
-        dt = elapsed(timer)
-        # Don't let the game proceed at fewer than this frames per second. If an
-        # update takes too long, allow the game to actually slow, rather than
-        # having too big of frames.
-        min_fps = 20.0
-        max_fps = 60.0
-        dt = min(dt / 1e9, 1.0 / min_fps)
-        start!(timer)
-        Base.invokelatest(g.update_function, g, dt)
-        tick!(scheduler[])
-        
-        if (playing[] == false)
-            throw(QuitException())
+            # Creating the "dockspace" that covers the whole window. This allows the child windows to automatically resize.
+            #`lib.igDockSpaceOverViewport(C_NULL, ImGuiDockNodeFlags_PassthruCentralNode, C_NULL, C_NULL) 
+            
+            # run custom imgui function
+            Base.invokelatest(g.imgui_function, g)
+
+            # Draw imgui objects to imgui renderer
+            CImGui.Render()
+            
+            SDL2.SDL_RenderSetScale(sdlRenderer, unsafe_load(io.DisplayFramebufferScale.x), unsafe_load(io.DisplayFramebufferScale.y));
+            #SDL2.SDL_SetRenderDrawColor(sdlRenderer, (UInt8)(round(clear_color[1] * 255)), (UInt8)(round(clear_color[2] * 255)), (UInt8)(round(clear_color[3] * 255)), (UInt8)(round(clear_color[4] * 255)));
+            
+            # copy imgui render data to sdlrenderer
+            ImGui_ImplSDLRenderer2_RenderDrawData(CImGui.GetDrawData(), sdlRenderer);
+
+            # present rendered image to screen
+            SDL_RenderPresent(sdlRenderer)
+
+            dt = elapsed(timer)
+            # Don't let the game proceed at fewer than this frames per second. If an
+            # update takes too long, allow the game to actually slow, rather than
+            # having too big of frames.
+            min_fps = 20.0
+            max_fps = 60.0
+            dt = min(dt / 1e9, 1.0 / min_fps)
+            start!(timer)
+            Base.invokelatest(g.update_function, g, dt)
+            tick!(scheduler[])
+
+            if (playing[] == false)
+                throw(QuitException())
+            end
         end
+    catch err
+        @warn "Error in renderloop!" exception=err
+        Base.show_backtrace(stderr, catch_backtrace())
+    finally
+        ImGui_ImplSDLRenderer2_Shutdown();
+        #ImGui_ImplSDL2_Shutdown();
+
+        CImGui.DestroyContext(ctx)
+        SDL2.SDL_DestroyRenderer(sdlRenderer);
+        SDL2.SDL_DestroyWindow(window);
+        SDL2.SDL_Quit()
     end
 end
 
@@ -178,8 +257,8 @@ function handleEvents!(g::Game, e, t)
     elseif (t == SDL_WINDOWEVENT)
         handleWindowEvent(g::Game, e, t)
     
-    elseif (t == SDL_QUIT)
-        paused[] = playing[] = false
+    #elseif (t == SDL_QUIT)
+    #    paused[] = playing[] = false
     end
 end
 
@@ -307,17 +386,24 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
         Base.include(g.game_module, jlf)
     end
 
+    g.imgui_function = getfn(g.game_module, :imgui, 2)
     g.update_function = getfn(g.game_module, :update, 2)
     g.render_function = getfn(g.game_module, :draw, 3)
     g.onkey_function = getfn(g.game_module, :on_key_down, 3)
     g.onmouseup_function = getfn(g.game_module, :on_mouse_up, 3)
     g.onmousedown_function = getfn(g.game_module, :on_mouse_down, 3)
     g.onmousemove_function = getfn(g.game_module, :on_mouse_move, 2)
+    g.state = Vector{Dict{String,Dict}}([Dict("imgui"=>Dict("username"=>"", "password"=>""))])
     g.screen = initscreen(g.game_module, name)
-    
+    g.imgui_settings = Dict(
+        "menu_active"=>false,
+        "show_login"=>true, 
+        "show_games"=>true,
+        "show_console"=>false,
+        "console_history"=>Vector{String}(),
+    )
     clear(g.screen)
     
-
     return g
 end
 
@@ -346,75 +432,6 @@ function getfn(m::Module, s::Symbol, maxargs = 3)
     else
         return (x...) -> nothing
     end
-end
-
-function start_text_input(g::Game, terminal::Actor)
-    done = false
-    comp = terminal.label
-    SDL_StartTextInput()
-
-    while !done
-        event, success = pollEvent!()
-
-        if success
-            event_array = UInt8.([Char(i) for i in event])
-
-            event_type = getEventType(event_array)
-            @debug "event type: $event_type"
-
-            key_sym = event_array[21]
-            @debug "key sym: $key_sym"
-
-            #SDL_GetModState() |> string
-
-            if getEventType(event) == SDL_TEXTINPUT
-                char = getTextInputEventChar(event)
-                comp *= char
-                comp = comp == ">`" ? ">" : comp
-
-                update_text_actor!(terminal, comp)
-                @debug "TextInputEvent: $(getEventType(event)) comp: $comp"
-
-                #= Paste from clipboard
-                # KEYMODs: LCTRL = 4160 | RCTRL = 4096
-
-                #elseif event_type == SDL_KEYDOWN && (SDL_GetModState() |> string == "4160" || SDL_GetModState() |> string == "4096") && (key_sym == "v" || key_sym == "V")
-                    comp = comp * "$(unsafe_string(SDL_GetClipboardText()))"
-                    update_text_actor!(terminal, comp)
-                    =#
-            elseif length(comp) > 1 && getEventType(event_array) == 768 && key_sym == 8  # "\b" backspace key
-                comp = comp[1:end-1]
-                update_text_actor!(terminal, comp)
-
-                @debug "BackspaceEvent: $(getEventType(event)) comp: $comp"
-
-            elseif getEventType(event_array) == 768 && (key_sym == 82 || key_sym == 81)
-                if haskey(terminal.data, :command_history) && length(terminal.data[:command_history]) > 0
-                    circshift!(terminal.data[:command_history], key_sym == 82 ? -1 : 1)
-                    comp = terminal.data[:command_history][begin]
-                    update_text_actor!(terminal, comp)
-                end
-
-            elseif getEventType(event) == SDL_KEYDOWN && key_sym == 13 #"\r" # return key
-                @debug "QuitEvent: $(getEventType(event))"
-                @info "Composition: $comp"
-
-                if !haskey(terminal.data, :command_history)
-                    terminal.data[:command_history] = [""]
-                end
-                    
-                done = true
-            end
-
-            # Update screen(s)
-            SDL_RenderClear(g.screen.renderer)
-            draw(g)
-            SDL_RenderPresent(g.screen.renderer)
-        end
-    end
-
-    SDL_StopTextInput()
-    terminal.label = comp
 end
 
 
