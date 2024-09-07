@@ -21,7 +21,6 @@ function TextActor(text::String, font_path::String, id=randstring(16); x = 0, y 
     
     fg = TTF_RenderText_Blended_Wrapped(text_font, text, SDL_Color(font_color...), UInt32(wrap_length))
     w, h = size(fg)
-    r = SDL_Rect(x, y, w, h)
     
     fg = if outline_size > 0
         TTF_SetFontOutline(outline_font, Int32(outline_size))
@@ -31,6 +30,11 @@ function TextActor(text::String, font_path::String, id=randstring(16); x = 0, y 
     else
         fg
     end
+    
+    TTF_CloseFont(text_font)
+    TTF_CloseFont(outline_font)
+    
+    r = SDL_Rect(x, y, w, h)
 
     a = Actor(
         id,
@@ -60,9 +64,6 @@ function TextActor(text::String, font_path::String, id=randstring(16); x = 0, y 
             :type=>"text",
             )
         )
-        
-    TTF_CloseFont(text_font)
-    TTF_CloseFont(outline_font)
         
     for (k, v) in kv
         setproperty!(a, k, v)
@@ -211,7 +212,10 @@ function draw(a::Actor, s::Screen=game[].screen)
         
         for sf in a.surfaces
             SDL_FreeSurface(sf)
+            sf=nothing
         end
+
+        a.surfaces = []
     end
 
     if a.alpha < 255
@@ -220,7 +224,7 @@ function draw(a::Actor, s::Screen=game[].screen)
     end
 
     local flip = if a.w < 0 && a.h < 0
-        SDL_FLIP_VERTICAL | SDL_FLIP_HORIZONTAL
+        SDL_FLIP_BOTH
     elseif a.h < 0
         SDL_FLIP_VERTICAL
     elseif a.w < 0
@@ -228,8 +232,6 @@ function draw(a::Actor, s::Screen=game[].screen)
     else
         SDL_FLIP_NONE
     end
-
-    # clear renderer
 
     SDL_RenderCopyEx(
         s.renderer,
