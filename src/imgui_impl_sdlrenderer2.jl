@@ -88,6 +88,7 @@ function ImGui_ImplSDLRenderer2_RenderDrawData(draw_data, sdlRenderer)
 
     old = BackupSDLRendererState()
     old.ClipEnabled = SDL2.SDL_RenderIsClipEnabled(sdlRenderer) == SDL2.SDL_TRUE
+    
     @c SDL2.SDL_RenderGetViewport(sdlRenderer, &old.Viewport)
     @c SDL2.SDL_RenderGetClipRect(sdlRenderer, &old.ClipRect)
 
@@ -99,6 +100,7 @@ function ImGui_ImplSDLRenderer2_RenderDrawData(draw_data, sdlRenderer)
     ImGui_ImplSDLRenderer2_SetupRenderState(sdlRenderer)
     data = unsafe_load(draw_data)
     GC.@preserve cmd_lists = unsafe_wrap(Vector{Ptr{CImGui.ImDrawList}}, data.CmdLists.Data, data.CmdListsCount)
+    
     for cmd_list in cmd_lists # struct  CImGui.ImDrawList
 
         vtx_buffer = cmd_list.VtxBuffer |> unsafe_load

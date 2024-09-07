@@ -52,7 +52,8 @@ global const BackendPlatformUserData = Ref{Any}(C_NULL)
 export SDL2, BackendPlatformUserData
 export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
-    window_paused, getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL
+    window_paused, getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL,
+    image_surface
 export Game, Keys, KeyMods, MouseButton
 export Actor, TextActor, ImageFileActor, ImageMemActor 
 export Line, Rect, Triangle, Circle
@@ -143,20 +144,14 @@ function mainloop(g::Game)
     ctx = CImGui.CreateContext()
     io = CImGui.GetIO()
     io.BackendPlatformUserData = C_NULL
-    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable | CImGui.ImGuiConfigFlags_NavEnableKeyboard | CImGui.ImGuiConfigFlags_NavEnableGamepad
+    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable
+    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_ViewportsEnable 
+    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_NavEnableKeyboard
+    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_NavEnableGamepad
 
     ImGui_ImplSDL2_InitForSDLRenderer(window, sdlRenderer)
     ImGui_ImplSDLRenderer2_Init(sdlRenderer)
     
-    # setup Dear ImGui style #Todo: Make this a setting
-    CImGui.StyleColorsDark()
-    # CImGui.StyleColorsClassic()
-    # CImGui.StyleColorsLight()
-    
-    showDemoWindow = true
-    showAnotherWindow = false
-    clear_color = Cfloat[0.45, 0.55, 0.60, 0.15]
-
     quit = false
     
     try
@@ -401,9 +396,11 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
     g.state = Vector{Dict{String,Dict}}([Dict("imgui"=>Dict("username"=>"", "password"=>""))])
     g.screen = initscreen(g.game_module, name)
     g.imgui_settings = Dict(
+        "menu_active"=>false,
         "show_login"=>true, 
         "show_games"=>true,
         "show_console"=>false,
+        "console_history"=>Vector{String}(),
     )
     clear(g.screen)
     

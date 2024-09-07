@@ -18,10 +18,10 @@ BACKGROUND = colorant"black"
 SCREEN_NAME = "Main"
 
 # Globals to store the velocity of the actor
-global dx = 3
-global dy = 3
-global dx2 = 3
-global dy2 = 3
+global a_dx = 3
+global a_dy = 3
+global t_dx = 2
+global t_dy = 2
 
 
 function text_input_with_hint_single_line(name::String, hint::String, filters = CImGui.ImGuiInputTextFlags_None)
@@ -118,7 +118,6 @@ function imgui(g::Game)
 
     command_text = "Welcome to the console!\n"
     response_text = ""
-    command_history = []
 
     if g.imgui_settings["show_console"]
         
@@ -175,33 +174,25 @@ function next_frame!(a::Actor)
 end
 
 # Create an `ImageActor` object from a PNG file
-#alien = ImageFileActor("alien1", [joinpath(@__DIR__,"images","alien.png")])
-alien = ImageFileActor("alien1", [joinpath("examples", "images", "alien.png")])
+alien = ImageFileActor("alien", [joinpath("examples", "images", "alien.png")])
+alien.x = 100
+alien.y = 100
 
-#alien_hurt_img = load("$(@__DIR__)/images/alien_hurt.png")
-#alien_ok_img = ["$(@__DIR__)/images/alien.png"]
-#alien2 = ImageMemActor("alien2", alien_hurt_img)
 
 # sound effects
 eep_wav = joinpath(@__DIR__, "sounds", "283201-RubberBallBouncing7.wav")
 cat_growl = joinpath(@__DIR__, "sounds", "39 Tom Cat Growling, Individual Grow.wav")
 harp = joinpath(@__DIR__, "sounds", "harp-glissando-descending-short-103886.mp3")
 
-# Create an `TextActor` object from an empty string for terminal use
-#terminal = TextActor(">", "$(@__DIR__)/fonts/OpenSans-Regular.ttf", outline_size=1, pt_size=35)
-#terminal.alpha = 0
 
-
-#=
 label = TextActor(
     "this is some example text",
     "$(@__DIR__)/fonts/OpenSans-Regular.ttf",
     outline_size=1,
     pt_size=24
     )
-#label.x = 25
+label.x = 50
 label.y = 25
-=#
 
     
 #load a custom animation
@@ -220,22 +211,20 @@ play_music("$(@__DIR__)/examples/music/radetzky_ogg")
 function draw(g::Game)
     draw(anim)
     draw(alien)
+    draw(label)
 end
 
-
-# The update function is called every frame. Within the function, we
-# * change the position of the actor by the velocity
-# * if the actor hits the edges, we invert the velocity, and play a sound
-# * if the up/down/left/right keys are pressed, we change the velocity to move the actor in the direction of the keypress
-
 function update(g::Game)
-    global dx, dy, dx2, dy2, anim, wanim
+    global a_dx, a_dy, t_dx, t_dy, anim, wanim
 
     if Bool(window_paused[])
         nothing
     else
-        alien.position.x += dx
-        alien.position.y += dy
+        alien.position.x += a_dx
+        alien.position.y += a_dy
+        
+        label.position.x += t_dx
+        label.position.y += t_dy
 
         if anim.data[:next_frame]
             if now() - anim.data[:then] > Millisecond(120)
@@ -244,14 +233,25 @@ function update(g::Game)
         end
         
         if alien.x > SCREEN_WIDTH - alien.w || alien.x < 2
-            dx = -dx
-            play_sound(eep_wav)
+            a_dx = -a_dx
+            rand(1:10) == 10 ? play_sound(eep_wav) : nothing
         end
         
         if alien.y > SCREEN_HEIGHT - alien.h || alien.y < 2
-            dy = -dy
-            play_sound(eep_wav)
+            a_dy = -a_dy
+            rand(1:10) == 10 ? play_sound(eep_wav) : nothing
         end
+
+        if label.x > SCREEN_WIDTH - label.w || label.x < 2
+            t_dx = -t_dx
+            rand(1:10) == 10 ? play_sound(eep_wav) : nothing
+        end
+
+        if label.y > SCREEN_HEIGHT - label.h || label.y < 2
+            t_dy = -t_dy
+            rand(1:10) == 10 ? play_sound(eep_wav) : nothing
+        end
+
     end
 
     if g.keyboard.DOWN
@@ -265,48 +265,3 @@ function update(g::Game)
     end
 end
 
-# If the "space" key is pressed, change the displayed image to the "hurt" variant.
-# Also schedule an event to change it back to normal after one second.
-# We define functions to change the image for the actor. These functions are called 
-# from the keydown and scheduled events.
-
-
-alien_hurt() = alien.image = "images/alien_hurt.png"
-alien_normal() = alien.image = "images/alien.png"
-
-#=command_history = ["@show alien.label"]
-
-function on_key_down(g, key, keymod)
-    # start terminal and accept input text to be parsed and executed by
-    if key == Keys.BACKQUOTE
-        @info "Terminal Started!"
-        terminal.alpha = 255
-        draw(g)
-        SDL_RenderPresent(g.screen.renderer)
-        update_text_actor!(terminal, ">")
-        text = start_text_input(g, terminal)
-        terminal.alpha = 150
-        update_text_actor!(terminal, "evaluating: $text...")
-
-        # evaluate entered text
-        try
-            io = IOBuffer()
-            ex = Meta.parse(text)
-            show(IOContext(io, :limit => true, :displaysize => (500, 250)), "text/plain", eval(g.game_module, ex))
-            s = String(take!(io))
-            update_text_actor!(terminal, s)
-            #push!(command_history, text)
-        catch e
-            @warn e
-        end
-
-        schedule_once(() -> terminal.alpha = 0, 4)
-        #=
-        =#
-    end
-end
-
-if !isempty(Base.PROGRAM_FILE)
-    rungame()
-end
-=#
