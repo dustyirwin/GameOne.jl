@@ -76,27 +76,28 @@ function update_text_actor!(a::Actor, new_text::String; font_path=a.data[:font_p
     outline_size = a.data[:outline_size])
 
     font = TTF_OpenFont(font_path, pt_size)
+    outline_font = TTF_OpenFont(font_path, pt_size)
+    
     fg = TTF_RenderText_Blended_Wrapped(font, new_text, SDL_Color(font_color...), UInt32(wrap_length))
     w, h = size(fg)
     
     fg = if a.data[:outline_size] > 0
-        outline_font = TTF_OpenFont(font_path, pt_size)
         TTF_SetFontOutline(outline_font, Int32(outline_size))
         bg = TTF_RenderText_Blended_Wrapped(
             outline_font, new_text, SDL_Color(outline_color...), UInt32(wrap_length))
         SDL_UpperBlitScaled(fg, C_NULL, bg, Int32[outline_size, outline_size, w, h])
-        #TTF_CloseFont(outline_font)
         bg
     else
         fg
     end
-
+    
     a.surfaces = [fg]
     a.w, a.h = size(a.surfaces[begin])
     a.textures = []
     a.label = new_text
-
-    #TTF_CloseFont(font)
+    
+    TTF_CloseFont(outline_font)
+    TTF_CloseFont(font)
 
     return a
 end
@@ -219,7 +220,7 @@ function draw(a::Actor, s::Screen=game[].screen)
     end
 
     local flip = if a.w < 0 && a.h < 0
-        SDL_FLIP_BOTH
+        SDL_FLIP_VERTICAL | SDL_FLIP_HORIZONTAL
     elseif a.h < 0
         SDL_FLIP_VERTICAL
     elseif a.w < 0

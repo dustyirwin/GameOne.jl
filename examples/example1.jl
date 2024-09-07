@@ -175,8 +175,6 @@ end
 
 # Create an `ImageActor` object from a PNG file
 alien = ImageFileActor("alien", [joinpath("examples", "images", "alien.png")])
-alien.x = 100
-alien.y = 100
 
 
 # sound effects
@@ -191,16 +189,12 @@ label = TextActor(
     outline_size=1,
     pt_size=24
     )
-label.x = 50
-label.y = 25
 
     
 #load a custom animation
 anim_fns = ["$(@__DIR__)/images/FireElem1/Visible$i.png" for i in 0:7]
 anim = ImageFileActor("fireelem", anim_fns)
 anim.data[:next_frame] = true
-anim.y = 50
-anim.x = 10
 
 
 # Start playing background music
@@ -220,11 +214,11 @@ function update(g::Game)
     if Bool(window_paused[])
         nothing
     else
-        alien.position.x += a_dx
-        alien.position.y += a_dy
+        alien.x += a_dx
+        alien.y += a_dy
         
-        label.position.x += t_dx
-        label.position.y += t_dy
+        label.x += t_dx
+        label.y += t_dy
 
         if anim.data[:next_frame]
             if now() - anim.data[:then] > Millisecond(120)
