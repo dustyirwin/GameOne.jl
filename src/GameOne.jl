@@ -16,6 +16,9 @@ using Reexport: @reexport
 @reexport using CImGui: ImVec2, ImVec4, IM_COL32, ImS32, ImU32, ImS64, ImU64, lib
 @reexport using CImGui.lib
 
+@reexport using Printf: @sprintf
+
+
 # SDL2 imports
 @reexport using SimpleDirectMediaLayer.LibSDL2: SDL_Event, SDL_Texture, SDL_DestroyTexture, SDL_ShowCursor, 
     SDL_SetWindowFullscreen, SDL_SetHint, SDL_HINT_RENDER_SCALE_QUALITY, SDL_RenderPresent, 
@@ -58,7 +61,10 @@ export Game, Keys, KeyMods, MouseButton
 export Actor, TextActor, ImageFileActor, ImageMemActor 
 export Line, Rect, Triangle, Circle
 export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init, ImGui_ImplSDLRenderer2_NewFrame, ImGui_ImplSDL2_NewFrame,
-    ImGui_ImplSDLRenderer2_RenderDrawData
+    ImGui_ImplSDLRenderer2_RenderDrawData, ImGuiDockNodeFlags_PassthruCentralNode, TextDisabled, PushItemFlag, PopItemFlag
+
+# :/
+#import DocStringExtensions: TYPEDSIGNATURES
 
 # ImGuiSDLBackend
 include("imgui_impl_sdl2.jl")
@@ -382,7 +388,7 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
     g.screen = initscreen(g.game_module, name)
     g.imgui_settings = Dict(
         "menu_active"=>true,
-        "show_login"=>false, 
+        "show_login"=>true, 
         "console_history"=>Vector{String}(),
     )
     clear(g.screen)
