@@ -3,7 +3,7 @@
 __GameOne.jl is a WIP non-zero overhead game engine, based on [aviks/GameZero.jl](https://github.com/aviks/GameZero.jl).__
 
 ## Known Issues
-- Incomplete text input API
+- None, please submit one!
 
 ## Running Games
 

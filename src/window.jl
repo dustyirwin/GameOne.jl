@@ -4,8 +4,7 @@
 function windowEventWatcher end
 const window_event_watcher_cfunc = Ref(Ptr{Nothing}(0))
 
-const window_paused = Threads.Atomic{UInt8}(1) # Whether or not the game should be running (if lost focus)
-
+const window_paused = Threads.Atomic{UInt8}(0) # Whether or not the game should be running (if lost focus)
 
 function makeWinRenderer(title = "GameOne", w=1920, h=1080)
     global winWidth, winHeight, winWidth_highDPI, winHeight_highDPI

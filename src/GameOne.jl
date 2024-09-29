@@ -16,6 +16,9 @@ using Reexport: @reexport
 @reexport using CImGui: ImVec2, ImVec4, IM_COL32, ImS32, ImU32, ImS64, ImU64, lib
 @reexport using CImGui.lib
 
+@reexport using Printf: @sprintf
+
+
 # SDL2 imports
 @reexport using SimpleDirectMediaLayer.LibSDL2: SDL_Event, SDL_Texture, SDL_DestroyTexture, SDL_ShowCursor, 
     SDL_SetWindowFullscreen, SDL_SetHint, SDL_HINT_RENDER_SCALE_QUALITY, SDL_RenderPresent, 
@@ -24,7 +27,7 @@ using Reexport: @reexport
     SDL_PIXELFORMAT_ARGB32, SDL_UpperBlitScaled, SDL_FreeSurface, SDL_FLIP_NONE, SDL_FLIP_BOTH, SDL_FLIP_VERTICAL, 
     SDL_FLIP_HORIZONTAL, SDL_RenderCopyEx, SDL_PollEvent, SDL_TEXTINPUT, SDL_KEYDOWN, SDL_KEYUP, SDL_MOUSEBUTTONDOWN, 
     SDL_MOUSEBUTTONUP, SDL_GetError, SDL_INIT_VIDEO, SDL_INIT_AUDIO, SDL_WINDOWEVENT, SDL_QUIT, SDL_MOUSEMOTION, 
-    SDL_MOUSEWHEEL, SDL_GetClipboardText, SDL_GetError, SDL_StopTextInput, SDL_StartTextInput, SDL_GL_MULTISAMPLEBUFFERS, 
+    SDL_MOUSEWHEEL, SDL_GetClipboardText, SDL_SetClipboardText, SDL_GetError, SDL_StopTextInput, SDL_StartTextInput, SDL_GL_MULTISAMPLEBUFFERS, 
     SDL_GL_MULTISAMPLESAMPLES,SDL_DestroyRenderer, SDL_DestroyWindow, SDL_GetWindowID, SDL_RenderDrawLine, 
     SDL_RenderDrawPoint, SDL_WINDOWPOS_CENTERED, SDL_WINDOW_ALLOW_HIGHDPI, SDL_RENDERER_ACCELERATED, SDL_WINDOW_ALLOW_HIGHDPI,
     SDL_RENDERER_PRESENTVSYNC, SDL_RENDERER_TARGETTEXTURE, SDL_RENDERER_SOFTWARE, 
@@ -57,7 +60,11 @@ export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique,
 export Game, Keys, KeyMods, MouseButton
 export Actor, TextActor, ImageFileActor, ImageMemActor 
 export Line, Rect, Triangle, Circle
-export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init
+export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init, ImGui_ImplSDLRenderer2_NewFrame, ImGui_ImplSDL2_NewFrame,
+    ImGui_ImplSDLRenderer2_RenderDrawData, ImGuiDockNodeFlags_PassthruCentralNode, TextDisabled, PushItemFlag, PopItemFlag
+
+# :/
+#import DocStringExtensions: TYPEDSIGNATURES
 
 # ImGuiSDLBackend
 include("imgui_impl_sdl2.jl")
@@ -141,8 +148,9 @@ function mainloop(g::Game)
     window = g.screen.window
     
     # create the ImGui context
-    ctx = CImGui.CreateContext()
-    io = CImGui.GetIO()
+    ctx = g.imgui_settings["ctx"] = CImGui.CreateContext()
+    io = g.imgui_settings["io"] = CImGui.GetIO()
+
     io.BackendPlatformUserData = C_NULL
     io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable
     io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_ViewportsEnable 
@@ -189,25 +197,8 @@ function mainloop(g::Game)
                 Base.invokelatest(g.render_function, g)
             end           
             
-            # start imgui frame
-            ImGui_ImplSDLRenderer2_NewFrame()
-            ImGui_ImplSDL2_NewFrame();
-            CImGui.NewFrame()
-
-            # Creating the "dockspace" that covers the whole window. This allows the child windows to automatically resize.
-            #`lib.igDockSpaceOverViewport(C_NULL, ImGuiDockNodeFlags_PassthruCentralNode, C_NULL, C_NULL) 
-            
-            # run custom imgui function
+            # run custom imguiSDL2 function to draw ui elements on screen
             Base.invokelatest(g.imgui_function, g)
-
-            # Draw imgui objects to imgui renderer
-            CImGui.Render()
-            
-            SDL2.SDL_RenderSetScale(sdlRenderer, unsafe_load(io.DisplayFramebufferScale.x), unsafe_load(io.DisplayFramebufferScale.y));
-            #SDL2.SDL_SetRenderDrawColor(sdlRenderer, (UInt8)(round(clear_color[1] * 255)), (UInt8)(round(clear_color[2] * 255)), (UInt8)(round(clear_color[3] * 255)), (UInt8)(round(clear_color[4] * 255)));
-            
-            # copy imgui render data to sdlrenderer
-            ImGui_ImplSDLRenderer2_RenderDrawData(CImGui.GetDrawData(), sdlRenderer);
 
             # present rendered image to screen
             SDL_RenderPresent(sdlRenderer)
@@ -396,10 +387,8 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
     g.state = Vector{Dict{String,Dict}}([Dict("imgui"=>Dict("username"=>"", "password"=>""))])
     g.screen = initscreen(g.game_module, name)
     g.imgui_settings = Dict(
-        "menu_active"=>false,
-        "show_login"=>true, 
-        "show_games"=>true,
-        "show_console"=>false,
+        "menu_active"=>true,
+        "show_login"=>false, 
         "console_history"=>Vector{String}(),
     )
     clear(g.screen)
