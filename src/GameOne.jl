@@ -3,6 +3,7 @@ module GameOne
 using Reexport: @reexport
 
 # Base imports
+@reexport using CEnum: @cenum
 @reexport using Logging: @debug, @info, @warn, @error, @logmsg
 @reexport using Colors: FixedPointNumbers, @colorant_str, ARGB, Colorant, red, green, blue, alpha
 @reexport using Base.Threads: @threads, @spawn, Atomic, SpinLock
@@ -24,8 +25,7 @@ using Reexport: @reexport
     SDL_SetWindowFullscreen, SDL_SetHint, SDL_HINT_RENDER_SCALE_QUALITY, SDL_RenderPresent, 
     SDL_HasIntersection, SDL_Rect, SDL_RenderFillRect, SDL_CreateTextureFromSurface, SDL_TEXTUREACCESS_TARGET,
     SDL_BlendMode, SDL_Surface, SDL_WINDOW_FULLSCREEN, IMG_Load, SDL_SetRenderTarget,
-    SDL_PIXELFORMAT_ARGB32, SDL_UpperBlitScaled, SDL_FreeSurface, SDL_FLIP_NONE, SDL_FLIP_BOTH, SDL_FLIP_VERTICAL, 
-    SDL_FLIP_HORIZONTAL, SDL_RenderCopyEx, SDL_PollEvent, SDL_TEXTINPUT, SDL_KEYDOWN, SDL_KEYUP, SDL_MOUSEBUTTONDOWN, 
+    SDL_PIXELFORMAT_ARGB32, SDL_UpperBlitScaled, SDL_FreeSurface, SDL_RenderCopyEx, SDL_PollEvent, SDL_TEXTINPUT, SDL_KEYDOWN, SDL_KEYUP, SDL_MOUSEBUTTONDOWN, 
     SDL_MOUSEBUTTONUP, SDL_GetError, SDL_INIT_VIDEO, SDL_INIT_AUDIO, SDL_WINDOWEVENT, SDL_QUIT, SDL_MOUSEMOTION, 
     SDL_MOUSEWHEEL, SDL_GetClipboardText, SDL_SetClipboardText, SDL_GetError, SDL_StopTextInput, SDL_StartTextInput, SDL_GL_MULTISAMPLEBUFFERS, 
     SDL_GL_MULTISAMPLESAMPLES,SDL_DestroyRenderer, SDL_DestroyWindow, SDL_GetWindowID, SDL_RenderDrawLine, 
@@ -45,7 +45,8 @@ using Reexport: @reexport
     Mix_Quit, Mix_LoadWAV_RW, AUDIO_S16SYS, Mix_PlayChannelTimed, Mix_PlayMusic, Mix_PlayingMusic, Mix_FreeChunk, 
     Mix_FreeMusic, Mix_VolumeMusic, Mix_Volume, Mix_PausedMusic, Mix_ResumeMusic, Mix_LoadMUS, Mix_PauseMusic,
     TTF_Quit, TTF_OpenFont, TTF_RenderText_Blended_Wrapped, TTF_SetFontOutline, TTF_CloseFont, TTF_Init,
-    SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, SDL_HINT_RENDER_VSYNC, SDL_HINT_RENDER_DRIVER, SDL_HINT_RENDER_DIRECT3D_THREADSAFE
+    SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, SDL_HINT_RENDER_VSYNC, SDL_HINT_RENDER_DRIVER, SDL_HINT_RENDER_DIRECT3D_THREADSAFE,
+    SDL_FLIP_BOTH, SDL_FLIP_HORIZONTAL, SDL_FLIP_VERTICAL, SDL_FLIP_NONE
 
 import SimpleDirectMediaLayer
 const SDL2 = SimpleDirectMediaLayer.LibSDL2
@@ -63,8 +64,6 @@ export Line, Rect, Triangle, Circle
 export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init, ImGui_ImplSDLRenderer2_NewFrame, ImGui_ImplSDL2_NewFrame,
     ImGui_ImplSDLRenderer2_RenderDrawData, ImGuiDockNodeFlags_PassthruCentralNode, TextDisabled, PushItemFlag, PopItemFlag
 
-# :/
-#import DocStringExtensions: TYPEDSIGNATURES
 
 # ImGuiSDLBackend
 include("imgui_impl_sdl2.jl")
@@ -111,7 +110,7 @@ const paused = Ref{Bool}(false)
 function initscreen(gm::Module, name::String)
     h = getifdefined(gm, HEIGHTSYMBOL, 600,)
     w = getifdefined(gm, WIDTHSYMBOL, 800,)
-    background = getifdefined(gm, BACKSYMBOL, SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0))
+    background = getifdefined(gm, BACKSYMBOL, SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 1))
 
     #if !(background isa Colorant)
     #    background = image_surface(background)
@@ -387,8 +386,8 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
     g.state = Vector{Dict{String,Dict}}([Dict("imgui"=>Dict("username"=>"", "password"=>""))])
     g.screen = initscreen(g.game_module, name)
     g.imgui_settings = Dict(
-        "menu_active"=>true,
-        "show_login"=>false, 
+        "show_menu"=>true,
+        "show_login"=>true, 
         "console_history"=>Vector{String}(),
     )
     clear(g.screen)

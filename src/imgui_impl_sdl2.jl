@@ -455,6 +455,7 @@ keycode_dict = Dict(
         UInt32(SDL2.LibSDL2.SDLK_F10) => CImGui.ImGuiKey_F10,
         UInt32(SDL2.LibSDL2.SDLK_F11) => CImGui.ImGuiKey_F11,
         UInt32(SDL2.LibSDL2.SDLK_F12) => CImGui.ImGuiKey_F12,
+        #=
         UInt32(SDL2.LibSDL2.SDLK_F13) => CImGui.ImGuiKey_F13,
         UInt32(SDL2.LibSDL2.SDLK_F14) => CImGui.ImGuiKey_F14,
         UInt32(SDL2.LibSDL2.SDLK_F15) => CImGui.ImGuiKey_F15,
@@ -469,4 +470,5 @@ keycode_dict = Dict(
         UInt32(SDL2.LibSDL2.SDLK_F24) => CImGui.ImGuiKey_F24,
         UInt32(SDL2.LibSDL2.SDLK_AC_BACK) => CImGui.ImGuiKey_AppBack,
         UInt32(SDL2.LibSDL2.SDLK_AC_FORWARD) => CImGui.ImGuiKey_AppForward
+        =#
     )

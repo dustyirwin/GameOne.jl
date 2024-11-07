@@ -154,6 +154,11 @@ end
 function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16); x=0, y=0, 
     frame_delays=[], anim=false, webp_path="", kv...)
     
+    if !isfile(img_fns[1])
+        @error "Image file for $name not found!: $(img_fns[1])"
+        return nothing
+    end
+
     n = Int32.(length(img_fns))
     frame_delays = isempty(frame_delays) ? [ Millisecond(100) for _ in 1:n ] : frame_delays
     surfaces = [ IMG_Load(fn) for fn in img_fns ]

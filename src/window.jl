@@ -12,7 +12,7 @@ function makeWinRenderer(title = "GameOne", w=1920, h=1080)
     win = SDL_CreateWindow(title,
         Int32(SDL_WINDOWPOS_CENTERED), 
         Int32(SDL_WINDOWPOS_CENTERED), Int32(w), Int32(h),
-        UInt32(SDL_WINDOW_METAL|SDL_WINDOW_SHOWN)
+        Base.Sys.isapple() ? UInt32(SDL_WINDOW_METAL|SDL_WINDOW_SHOWN) : UInt32(SDL_WINDOW_OPENGL|SDL_WINDOW_SHOWN)
     );
     
     SDL_SetWindowMinimumSize(win, Int32(w), Int32(h))
