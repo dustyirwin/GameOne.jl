@@ -1,4 +1,3 @@
-
 # -------- Opening a window ---------------
 # Forward reference for @cfunction
 function windowEventWatcher end
@@ -12,7 +11,7 @@ function makeWinRenderer(title = "GameOne", w=1920, h=1080)
     win = SDL_CreateWindow(title,
         Int32(SDL_WINDOWPOS_CENTERED), 
         Int32(SDL_WINDOWPOS_CENTERED), Int32(w), Int32(h),
-        UInt32(SDL_WINDOW_METAL|SDL_WINDOW_SHOWN)
+        UInt32(SDL_WINDOW_METAL|SDL_WINDOW_SHOWN|SDL_WINDOW_RESIZABLE)
     );
     
     SDL_SetWindowMinimumSize(win, Int32(w), Int32(h))

@@ -12,100 +12,46 @@ Base.@kwdef mutable struct ImGui_ImplSDL2_Data
     MouseCanUseGlobalState::Bool
 end
 
+# Add this at module level
+const BACKEND_DATA = Ref{Union{Nothing,ImGui_ImplSDL2_Data}}(nothing)
+
 function ImGui_ImplSDL2_InitForOpenGL(window, sdl_gl_context)
     #IM_UNUSED(sdl_gl_context); // Viewport branch will need this.
     return ImGui_ImplSDL2_Init(window, Ptr{Cvoid}(C_NULL));
 end
 
 function ImGui_ImplSDL2_Init(window, renderer)
-    io = CImGui.GetIO()
-    @assert unsafe_load(io.BackendPlatformUserData) == C_NULL
+    try
+        io = CImGui.GetIO()
+        @assert unsafe_load(io.BackendPlatformUserData) == C_NULL "Already initialized"
 
-    # Check and store if we are on a SDL backend that supports global mouse position
-    # ("wayland" and "rpi" don't support it, but we chose to use a white-list instead of a black-list)
-    mouse_can_use_global_state = false
-    sdl_backend = SDL2.SDL_GetCurrentVideoDriver()
-    global_mouse_whitelist = ["windows", "cocoa", "x11", "DIVE", "VMAN"]
-    for backend in global_mouse_whitelist
-        if unsafe_string(sdl_backend) == backend
-            mouse_can_use_global_state = true
-            break
-        end
+        # Create backend data
+        bd = ImGui_ImplSDL2_Data(
+            window,
+            renderer,
+            0,
+            0,
+            0,
+            fill(Ptr{Any}(C_NULL), Int(9)),
+            Ptr{Cvoid}(C_NULL),
+            0,
+            Ptr{Cchar}(C_NULL),
+            true  # Default to true for now
+        )
+        
+        # Store in global ref
+        BACKEND_DATA[] = bd
+        
+        io.BackendPlatformUserData = pointer_from_objref(bd)
+        io.BackendPlatformName = pointer("imgui_impl_sdl2")
+        io.BackendFlags = unsafe_load(io.BackendFlags) | CImGui.ImGuiBackendFlags_HasMouseCursors
+        io.BackendFlags = unsafe_load(io.BackendFlags) | CImGui.ImGuiBackendFlags_HasSetMousePos
+        
+        return true
+    catch e
+        @error "Error in ImGui_ImplSDL2_Init" exception=e
+        return false
     end
-
-    bd = ImGui_ImplSDL2_Data(
-        window,
-        renderer,
-        0,
-        0,
-        0,
-        fill(Ptr{Any}(C_NULL), Int(9)),
-        Ptr{Cvoid}(C_NULL),
-        0,
-        Ptr{Cchar}(C_NULL),
-        mouse_can_use_global_state
-    )
-    
-    #Todo: Actually use this
-    io.BackendPlatformUserData = pointer_from_objref(bd)
-    io.BackendPlatformName = pointer("imgui_impl_sdl2")
-    io.BackendFlags = unsafe_load(io.BackendFlags) | CImGui.ImGuiBackendFlags_HasMouseCursors       # We can honor GetMouseCursor() values (optional)
-    io.BackendFlags = unsafe_load(io.BackendFlags) | CImGui.ImGuiBackendFlags_HasSetMousePos        # We can honor io.WantSetMousePos requests (optional, rarely used)
-    
-    # set clipboard
-    # io.SetClipboardTextFn = pointer(ImGui_ImplSDL2_SetClipboardText)
-    # io.GetClipboardTextFn = pointer(ImGui_ImplSDL2_GetClipboardText)
-    # io.ClipboardUserData = nothing
-    # io.SetPlatformImeDataFn = ImGui_ImplSDL2_SetPlatformImeData
-    
-    # Load mouse cursors
-    bd.MouseCursors[ CImGui.ImGuiMouseCursor_Arrow+1] = SDL2.SDL_CreateSystemCursor(SDL2.SDL_SYSTEM_CURSOR_ARROW)
-    bd.MouseCursors[ CImGui.ImGuiMouseCursor_TextInput+1] = SDL2.SDL_CreateSystemCursor(SDL2.SDL_SYSTEM_CURSOR_IBEAM)
-    bd.MouseCursors[ CImGui.ImGuiMouseCursor_ResizeAll+1] = SDL2.SDL_CreateSystemCursor(SDL2.SDL_SYSTEM_CURSOR_SIZEALL)
-    bd.MouseCursors[ CImGui.ImGuiMouseCursor_ResizeNS+1] = SDL2.SDL_CreateSystemCursor(SDL2.SDL_SYSTEM_CURSOR_SIZENS)
-    bd.MouseCursors[ CImGui.ImGuiMouseCursor_ResizeEW+1] = SDL2.SDL_CreateSystemCursor(SDL2.SDL_SYSTEM_CURSOR_SIZEWE)
-    bd.MouseCursors[ CImGui.ImGuiMouseCursor_ResizeNESW+1] = SDL2.SDL_CreateSystemCursor(SDL2.SDL_SYSTEM_CURSOR_SIZENESW)
-    bd.MouseCursors[ CImGui.ImGuiMouseCursor_ResizeNWSE+1] = SDL2.SDL_CreateSystemCursor(SDL2.SDL_SYSTEM_CURSOR_SIZENWSE)
-    bd.MouseCursors[ CImGui.ImGuiMouseCursor_Hand+1] = SDL2.SDL_CreateSystemCursor(SDL2.SDL_SYSTEM_CURSOR_HAND)
-    bd.MouseCursors[ CImGui.ImGuiMouseCursor_NotAllowed+1] = SDL2.SDL_CreateSystemCursor(SDL2.SDL_SYSTEM_CURSOR_NO)
-    
-    # Set platform dependent data in viewport
-    # Our mouse update function expect PlatformHandle to be filled for the main viewport
-    main_viewport = CImGui.igGetMainViewport()
-    main_viewport.PlatformHandleRaw = C_NULL
-    # info = SDL_SysWMinfo()
-    # SDL_VERSION(info.version)
-    # if SDL_GetWindowWMInfo(window, info)
-    #     if Sys.iswindows()
-    #         main_viewport.PlatformHandleRaw = info.info.win.window
-    #     elseif Sys.isapple()
-    #         main_viewport.PlatformHandleRaw = info.info.cocoa.window
-    #     end
-    # end
-    
-    # From 2.0.5: Set SDL hint to receive mouse click events on window focus, otherwise SDL doesn't emit the event.
-    # Without this, when clicking to gain focus, our widgets wouldn't activate even though they showed as hovered.
-    # (This is unfortunately a global SDL setting, so enabling it might have a side-effect on your application.
-    # It is unlikely to make a difference, but if your app absolutely needs to ignore the initial on-focus click:
-    # you can ignore SDL_MOUSEBUTTONDOWN events coming right after a SDL_WINDOWEVENT_FOCUS_GAINED)
-    #if def(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH)
-    SDL2.SDL_SetHint(SDL2.SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1")
-    #end
-    
-    # From 2.0.18: Enable native IME.
-    # IMPORTANT: This is used at the time of SDL_CreateWindow() so this will only affects secondary windows, if any.
-    # For the main window to be affected, your application needs to call this manually before calling SDL_CreateWindow().
-    #if defined(SDL_HINT_IME_SHOW_UI)
-    SDL2.SDL_SetHint("SDL_HINT_IME_SHOW_UI", "1")
-    #end
-    
-    # From 2.0.22: Disable auto-capture, this is preventing drag and drop across multiple windows (see #5710)
-    #if defined(SDL_HINT_MOUSE_AUTO_CAPTURE)
-    SDL2.SDL_SetHint("SDL_HINT_MOUSE_AUTO_CAPTURE", "0")
-    #end
-    
-    BackendPlatformUserData[] = bd
-    return true
 end
 
 function ImGui_ImplSDL2_SetClipboardText(text)
@@ -127,23 +73,23 @@ end
 # // FIXME: multi-context support is not well tested and probably dysfunctional in this backend.
 # // FIXME: some shared resources (mouse cursor shape, gamepad) are mishandled when using multi-context.
 function ImGui_ImplSDL2_GetBackendData()
-    GC.@preserve io::Ptr{ CImGui.ImGuiIO} = CImGui.GetIO()
-    #bep = unsafe_load(io.BackendPlatformUserData)
-    io.BackendPlatformUserData = pointer_from_objref(ImGui_ImplSDL2_Data(
-        BackendPlatformUserData[].Window,
-        BackendPlatformUserData[].Renderer,
-        BackendPlatformUserData[].Time,
-        BackendPlatformUserData[].MouseWindowID,
-        BackendPlatformUserData[].MouseButtonsDown,
-        BackendPlatformUserData[].MouseCursors,
-        BackendPlatformUserData[].LastMouseCursor,
-        BackendPlatformUserData[].PendingMouseLeaveFrame,
-        BackendPlatformUserData[].ClipboardTextData,
-        BackendPlatformUserData[].MouseCanUseGlobalState
-    ))
-    #GC.@preserve bep = unsafe_load(BackendPlatformUserData[]) 
-    bep = unsafe_pointer_to_objref(unsafe_load(io.BackendPlatformUserData))
-    return CImGui.GetCurrentContext() != C_NULL ? bep : C_NULL
+    try
+        io = CImGui.GetIO()
+        if io == C_NULL
+            @error "Failed to get ImGui IO"
+            return C_NULL
+        end
+        
+        if BACKEND_DATA[] === nothing
+            @error "Backend data not initialized"
+            return C_NULL
+        end
+        
+        return BACKEND_DATA[]
+    catch e
+        @error "Error in GetBackendData" exception=e
+        return C_NULL
+    end
 end
 
 function ImGui_ImplSDL2_NewFrame()
