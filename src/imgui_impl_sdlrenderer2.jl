@@ -71,6 +71,7 @@ Base.@kwdef mutable struct BackupSDLRendererState
 end
 
 function ImGui_ImplSDLRenderer2_RenderDrawData(draw_data, sdlRenderer)
+    io = CImGui.GetIO()
     bd = ImGui_ImplSDLRenderer2_GetBackendData()
 
     # If there's a scale factor set by the user, use that instead

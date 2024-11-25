@@ -217,6 +217,9 @@ function mainloop(g::Game)
             if (playing[] == false)
                 throw(QuitException())
             end
+
+            # Small sleep to prevent CPU hogging
+            sleep(0.001)
         end
     catch err
         @warn "Error in renderloop!" exception=err
@@ -388,8 +391,10 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
     g.screen = initscreen(g.game_module, name)
     g.imgui_settings = Dict(
         "menu_active"=>true,
-        "show_login"=>false, 
+        "show_login"=>false,
+        "show_menu"=>false,
         "console_history"=>Vector{String}(),
+        "io"=>CImGui.GetIO()
     )
     clear(g.screen)
     
