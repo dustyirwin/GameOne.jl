@@ -8,7 +8,7 @@ using Reexport: @reexport
 @reexport using Base.Threads: @threads, @spawn, Atomic, SpinLock
 @reexport using Dates: now, Millisecond
 @reexport using Random: rand, randstring, shuffle, shuffle!
-@reexport using DataStructures: OrderedDict, counter
+@reexport using DataStructures: OrderedDict, counter, @enum
 @reexport using Sockets
 @reexport using CImGui
 @reexport using CImGui.CSyntax
@@ -17,7 +17,6 @@ using Reexport: @reexport
 @reexport using CImGui.lib
 
 @reexport using Printf: @sprintf
-
 
 # SDL2 imports
 @reexport using SimpleDirectMediaLayer.LibSDL2: SDL_Event, SDL_Texture, SDL_DestroyTexture, SDL_ShowCursor, 
@@ -61,7 +60,8 @@ export Game, Keys, KeyMods, MouseButton
 export Actor, TextActor, ImageFileActor, ImageMemActor 
 export Line, Rect, Triangle, Circle
 export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init, ImGui_ImplSDLRenderer2_NewFrame, ImGui_ImplSDL2_NewFrame,
-    ImGui_ImplSDLRenderer2_RenderDrawData, ImGuiDockNodeFlags_PassthruCentralNode, TextDisabled, PushItemFlag, PopItemFlag
+    ImGui_ImplSDLRenderer2_RenderDrawData, ImGuiDockNodeFlags_PassthruCentralNode, TextDisabled, PushItemFlag, PopItemFlag,
+    ImGui_ImplSDLRenderer2_Shutdown#, ImGui_ImplSDL2_Shutdown
 
 # :/
 #import DocStringExtensions: TYPEDSIGNATURES

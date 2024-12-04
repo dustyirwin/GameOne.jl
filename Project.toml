@@ -1,7 +1,7 @@
 name = "GameOne"
 uuid = "9da27670-f782-11e9-1da1-f53579315bfe"
 authors = ["Dustin Irwin"]
-version = "0.2.1"
+version = "0.2.2"
 
 [deps]
 CImGui = "5d785b6c-b76f-510e-a07c-3070796c7e87"

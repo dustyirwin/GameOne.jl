@@ -12,16 +12,22 @@ mutable struct Actor
     data::Dict{Symbol,Any}
 end
 
-function TextActor(text::String, font_path::String, id=randstring(16); x = 0, y = 0, pt_size = 24,
+function TextActor(text::String, font_path::String; id=randstring(10), x = 0, y = 0, pt_size = 24,
     font_color = Int[255, 255, 255, 255], outline_color = Int[0, 0, 0, 225],
     wrap_length = 800, outline_size = 0, kv...)
+
+    @assert isfile(font_path) "Font file for $text not found: $font_path"
 
     text_font = TTF_OpenFont(font_path, pt_size)
     outline_font = TTF_OpenFont(font_path, pt_size)
     
     fg = TTF_RenderText_Blended_Wrapped(text_font, text, SDL_Color(font_color...), UInt32(wrap_length))
-    w, h = size(fg)
+    if fg == C_NULL
+        error("Failed to render text surface: $(unsafe_string(SDL_GetError()))")
+    end
     
+    surface = unsafe_load(fg)
+    w, h = Int32(surface.w), Int32(surface.h)
     fg = if outline_size > 0
         TTF_SetFontOutline(outline_font, Int32(outline_size))
         bg = TTF_RenderText_Blended_Wrapped(outline_font, text, SDL_Color(outline_color...), UInt32(wrap_length))
