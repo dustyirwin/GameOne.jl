@@ -1,4 +1,3 @@
-
 # -------- Opening a window ---------------
 # Forward reference for @cfunction
 function windowEventWatcher end

@@ -9,13 +9,15 @@ using Reexport: @reexport
 @reexport using Base.Threads: @threads, @spawn, Atomic, SpinLock
 @reexport using Dates: now, Millisecond
 @reexport using Random: rand, randstring, shuffle, shuffle!
-@reexport using DataStructures: OrderedDict, counter
+@reexport using DataStructures: OrderedDict, counter, @enum
 @reexport using Sockets
 @reexport using CImGui
 @reexport using CImGui.CSyntax
 @reexport using CImGui.CSyntax.CStatic
 @reexport using CImGui: ImVec2, ImVec4, IM_COL32, ImS32, ImU32, ImS64, ImU64, lib
 @reexport using CImGui.lib
+
+@reexport using Printf: @sprintf
 
 @reexport using Printf: @sprintf
 
@@ -27,6 +29,7 @@ using Reexport: @reexport
     SDL_BlendMode, SDL_Surface, SDL_WINDOW_FULLSCREEN, IMG_Load, SDL_SetRenderTarget,
     SDL_PIXELFORMAT_ARGB32, SDL_UpperBlitScaled, SDL_FreeSurface, SDL_RenderCopyEx, SDL_PollEvent, SDL_TEXTINPUT, SDL_KEYDOWN, SDL_KEYUP, SDL_MOUSEBUTTONDOWN, 
     SDL_MOUSEBUTTONUP, SDL_GetError, SDL_INIT_VIDEO, SDL_INIT_AUDIO, SDL_WINDOWEVENT, SDL_QUIT, SDL_MOUSEMOTION, 
+    SDL_MOUSEWHEEL, SDL_GetClipboardText, SDL_SetClipboardText, SDL_GetError, SDL_StopTextInput, SDL_StartTextInput, SDL_GL_MULTISAMPLEBUFFERS, 
     SDL_MOUSEWHEEL, SDL_GetClipboardText, SDL_SetClipboardText, SDL_GetError, SDL_StopTextInput, SDL_StartTextInput, SDL_GL_MULTISAMPLEBUFFERS, 
     SDL_GL_MULTISAMPLESAMPLES,SDL_DestroyRenderer, SDL_DestroyWindow, SDL_GetWindowID, SDL_RenderDrawLine, 
     SDL_RenderDrawPoint, SDL_WINDOWPOS_CENTERED, SDL_WINDOW_ALLOW_HIGHDPI, SDL_RENDERER_ACCELERATED, SDL_WINDOW_ALLOW_HIGHDPI,
@@ -61,6 +64,12 @@ export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique,
 export Game, Keys, KeyMods, MouseButton
 export Actor, TextActor, ImageFileActor, ImageMemActor 
 export Line, Rect, Triangle, Circle
+export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init, ImGui_ImplSDLRenderer2_NewFrame, ImGui_ImplSDL2_NewFrame,
+    ImGui_ImplSDLRenderer2_RenderDrawData, ImGuiDockNodeFlags_PassthruCentralNode, TextDisabled, PushItemFlag, PopItemFlag,
+    ImGui_ImplSDLRenderer2_Shutdown#, ImGui_ImplSDL2_Shutdown
+
+# :/
+#import DocStringExtensions: TYPEDSIGNATURES
 export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init, ImGui_ImplSDLRenderer2_NewFrame, ImGui_ImplSDL2_NewFrame,
     ImGui_ImplSDLRenderer2_RenderDrawData, ImGuiDockNodeFlags_PassthruCentralNode, TextDisabled, PushItemFlag, PopItemFlag
 
@@ -150,6 +159,9 @@ function mainloop(g::Game)
     ctx = g.imgui_settings["ctx"] = CImGui.CreateContext()
     io = g.imgui_settings["io"] = CImGui.GetIO()
 
+    ctx = g.imgui_settings["ctx"] = CImGui.CreateContext()
+    io = g.imgui_settings["io"] = CImGui.GetIO()
+
     io.BackendPlatformUserData = C_NULL
     io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable
     io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_ViewportsEnable 
@@ -197,6 +209,7 @@ function mainloop(g::Game)
             end           
             
             # run custom imguiSDL2 function to draw ui elements on screen
+            # run custom imguiSDL2 function to draw ui elements on screen
             Base.invokelatest(g.imgui_function, g)
 
             # present rendered image to screen
@@ -216,6 +229,9 @@ function mainloop(g::Game)
             if (playing[] == false)
                 throw(QuitException())
             end
+
+            # Small sleep to prevent CPU hogging
+            sleep(0.001)
         end
     catch err
         @warn "Error in renderloop!" exception=err
@@ -386,9 +402,13 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
     g.state = Vector{Dict{String,Dict}}([Dict("imgui"=>Dict("username"=>"", "password"=>""))])
     g.screen = initscreen(g.game_module, name)
     g.imgui_settings = Dict(
+        "menu_active"=>true,
+        "show_login"=>false,
+        "show_menu"=>false,
         "show_menu"=>true,
         "show_login"=>true, 
         "console_history"=>Vector{String}(),
+        "io"=>CImGui.GetIO()
     )
     clear(g.screen)
     

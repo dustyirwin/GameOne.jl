@@ -23,7 +23,9 @@ function ImGui_ImplSDLRenderer2_Init(renderer::Ptr{SDL2.SDL_Renderer})
     bd = ImGui_ImplSDLRenderer2_Data(renderer, C_NULL)
     io.BackendRendererUserData = pointer_from_objref(bd)
     io.BackendRendererName = pointer("imgui_impl_sdlrenderer2")
-    io.BackendFlags = unsafe_load(io.BackendFlags) | CImGui.ImGuiBackendFlags_RendererHasVtxOffset # We can honor the  CImGui.ImDrawCmd::VtxOffset field, allowing for large meshes.
+    io.BackendFlags = unsafe_load(io.BackendFlags) | CImGui.ImGuiBackendFlags_RendererHasVtxOffset  
+    io.BackendFlags = unsafe_load(io.BackendFlags) | CImGui.ImGuiBackendFlags_RendererHasViewports  # Add viewport support
+
     ImGui_ImplSDLRenderer2_CreateFontsTexture(bd)
     return true
 end
@@ -69,6 +71,7 @@ Base.@kwdef mutable struct BackupSDLRendererState
 end
 
 function ImGui_ImplSDLRenderer2_RenderDrawData(draw_data, sdlRenderer)
+    io = CImGui.GetIO()
     bd = ImGui_ImplSDLRenderer2_GetBackendData()
 
     # If there's a scale factor set by the user, use that instead
@@ -180,6 +183,22 @@ function ImGui_ImplSDLRenderer2_RenderDrawData(draw_data, sdlRenderer)
         @c SDL2.SDL_RenderSetClipRect(sdlRenderer, &old.ClipRect)
     else
         @c SDL2.SDL_RenderSetClipRect(sdlRenderer, C_NULL)
+    end
+
+    # Handle viewport rendering
+    if (unsafe_load(io.ConfigFlags) & CImGui.ImGuiConfigFlags_ViewportsEnable) != 0
+        viewport = CImGui.GetMainViewport()
+        window_pos = unsafe_load(viewport.Pos)
+        window_size = unsafe_load(viewport.Size)
+        
+        # Set viewport for main window
+        viewport_rect = SDL_Rect(
+            Int32(window_pos.x), 
+            Int32(window_pos.y),
+            Int32(window_size.x),
+            Int32(window_size.y)
+        )
+        SDL_RenderSetViewport(sdlRenderer, Ref(viewport_rect))
     end
 end
 

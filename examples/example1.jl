@@ -100,56 +100,6 @@ function imgui(g::Game)
             CImGui.End()
         end
     end
-
-    command_text = "Welcome to the console!\n"
-    response_text = ""
-
-    if g.imgui_settings["show_console"]
-        
-        if CImGui.Begin("Console")
-            CImGui.SetWindowSize((280,140))
-            
-            @cstatic txt=""*"\0"^512  begin
-                # Widget labels CANNOT match any other label in widget?
-                if CImGui.InputTextWithHint(" ", "  <command>  ", txt, length(txt))  
-                    println(txt)
-                end
-
-                command_text = rstrip(string(txt),'\0')
-                CImGui.Text(command_text)
-            end
-            
-            CImGui.NewLine()
-            
-            if CImGui.Button("Run")
-                println("Run button clicked")
-                # Add your run logic here
-                
-                try
-                    io = IOBuffer()
-                    ex = Meta.parse(command_text)
-                    @info "command_text: $command_text"
-                    show(IOContext(io, :limit => true, :displaysize => (500, 250)), "text/plain", eval(g.game_module, ex))
-                    response_text = String(take!(io))
-                    @info "response_text: $response_text"
-                    push!(command_history, command_text)
-                catch e
-                    @warn e
-                end
-            end
-
-            CImGui.SameLine()
-            
-            if CImGui.Button("Clear")
-                println("Clear button clicked")
-                # Add your clear logic here
-                command_text = ""
-            end
-            
-
-            CImGui.End()
-        end
-    end
 end
 
 function next_frame!(a::Actor)
