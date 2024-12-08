@@ -214,7 +214,7 @@ function mainloop(g::Game)
             end           
             
             # Run ImGui only for primary window
-            if g.screens.active_screen == :primary
+            if g.screens.active_screen == UInt32(1)
                 # Show demo window
                 if show_demo_window
                     CImGui.ShowDemoWindow(Ref(show_demo_window))
@@ -579,7 +579,7 @@ function render_game(game_state, screens::GameScreens)
     
     # Draw all actors that belong to primary screen
     for actor in game_state.actors
-        if actor.current_window == :primary
+        if actor.current_window == UInt32(1)
             @debug "Drawing actor $(actor.label) on primary screen"
             draw(actor, screens)
         end
@@ -592,7 +592,7 @@ function render_game(game_state, screens::GameScreens)
     
     # Draw all actors that belong to secondary screen
     for actor in game_state.actors
-        if actor.current_window == :secondary
+        if actor.current_window == UInt32(2)
             @debug "Drawing actor $(actor.label) on secondary screen"
             draw(actor, screens)
         end

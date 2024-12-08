@@ -43,63 +43,12 @@ function HelpMarker(msg::AbstractString)
 end
 
 function imgui(g::Game)
-    
-    #@c CImGui.ShowDemoWindow(Ref{Bool}(true))
-
-    show_login = true
-    username = ""
-    password = ""
-
-    if true
-        if CImGui.Begin("Login")
-            CImGui.SetWindowSize((280,140))
-            
-            @cstatic u=""*"\0"^128 p=""*"\0"^128 begin
-                # Widget labels CANNOT match any other label in widget?
-                if CImGui.InputTextWithHint(" ", "   <username>    ", u, length(u))  
-                    @info u
-                end
-                
-                CImGui.NewLine()
-
-                # Widget text labels CANNOT match any other label in widget?
-                if CImGui.InputTextWithHint("  ", "   <password>    ", p, length(p), CImGui.ImGuiInputTextFlags_Password)
-                    @info p
-                end
-
-                username = rstrip(string(u),'\0')
-                password = rstrip(string(p),'\0')
-            end
-
-            CImGui.NewLine()
-
-            if CImGui.Button("Login")
-                println("Username: ", username, " username_length: ", length(username))
-                println("Password: ", password, " password_length: ", length(password))
-                
-                # Add your authentication logic here
-
-                if "beep" == username && "boop" == password
-                    println("Login successful")
-                    play_sound(harp)
-                    g.imgui_settings["show_login"]  = false
-                    g.imgui_settings["show_console"] = true
-                    window_paused[] = false
-                else
-                    println("Login failed")
-                    play_sound(cat_growl)
-                end
-            end
+    if g.screens.active_screen == UInt32(1)  # Only render ImGui on primary screen
+        @info "Rendering ImGui frame on primary screen"
         
-            CImGui.SameLine()
-
-            if CImGui.Button("Sign Up")
-                println("Sign Up button clicked")
-                # Add your sign up logic here
-            end
-
-            CImGui.End()
-        end
+        # Show demo window
+        show_demo = true  # Keep demo window visible
+        CImGui.ShowDemoWindow(Ref{Bool}(show_demo))
     end
 end
 
@@ -112,7 +61,7 @@ end
 # Create an `ImageActor` object from a PNG file
 alien_image_path = joinpath("examples", "images", "alien.png")
 @assert isfile(alien_image_path) "Alien image not found at: $alien_image_path"
-alien = ImageFileActor("alien", [alien_image_path], current_window=:primary)
+alien = ImageFileActor("alien", [alien_image_path], current_window=UInt32(1))  # 1 for primary
 @debug "Created alien actor with image: $alien_image_path"
 alien.x = SCREEN_WIDTH ÷ 2  # Start in the middle of the screen
 alien.y = SCREEN_HEIGHT ÷ 2  # Start in the middle of the screen
@@ -128,14 +77,14 @@ label = TextActor(
     "$(@__DIR__)/fonts/OpenSans-Regular.ttf",
     outline_size=1,
     pt_size=24,
-    current_window=:primary  # Start on primary screen
+    current_window=UInt32(1)  # 1 for primary
 )
 label.x = SCREEN_WIDTH ÷ 4  # Start at 1/4 of screen width
 label.y = SCREEN_HEIGHT ÷ 4  # Start at 1/4 of screen height
 
 # Load a custom animation with dual screen support
 anim_fns = ["$(@__DIR__)/images/FireElem1/Visible$i.png" for i in 0:7]
-anim = ImageFileActor("fireelem", anim_fns, current_window=:primary)  # Start on primary screen
+anim = ImageFileActor("fireelem", anim_fns, current_window=UInt32(1))  # 1 for primary
 anim.data[:next_frame] = true
 anim.x = SCREEN_WIDTH ÷ 3  # Start at 1/3 of screen width
 anim.y = SCREEN_HEIGHT ÷ 3  # Start at 1/3 of screen height
@@ -173,15 +122,11 @@ function update(g::Game)
         return
     end
 
-    # Update alien position
+    # Update positions
     alien.x += dx_alien
     alien.y += dy_alien
-
-    # Update text position
     label.x += dx_label
     label.y += dy_label
-
-    # Update FireElem position
     anim.x += dx_anim
     anim.y += dy_anim
 
@@ -191,16 +136,16 @@ function update(g::Game)
     end
 
     # Check boundaries and handle screen transitions for alien
-    if alien.current_window == :primary && alien.x > SCREEN_WIDTH - alien.w  # Right edge of primary
-        alien.current_window = :secondary
-        alien.x = 2  # Place at left edge of secondary window
+    if alien.current_window == UInt32(1) && alien.x > SCREEN_WIDTH - alien.w  # Right edge of primary
+        alien.current_window = UInt32(2)  # Switch to secondary
+        alien.x = 2
         play_sound(eep_wav)
-    elseif alien.current_window == :secondary && alien.x < 2  # Left edge of secondary
-        alien.current_window = :primary
-        alien.x = SCREEN_WIDTH - alien.w - 2  # Place at right edge of primary window
+    elseif alien.current_window == UInt32(2) && alien.x < 2  # Left edge of secondary
+        alien.current_window = UInt32(1)  # Switch to primary
+        alien.x = SCREEN_WIDTH - alien.w - 2
         play_sound(eep_wav)
-    elseif (alien.current_window == :primary && alien.x < 2) ||  # Left edge of primary
-           (alien.current_window == :secondary && alien.x > SCREEN_WIDTH - alien.w)  # Right edge of secondary
+    elseif (alien.current_window == UInt32(1) && alien.x < 2) ||  # Left edge of primary
+           (alien.current_window == UInt32(2) && alien.x > SCREEN_WIDTH - alien.w)  # Right edge of secondary
         dx_alien = -dx_alien  # Bounce back
         play_sound(eep_wav)
     end
@@ -211,16 +156,16 @@ function update(g::Game)
     end
 
     # Check boundaries and handle screen transitions for text
-    if label.current_window == :primary && label.x > SCREEN_WIDTH - label.w  # Right edge of primary
-        label.current_window = :secondary
-        label.x = 2  # Place at left edge of secondary window
+    if label.current_window == UInt32(1) && label.x > SCREEN_WIDTH - label.w  # Right edge of primary
+        label.current_window = UInt32(2)  # Switch to secondary
+        label.x = 2
         play_sound(eep_wav)
-    elseif label.current_window == :secondary && label.x < 2  # Left edge of secondary
-        label.current_window = :primary
-        label.x = SCREEN_WIDTH - label.w - 2  # Place at right edge of primary window
+    elseif label.current_window == UInt32(2) && label.x < 2  # Left edge of secondary
+        label.current_window = UInt32(1)  # Switch to primary
+        label.x = SCREEN_WIDTH - label.w - 2
         play_sound(eep_wav)
-    elseif (label.current_window == :primary && label.x < 2) ||  # Left edge of primary
-           (label.current_window == :secondary && label.x > SCREEN_WIDTH - label.w)  # Right edge of secondary
+    elseif (label.current_window == UInt32(1) && label.x < 2) ||  # Left edge of primary
+           (label.current_window == UInt32(2) && label.x > SCREEN_WIDTH - label.w)  # Right edge of secondary
         dx_label = -dx_label  # Bounce back
         play_sound(eep_wav)
     end
@@ -231,16 +176,16 @@ function update(g::Game)
     end
 
     # Check boundaries and handle screen transitions for FireElem
-    if anim.current_window == :primary && anim.x > SCREEN_WIDTH - anim.w  # Right edge of primary
-        anim.current_window = :secondary
-        anim.x = 2  # Place at left edge of secondary window
+    if anim.current_window == UInt32(1) && anim.x > SCREEN_WIDTH - anim.w  # Right edge of primary
+        anim.current_window = UInt32(2)  # Switch to secondary
+        anim.x = 2
         play_sound(eep_wav)
-    elseif anim.current_window == :secondary && anim.x < 2  # Left edge of secondary
-        anim.current_window = :primary
-        anim.x = SCREEN_WIDTH - anim.w - 2  # Place at right edge of primary window
+    elseif anim.current_window == UInt32(2) && anim.x < 2  # Left edge of secondary
+        anim.current_window = UInt32(1)  # Switch to primary
+        anim.x = SCREEN_WIDTH - anim.w - 2
         play_sound(eep_wav)
-    elseif (anim.current_window == :primary && anim.x < 2) ||  # Left edge of primary
-           (anim.current_window == :secondary && anim.x > SCREEN_WIDTH - anim.w)  # Right edge of secondary
+    elseif (anim.current_window == UInt32(1) && anim.x < 2) ||  # Left edge of primary
+           (anim.current_window == UInt32(2) && anim.x > SCREEN_WIDTH - anim.w)  # Right edge of secondary
         dx_anim = -dx_anim  # Bounce back
         play_sound(eep_wav)
     end

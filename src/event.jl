@@ -71,10 +71,10 @@ function process_events!(game_state, screens::GameScreens)
         
         # Get window information
         current_screen = if window_id == primary_window_id
-            screens.active_screen = :primary
+            screens.active_screen = UInt32(1)
             "PRIMARY"
         elseif window_id == secondary_window_id
-            screens.active_screen = :secondary
+            screens.active_screen = UInt32(2)
             "SECONDARY"
         else
             "UNKNOWN"
@@ -107,7 +107,7 @@ end
 function handle_mouse_button!(game_state, evt, screens::GameScreens)
     x, y = Int(evt.button.x), Int(evt.button.y)
     window_id = evt.button.windowID
-    current_screen = screens.active_screen == :primary ? "PRIMARY" : "SECONDARY"
+    current_screen = screens.active_screen == UInt32(1) ? "PRIMARY" : "SECONDARY"
     button_name = get_mouse_button_name(evt.button.button)
     
     if evt.type == SDL2.MOUSEBUTTONDOWN
@@ -131,7 +131,7 @@ function handle_mouse_motion!(game_state, evt, screens::GameScreens)
     if game_state.dragging_actor !== nothing
         x, y = Int(evt.motion.x), Int(evt.motion.y)
         window_id = evt.motion.windowID
-        current_screen = screens.active_screen == :primary ? "PRIMARY" : "SECONDARY"
+        current_screen = screens.active_screen == UInt32(1) ? "PRIMARY" : "SECONDARY"
         actor = game_state.dragging_actor
         
         # Update actor position based on mouse movement
@@ -142,13 +142,13 @@ function handle_mouse_motion!(game_state, evt, screens::GameScreens)
         @info "ACTOR DRAGGING" actor=actor.label screen=current_screen x=x y=y window_id=window_id
         
         # Check if we should switch windows based on position
-        if screens.active_screen == :primary && x > SCREEN_WIDTH - actor.w
+        if screens.active_screen == UInt32(1) && x > SCREEN_WIDTH - actor.w
             @info "ACTOR TRANSITION" actor=actor.label from="PRIMARY" to="SECONDARY" x=x y=y window_id=window_id
-            actor.current_window = :secondary
+            actor.current_window = UInt32(2)
             actor.x = 2
-        elseif screens.active_screen == :secondary && x < 2
+        elseif screens.active_screen == UInt32(2) && x < 2
             @info "ACTOR TRANSITION" actor=actor.label from="SECONDARY" to="PRIMARY" x=x y=y window_id=window_id
-            actor.current_window = :primary
+            actor.current_window = UInt32(1)
             actor.x = SCREEN_WIDTH - actor.w - 2
         end
     end
@@ -159,11 +159,11 @@ function handleWindowEvent(g::Game, e, t)
     
     # Update active screen based on window focus
     if window_id == SDL2.SDL_GetWindowID(g.screens.primary.window)
-        g.screens.active_screen = :primary
+        g.screens.active_screen = UInt32(1)
         g.screens.primary.has_focus = true
         g.screens.secondary.has_focus = false
     elseif window_id == SDL2.SDL_GetWindowID(g.screens.secondary.window)
-        g.screens.active_screen = :secondary
+        g.screens.active_screen = UInt32(2)
         g.screens.primary.has_focus = false
         g.screens.secondary.has_focus = true
     end

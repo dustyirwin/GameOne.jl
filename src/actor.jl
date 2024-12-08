@@ -41,12 +41,12 @@ mutable struct Actor
     angle::Float64
     alpha::UInt8
     data::Dict{Symbol,Any}
-    current_window::Symbol  # :primary or :secondary
+    current_window::UInt32  # 1 for primary, 2 for secondary
 
     # Add constructor with type conversions
     function Actor(id::String, label::String, surfaces, textures, position::SDL_Rect, 
                   scale::Vector, rotate_center, angle::Number, alpha::Number, 
-                  data::Dict{Symbol,Any}, current_window::Symbol=:primary)
+                  data::Dict{Symbol,Any}, current_window=UInt32(1))
         new(id, label, surfaces, textures, position, 
             convert(Vector{Float32}, scale), 
             rotate_center,
@@ -58,7 +58,7 @@ end
 
 function TextActor(text::String, font_path::String; id=randstring(10), x = 0, y = 0, pt_size = 24,
     font_color = Int[255, 255, 255, 255], outline_color = Int[0, 0, 0, 225],
-    wrap_length = 800, outline_size = 0, current_window=:primary, kv...)
+    wrap_length = 800, outline_size = 0, current_window=UInt32(1), kv...)
 
     @assert isfile(font_path) "Font file for $text not found: $font_path"
 
@@ -224,7 +224,7 @@ function ImageMemActor(img_name::String, img; x=0, y=0, kv...)
 end
 
 function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16); x=0, y=0, 
-    frame_delays=[], anim=false, webp_path="", current_window=:primary, kv...)
+    frame_delays=[], anim=false, webp_path="", current_window=UInt32(1), kv...)
     
     n = Int32.(length(img_fns))
     frame_delays = isempty(frame_delays) ? [ Millisecond(100) for _ in 1:n ] : frame_delays
@@ -296,7 +296,7 @@ function draw(a::Actor, screens::GameScreens=game[].screens)
     #@debug "Actor position: ($(a.x), $(a.y))"
     
     # Determine which screen to draw on based on actor's current_window
-    screen = a.current_window == :primary ? screens.primary : screens.secondary
+    screen = a.current_window == 1 ? screens.primary : screens.secondary
     
     # Check if we need to recreate textures for the current renderer
     if !isempty(a.textures) && haskey(a.data, :last_renderer) && a.data[:last_renderer] !== screen.renderer
@@ -540,12 +540,12 @@ function handle_mouse_motion!(game_state, evt, screens::GameScreens)
         actor.y = y - game_state.drag_offset_y
         
         # Check if we've dragged to window edge and switch windows if needed
-        if screens.active_screen == :primary && x >= screens.primary.width - 10
-            actor.current_window = :secondary
+        if screens.active_screen == UInt32(1) && x >= screens.primary.width - 10
+            actor.current_window = UInt32(2)
             # Adjust position for new window
             actor.x = 0
-        elseif screens.active_screen == :secondary && x <= 10
-            actor.current_window = :primary
+        elseif screens.active_screen == UInt32(2) && x <= 10
+            actor.current_window = UInt32(1)
             # Adjust position for new window
             actor.x = screens.primary.width - 20
         end

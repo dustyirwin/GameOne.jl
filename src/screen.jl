@@ -342,13 +342,13 @@ end
 mutable struct GameScreens
     primary::Screen
     secondary::Screen
-    active_screen::UInt32  # 1 for primary, 2 for secondary
+    active_screen::UInt32  # Changed from Symbol to UInt32
 end
 
 function create_screens(title1="Primary Window", title2="Secondary Window")
     primary = create_screen(title1, 800, 600)
-    secondary = create_screen(title2, 800, 600, offset_x=850)  # Position second window to the right
-    return GameScreens(primary, secondary, 1)
+    secondary = create_screen(title2, 800, 600, offset_x=850)
+    return GameScreens(primary, secondary, UInt32(1))  # Initialize with 1 for primary
 end
 
 function create_screen(title, width, height; offset_x=20, offset_y=20)
@@ -366,14 +366,10 @@ function initscreens(gm::Module, name::String)
     w = getifdefined(gm, WIDTHSYMBOL, 800)
     background = getifdefined(gm, BACKSYMBOL, SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0))
     
-    # Create primary screen
     primary = Screen(name * " Primary", w, h, background)
-    
-    # Create secondary screen with same dimensions
     secondary = Screen(name * " Secondary", w, h, background)
     
-    # Create GameScreens struct
-    screens = GameScreens(primary, secondary, 1)
+    screens = GameScreens(primary, secondary, UInt32(1))  # Initialize with 1 for primary
     
     clear(primary)
     clear(secondary)
