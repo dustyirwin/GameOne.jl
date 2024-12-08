@@ -156,18 +156,32 @@ end
 
 LoadBMP(src::String) = SDL_LoadBMP_RW(src, 1)
 
-#= Actor does not release memory! Why??
+# future image loading optimizations:
+# - use a texture manager to cache textures
+# - use a texture atlas for multiple images
 function ImageMemActor(img_name::String, img; x=0, y=0, kv...)
+    # Convert image to ARGB format
     img = ARGB.(img)
     w, h = Int32.(size(img))
+    
+    # Create a copy of the image data to avoid referencing the input array
+    img_copy = copy(img)
+    
+    # Create SDL surface from the copied image data
     sf = SDL_CreateRGBSurfaceWithFormatFrom(
-        img,
+        img_copy,
         w,
         h,
         Int32(32),
         Int32(4w),
         SDL_PIXELFORMAT_ARGB32,
     )
+
+    # Check if surface creation failed
+    if sf == C_NULL
+        error_msg = unsafe_string(SDL_GetError())
+        error("Failed to create surface: $error_msg")
+    end
 
     r = SDL_Rect(x, y, w, h)
     a = Actor(
@@ -182,25 +196,32 @@ function ImageMemActor(img_name::String, img; x=0, y=0, kv...)
         255,
         Dict(
             :anim => false,
-            :label=>img_name,
-            :img=>img,              # required! Causes garbled image if not included?? Why?? Because sf is a pointer/reference?
-            :sz=>[w,h],
-            :fade_in=>false,        # change to fade_in? remove anim-specific keys (add k,v when anim is run?)
-            :fade_out=>false,
-            :spin=>false,
-            :spin_cw=>true,
-            :shake=>false,
-            :mouse_offset=>Int32[0,0],
-            :type=>"imagemem",
+            :label => img_name,
+            :sz => [w,h],
+            :mouse_offset => Int32[0,0],
+            :type => "imagemem",
+            # Store a finalizer function to clean up the surface
+            :cleanup => () -> begin
+                if sf != C_NULL
+                    SDL_FreeSurface(sf)
+                end
+            end
         )
     )
+
+    # Register finalizer to ensure cleanup when actor is garbage collected
+    finalizer(a) do x
+        if haskey(x.data, :cleanup)
+            x.data[:cleanup]()
+        end
+    end
 
     for (k, v) in kv
         setproperty!(a, k, v)
     end
+    
     return a
 end
-=#
 
 function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16); x=0, y=0, 
     frame_delays=[], anim=false, webp_path="", current_window=:primary, kv...)
@@ -271,8 +292,8 @@ end
 
 function draw(a::Actor, screens::GameScreens=game[].screens)
     # Debug logging
-    @debug "Drawing actor $(a.label) on window $(a.current_window)"
-    @debug "Actor position: ($(a.x), $(a.y))"
+    #@debug "Drawing actor $(a.label) on window $(a.current_window)"
+    #@debug "Actor position: ($(a.x), $(a.y))"
     
     # Determine which screen to draw on based on actor's current_window
     screen = a.current_window == :primary ? screens.primary : screens.secondary
@@ -377,7 +398,7 @@ function draw(a::Actor, screens::GameScreens=game[].screens)
         return
     end
 
-    @debug "Setting up rendering for $(a.label) with $(length(a.textures)) textures"
+    #@debug "Setting up rendering for $(a.label) with $(length(a.textures)) textures"
     
     if a.alpha < 255
         SDL_SetTextureBlendMode(a.textures[begin], SDL_BLENDMODE_BLEND)
@@ -409,7 +430,7 @@ function draw(a::Actor, screens::GameScreens=game[].screens)
         error_msg = unsafe_string(SDL_GetError())
         @error "Failed to render actor $(a.label): $error_msg"
     else
-        @debug "Successfully rendered actor $(a.label)"
+        #@debug "Successfully rendered actor $(a.label)"
     end
 end
 

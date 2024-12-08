@@ -296,7 +296,9 @@ function handleKeyPress(g::Game, e, t)
 end
 
 function handleMouseClick(g::Game, e, t)
-    @debug "Mouse Button" button, x, y
+    window_id = e.windowID
+    @debug "Mouse Button" e.x e.y window_id
+    
     if (t == SDL_MOUSEBUTTONUP)
         Base.invokelatest(g.onmouseup_function, g, (e.x, e.y), MouseButtons.MouseButton(e.button))
     elseif (t == SDL_MOUSEBUTTONDOWN)
@@ -314,11 +316,11 @@ function handleWindowEvent(g::Game, e, t)
     
     # Update active screen based on window focus
     if window_id == SDL2.SDL_GetWindowID(g.screens.primary.window)
-        g.screens.active_screen = :primary
+        g.screens.active_screen = UInt32(1)
         g.screens.primary.has_focus = true
         g.screens.secondary.has_focus = false
     elseif window_id == SDL2.SDL_GetWindowID(g.screens.secondary.window)
-        g.screens.active_screen = :secondary
+        g.screens.active_screen = UInt32(2)
         g.screens.primary.has_focus = false
         g.screens.secondary.has_focus = true
     end

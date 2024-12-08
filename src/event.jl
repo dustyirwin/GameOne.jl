@@ -42,6 +42,18 @@ function bitcat(::Type{T}, arr)::T where T<:Number
     out
 end
 
+function get_mouse_button_name(button::UInt8)
+    if button == SDL2.BUTTON_LEFT
+        return "LEFT"
+    elseif button == SDL2.BUTTON_RIGHT
+        return "RIGHT"
+    elseif button == SDL2.BUTTON_MIDDLE
+        return "MIDDLE"
+    else
+        return "BUTTON_$button"
+    end
+end
+
 function process_events!(game_state, screens::GameScreens)
     event_ref = Ref{SDL2.Event}()
     
@@ -54,40 +66,92 @@ function process_events!(game_state, screens::GameScreens)
         
         # Determine which window the event belongs to
         window_id = get_window_id(evt)
-        if window_id == SDL2.SDL_GetWindowID(screens.primary.window)
+        primary_window_id = SDL2.SDL_GetWindowID(screens.primary.window)
+        secondary_window_id = SDL2.SDL_GetWindowID(screens.secondary.window)
+        
+        # Get window information
+        current_screen = if window_id == primary_window_id
             screens.active_screen = :primary
-        elseif window_id == SDL2.SDL_GetWindowID(screens.secondary.window)
+            "PRIMARY"
+        elseif window_id == secondary_window_id
             screens.active_screen = :secondary
+            "SECONDARY"
+        else
+            "UNKNOWN"
         end
         
-        # Handle mouse events
+        # Handle mouse events with enhanced logging
         if evt.type == SDL2.MOUSEBUTTONDOWN
-            handle_mouse_down!(game_state, evt, screens)
+            x, y = Int(evt.button.x), Int(evt.button.y)
+            button = evt.button.button
+            button_name = get_mouse_button_name(button)
+            @info "MOUSE EVENT" event="BUTTON DOWN" button=button_name screen=current_screen x=x y=y window_id=window_id
+            handle_mouse_button!(game_state, evt, screens)
         elseif evt.type == SDL2.MOUSEBUTTONUP
-            handle_mouse_up!(game_state, evt, screens)
+            x, y = Int(evt.button.x), Int(evt.button.y)
+            button = evt.button.button
+            button_name = get_mouse_button_name(button)
+            @info "MOUSE EVENT" event="BUTTON UP" button=button_name screen=current_screen x=x y=y window_id=window_id
+            handle_mouse_button!(game_state, evt, screens)
         elseif evt.type == SDL2.MOUSEMOTION
+            x, y = Int(evt.motion.x), Int(evt.motion.y)
+            if game_state.dragging_actor !== nothing
+                @info "MOUSE EVENT" event="MOTION" screen=current_screen x=x y=y window_id=window_id actor=game_state.dragging_actor.label
+            end
             handle_mouse_motion!(game_state, evt, screens)
         end
     end
     return true
 end
 
-function get_window_id(evt::SDL2.SDL_Event)
-    # Different event types store window ID in different places
-    if evt.type in (SDL2.MOUSEBUTTONDOWN, SDL2.MOUSEBUTTONUP, SDL2.MOUSEMOTION)
-        return evt.button.windowID
+function handle_mouse_button!(game_state, evt, screens::GameScreens)
+    x, y = Int(evt.button.x), Int(evt.button.y)
+    window_id = evt.button.windowID
+    current_screen = screens.active_screen == :primary ? "PRIMARY" : "SECONDARY"
+    button_name = get_mouse_button_name(evt.button.button)
+    
+    if evt.type == SDL2.MOUSEBUTTONDOWN
+        # Check for clicks on actors in the active screen
+        for actor in game_state.actors
+            if actor.current_window == screens.active_screen && collide(actor, x, y)
+                @info "ACTOR CLICKED" actor=actor.label button=button_name screen=current_screen x=x y=y window_id=window_id
+                game_state.dragging_actor = actor
+                # Store the offset between mouse and actor position for smooth dragging
+                actor.data[:mouse_offset] = Int32[x - actor.x, y - actor.y]
+                break
+            end
+        end
+    elseif evt.type == SDL2.MOUSEBUTTONUP && game_state.dragging_actor !== nothing
+        @info "ACTOR RELEASED" actor=game_state.dragging_actor.label button=button_name screen=current_screen x=x y=y window_id=window_id
+        game_state.dragging_actor = nothing
     end
-    return 0
 end
 
-function handle_mouse_down!(game_state, evt, screens::GameScreens)
-    x, y = Int(evt.button.x), Int(evt.button.y)
-    
-    # Get the current screen's actors
-    active_screen = screens.active_screen == :primary ? screens.primary : screens.secondary
-    
-    # Your existing mouse down handling code here, but use active_screen
-    # ...
+function handle_mouse_motion!(game_state, evt, screens::GameScreens)
+    if game_state.dragging_actor !== nothing
+        x, y = Int(evt.motion.x), Int(evt.motion.y)
+        window_id = evt.motion.windowID
+        current_screen = screens.active_screen == :primary ? "PRIMARY" : "SECONDARY"
+        actor = game_state.dragging_actor
+        
+        # Update actor position based on mouse movement
+        offset = actor.data[:mouse_offset]
+        actor.x = x - offset[1]
+        actor.y = y - offset[2]
+        
+        @info "ACTOR DRAGGING" actor=actor.label screen=current_screen x=x y=y window_id=window_id
+        
+        # Check if we should switch windows based on position
+        if screens.active_screen == :primary && x > SCREEN_WIDTH - actor.w
+            @info "ACTOR TRANSITION" actor=actor.label from="PRIMARY" to="SECONDARY" x=x y=y window_id=window_id
+            actor.current_window = :secondary
+            actor.x = 2
+        elseif screens.active_screen == :secondary && x < 2
+            @info "ACTOR TRANSITION" actor=actor.label from="SECONDARY" to="PRIMARY" x=x y=y window_id=window_id
+            actor.current_window = :primary
+            actor.x = SCREEN_WIDTH - actor.w - 2
+        end
+    end
 end
 
 function handleWindowEvent(g::Game, e, t)

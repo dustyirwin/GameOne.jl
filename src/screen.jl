@@ -5,7 +5,7 @@
     height::Int32
     width::Int32
     background::Union{ARGB,Ptr{SDL_Surface}}
-    window_id::Int
+    window_id::UInt32
     has_focus::Bool = false
     full_screen::Bool = true
     minimized::Bool = false
@@ -342,13 +342,13 @@ end
 mutable struct GameScreens
     primary::Screen
     secondary::Screen
-    active_screen::Symbol  # :primary or :secondary
+    active_screen::UInt32  # 1 for primary, 2 for secondary
 end
 
 function create_screens(title1="Primary Window", title2="Secondary Window")
     primary = create_screen(title1, 800, 600)
     secondary = create_screen(title2, 800, 600, offset_x=850)  # Position second window to the right
-    return GameScreens(primary, secondary, :primary)
+    return GameScreens(primary, secondary, 1)
 end
 
 function create_screen(title, width, height; offset_x=20, offset_y=20)
@@ -373,7 +373,7 @@ function initscreens(gm::Module, name::String)
     secondary = Screen(name * " Secondary", w, h, background)
     
     # Create GameScreens struct
-    screens = GameScreens(primary, secondary, :primary)
+    screens = GameScreens(primary, secondary, 1)
     
     clear(primary)
     clear(secondary)

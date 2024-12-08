@@ -50,7 +50,7 @@ function imgui(g::Game)
     username = ""
     password = ""
 
-    if g.imgui_settings["show_login"] 
+    if true
         if CImGui.Begin("Login")
             CImGui.SetWindowSize((280,140))
             
@@ -154,10 +154,10 @@ play_music("$(@__DIR__)/examples/music/radetzky_ogg")
 
 # The draw function is called by the framework
 function draw(g::Game)
-    @debug "Drawing actors..."
-    @debug "Alien position: ($(alien.x), $(alien.y)), window: $(alien.current_window)"
-    @debug "Label position: ($(label.x), $(label.y)), window: $(label.current_window)"
-    @debug "FireElem position: ($(anim.x), $(anim.y)), window: $(anim.current_window)"
+    #@debug "Drawing actors..."
+    #@debug "Alien position: ($(alien.x), $(alien.y)), window: $(alien.current_window)"
+    #@debug "Label position: ($(label.x), $(label.y)), window: $(label.current_window)"
+    #@debug "FireElem position: ($(anim.x), $(anim.y)), window: $(anim.current_window)"
     
     # Draw actors on their respective screens
     draw(alien, g.screens)
