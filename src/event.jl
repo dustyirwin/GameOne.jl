@@ -41,3 +41,68 @@ function bitcat(::Type{T}, arr)::T where T<:Number
 
     out
 end
+
+function process_events!(game_state, screens::GameScreens)
+    event_ref = Ref{SDL2.Event}()
+    
+    while Bool(SDL2.PollEvent(event_ref))
+        evt = event_ref[]
+        
+        if evt.type == SDL2.QUIT
+            return false
+        end
+        
+        # Determine which window the event belongs to
+        window_id = get_window_id(evt)
+        if window_id == SDL2.SDL_GetWindowID(screens.primary.window)
+            screens.active_screen = :primary
+        elseif window_id == SDL2.SDL_GetWindowID(screens.secondary.window)
+            screens.active_screen = :secondary
+        end
+        
+        # Handle mouse events
+        if evt.type == SDL2.MOUSEBUTTONDOWN
+            handle_mouse_down!(game_state, evt, screens)
+        elseif evt.type == SDL2.MOUSEBUTTONUP
+            handle_mouse_up!(game_state, evt, screens)
+        elseif evt.type == SDL2.MOUSEMOTION
+            handle_mouse_motion!(game_state, evt, screens)
+        end
+    end
+    return true
+end
+
+function get_window_id(evt::SDL2.SDL_Event)
+    # Different event types store window ID in different places
+    if evt.type in (SDL2.MOUSEBUTTONDOWN, SDL2.MOUSEBUTTONUP, SDL2.MOUSEMOTION)
+        return evt.button.windowID
+    end
+    return 0
+end
+
+function handle_mouse_down!(game_state, evt, screens::GameScreens)
+    x, y = Int(evt.button.x), Int(evt.button.y)
+    
+    # Get the current screen's actors
+    active_screen = screens.active_screen == :primary ? screens.primary : screens.secondary
+    
+    # Your existing mouse down handling code here, but use active_screen
+    # ...
+end
+
+function handleWindowEvent(g::Game, e, t)
+    window_id = e.window.windowID
+    
+    # Update active screen based on window focus
+    if window_id == SDL2.SDL_GetWindowID(g.screens.primary.window)
+        g.screens.active_screen = :primary
+        g.screens.primary.has_focus = true
+        g.screens.secondary.has_focus = false
+    elseif window_id == SDL2.SDL_GetWindowID(g.screens.secondary.window)
+        g.screens.active_screen = :secondary
+        g.screens.primary.has_focus = false
+        g.screens.secondary.has_focus = true
+    end
+    
+    @debug "Window $window_id focus changed. Active screen: $(g.screens.active_screen)"
+end

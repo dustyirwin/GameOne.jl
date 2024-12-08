@@ -1,9 +1,9 @@
 @kwdef mutable struct Screen
     name::String = ""
-    window
-    renderer
-    height::Int
-    width::Int
+    window::Ptr{SDL2.SDL_Window}
+    renderer::Ptr{SDL2.SDL_Renderer}
+    height::Int32
+    width::Int32
     background::Union{ARGB,Ptr{SDL_Surface}}
     window_id::Int
     has_focus::Bool = false
@@ -14,7 +14,7 @@
 
     function Screen(name, w, h, background)
         win, renderer = makeWinRenderer(name, w, h)
-        surface = SDL_CreateRGBSurface(w, h, 32, 0, 255, 255, 255, 0)
+        surface = SDL_CreateRGBSurface(w, h, 32, 0, 155, 155, 155, 0)
         new(name, win, renderer, h, w, surface, SDL_GetWindowID(win))
     end
 end
@@ -181,7 +181,10 @@ function clear(s::Screen)
     fill(s, s.background)
 end
 
-clear() = clear(game[].screen)
+function clear()
+    clear(game[].screens.primary)
+    clear(game[].screens.secondary)
+end
 
 function Base.fill(s::Screen, c::Colorant)
     SDL_SetRenderDrawColor(
@@ -334,4 +337,46 @@ function cleanup_old_textures!(tm::TextureManager)
             delete!(tm.last_used, tex)
         end
     end
+end
+
+mutable struct GameScreens
+    primary::Screen
+    secondary::Screen
+    active_screen::Symbol  # :primary or :secondary
+end
+
+function create_screens(title1="Primary Window", title2="Secondary Window")
+    primary = create_screen(title1, 800, 600)
+    secondary = create_screen(title2, 800, 600, offset_x=850)  # Position second window to the right
+    return GameScreens(primary, secondary, :primary)
+end
+
+function create_screen(title, width, height; offset_x=20, offset_y=20)
+    window = SDL2.CreateWindow(title, Int32(SDL_WINDOWPOS_CENTERED + offset_x), 
+                             Int32(SDL_WINDOWPOS_CENTERED + offset_y), 
+                             Int32(width), Int32(height), 
+                             UInt32(SDL_WINDOW_SHOWN))
+    renderer = SDL2.CreateRenderer(window, Int32(-1),
+                                 UInt32(SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC))
+    return Screen(window, renderer, width, height)
+end
+
+function initscreens(gm::Module, name::String)
+    h = getifdefined(gm, HEIGHTSYMBOL, 600)
+    w = getifdefined(gm, WIDTHSYMBOL, 800)
+    background = getifdefined(gm, BACKSYMBOL, SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0))
+    
+    # Create primary screen
+    primary = Screen(name * " Primary", w, h, background)
+    
+    # Create secondary screen with same dimensions
+    secondary = Screen(name * " Secondary", w, h, background)
+    
+    # Create GameScreens struct
+    screens = GameScreens(primary, secondary, :primary)
+    
+    clear(primary)
+    clear(secondary)
+    
+    return screens
 end

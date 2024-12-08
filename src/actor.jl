@@ -41,11 +41,24 @@ mutable struct Actor
     angle::Float64
     alpha::UInt8
     data::Dict{Symbol,Any}
+    current_window::Symbol  # :primary or :secondary
+
+    # Add constructor with type conversions
+    function Actor(id::String, label::String, surfaces, textures, position::SDL_Rect, 
+                  scale::Vector, rotate_center, angle::Number, alpha::Number, 
+                  data::Dict{Symbol,Any}, current_window::Symbol=:primary)
+        new(id, label, surfaces, textures, position, 
+            convert(Vector{Float32}, scale), 
+            rotate_center,
+            convert(Float64, angle),
+            convert(UInt8, alpha),
+            data, current_window)
+    end
 end
 
 function TextActor(text::String, font_path::String; id=randstring(10), x = 0, y = 0, pt_size = 24,
     font_color = Int[255, 255, 255, 255], outline_color = Int[0, 0, 0, 225],
-    wrap_length = 800, outline_size = 0, kv...)
+    wrap_length = 800, outline_size = 0, current_window=:primary, kv...)
 
     @assert isfile(font_path) "Font file for $text not found: $font_path"
 
@@ -99,6 +112,7 @@ function TextActor(text::String, font_path::String; id=randstring(10), x = 0, y 
             :mouse_offset => Int32[0, 0],
             :font_color => font_color,
             :type=>"text",
+            :current_window => current_window,
             )
         )
         
@@ -189,12 +203,32 @@ end
 =#
 
 function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16); x=0, y=0, 
-    frame_delays=[], anim=false, webp_path="", kv...)
+    frame_delays=[], anim=false, webp_path="", current_window=:primary, kv...)
     
     n = Int32.(length(img_fns))
     frame_delays = isempty(frame_delays) ? [ Millisecond(100) for _ in 1:n ] : frame_delays
-    surfaces = [ IMG_Load(fn) for fn in img_fns ]
-    w, h = Int32.(size(surfaces[begin]))
+    
+    # Load images with error checking
+    surfaces = []
+    for fn in img_fns
+        @debug "Loading image: $fn"
+        surface = IMG_Load(fn)
+        if surface == C_NULL
+            error_msg = unsafe_string(SDL_GetError())
+            error("Failed to load image $fn: $error_msg")
+        end
+        @debug "Successfully loaded surface for $fn"
+        push!(surfaces, surface)
+    end
+    
+    if isempty(surfaces)
+        error("No surfaces were loaded for actor $name")
+    end
+    
+    # Get dimensions from first surface
+    surface = unsafe_load(surfaces[begin])
+    w, h = Int32(surface.w), Int32(surface.h)
+    @debug "Image loaded with dimensions: $(w)x$(h)"
     
     r = SDL_Rect(x, y, w, h)
     a = Actor(
@@ -203,7 +237,7 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
         surfaces,
         [],
         r,
-        [1,1],
+        [1.,1.],
         C_NULL,
         0,
         255,
@@ -223,38 +257,128 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
             :frame_delays => frame_delays,
             :mouse_offset => Int32[0, 0],
             :type => "imagefile",
+            :current_window => current_window,
         )
     )
 
     for (k, v) in kv
         setproperty!(a, k, v)
     end
+    
+    @debug "Created ImageFileActor: $name with id: $id"
     return a
 end
 
-function draw(a::Actor, s::Screen=game[].screen)
+function draw(a::Actor, screens::GameScreens=game[].screens)
+    # Debug logging
+    @debug "Drawing actor $(a.label) on window $(a.current_window)"
+    @debug "Actor position: ($(a.x), $(a.y))"
     
-    if isempty(a.textures)
+    # Determine which screen to draw on based on actor's current_window
+    screen = a.current_window == :primary ? screens.primary : screens.secondary
+    
+    # Check if we need to recreate textures for the current renderer
+    if !isempty(a.textures) && haskey(a.data, :last_renderer) && a.data[:last_renderer] !== screen.renderer
+        @debug "Switching renderers - recreating textures"
+        # Destroy old textures
+        for tx in a.textures
+            SDL_DestroyTexture(tx)
+        end
+        a.textures = []
         
-        for (i, sf) in enumerate(a.surfaces)
-            tx = SDL_CreateTextureFromSurface(s.renderer, sf)
+        # Handle different actor types
+        if haskey(a.data, :type) && a.data[:type] == "text"
+            @debug "Recreating text surfaces"
+            # Recreate text surfaces
+            text_font = TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
+            outline_font = TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
             
-            if tx == C_NULL
-                @warn "Failed to create texture $i for $(a.label)! Fall back to CPU?"
-                break
+            if text_font == C_NULL || outline_font == C_NULL
+                @error "Failed to load font: $(unsafe_string(SDL_GetError()))"
+                return
             end
             
-            push!(a.textures, tx)
+            fg = TTF_RenderText_Blended_Wrapped(
+                text_font, 
+                a.label, 
+                SDL_Color(a.data[:font_color]...), 
+                UInt32(a.data[:wrap_length])
+            )
+            
+            if fg == C_NULL
+                @error "Failed to render text surface: $(unsafe_string(SDL_GetError()))"
+                return
+            end
+            
+            surface = if a.data[:outline_size] > 0
+                TTF_SetFontOutline(outline_font, Int32(a.data[:outline_size]))
+                bg = TTF_RenderText_Blended_Wrapped(
+                    outline_font, 
+                    a.label, 
+                    SDL_Color(a.data[:outline_color]...), 
+                    UInt32(a.data[:wrap_length])
+                )
+                SDL_UpperBlitScaled(fg, C_NULL, bg, Int32[a.data[:outline_size], a.data[:outline_size], a.w, a.h])
+                bg
+            else
+                fg
+            end
+            
+            push!(a.surfaces, surface)
+            TTF_CloseFont(text_font)
+            TTF_CloseFont(outline_font)
+            
+        elseif haskey(a.data, :img_fns)
+            # Handle image-based actors
+            @debug "Reloading surfaces from image files"
+            a.surfaces = []
+            for fn in a.data[:img_fns]
+                surface = IMG_Load(fn)
+                if surface == C_NULL
+                    error_msg = unsafe_string(SDL_GetError())
+                    @error "Failed to reload image $fn: $error_msg"
+                    continue
+                end
+                push!(a.surfaces, surface)
+            end
         end
+    end
+    
+    if isempty(a.textures)
+        @debug "Creating textures for actor $(a.label)"
+        for (i, sf) in enumerate(a.surfaces)
+            if sf == C_NULL
+                @error "Surface $i is NULL for actor $(a.label)"
+                continue
+            end
+            
+            tx = SDL_CreateTextureFromSurface(screen.renderer, sf)
+            if tx == C_NULL
+                error_msg = unsafe_string(SDL_GetError())
+                @error "Failed to create texture $i for $(a.label): $error_msg"
+                continue
+            end
+            push!(a.textures, tx)
+            @debug "Successfully created texture $i for $(a.label)"
+        end
+        
+        # Store the renderer we created the textures with
+        a.data[:last_renderer] = screen.renderer
         
         for sf in a.surfaces
             SDL_FreeSurface(sf)
             sf=nothing
         end
-
         a.surfaces = []
     end
 
+    if isempty(a.textures)
+        @error "No valid textures for actor $(a.label)"
+        return
+    end
+
+    @debug "Setting up rendering for $(a.label) with $(length(a.textures)) textures"
+    
     if a.alpha < 255
         SDL_SetTextureBlendMode(a.textures[begin], SDL_BLENDMODE_BLEND)
         SDL_SetTextureAlphaMod(a.textures[begin], a.alpha)
@@ -270,15 +394,23 @@ function draw(a::Actor, s::Screen=game[].screen)
         SDL_FLIP_NONE
     end
 
-    SDL_RenderCopyEx(
-        s.renderer,
+    # Draw on the appropriate screen
+    result = SDL_RenderCopyEx(
+        screen.renderer,
         a.textures[begin],
         C_NULL,
-        Ref(SDL_Rect(Int32[ a.x, a.y, ceil(a.w * a.scale[1]), ceil(a.h * a.scale[2]) ]...)),
+        Ref(SDL_Rect(Int32[a.x, a.y, ceil(a.w * a.scale[1]), ceil(a.h * a.scale[2])]...)),
         a.angle,
         a.rotate_center,
         flip,
     )
+    
+    if result != 0
+        error_msg = unsafe_string(SDL_GetError())
+        @error "Failed to render actor $(a.label): $error_msg"
+    else
+        @debug "Successfully rendered actor $(a.label)"
+    end
 end
 
 function Base.setproperty!(s::Actor, p::Symbol, x)
@@ -376,3 +508,25 @@ function collide(c, d)
 end
 
 rect(a::Actor) = a.position
+
+function handle_mouse_motion!(game_state, evt, screens::GameScreens)
+    if game_state.dragging_actor !== nothing
+        x, y = Int(evt.motion.x), Int(evt.motion.y)
+        actor = game_state.dragging_actor
+        
+        # Update actor position
+        actor.x = x - game_state.drag_offset_x
+        actor.y = y - game_state.drag_offset_y
+        
+        # Check if we've dragged to window edge and switch windows if needed
+        if screens.active_screen == :primary && x >= screens.primary.width - 10
+            actor.current_window = :secondary
+            # Adjust position for new window
+            actor.x = 0
+        elseif screens.active_screen == :secondary && x <= 10
+            actor.current_window = :primary
+            # Adjust position for new window
+            actor.x = screens.primary.width - 20
+        end
+    end
+end

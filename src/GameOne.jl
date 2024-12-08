@@ -44,7 +44,8 @@ using Reexport: @reexport
     Mix_Quit, Mix_LoadWAV_RW, AUDIO_S16SYS, Mix_PlayChannelTimed, Mix_PlayMusic, Mix_PlayingMusic, Mix_FreeChunk, 
     Mix_FreeMusic, Mix_VolumeMusic, Mix_Volume, Mix_PausedMusic, Mix_ResumeMusic, Mix_LoadMUS, Mix_PauseMusic,
     TTF_Quit, TTF_OpenFont, TTF_RenderText_Blended_Wrapped, TTF_SetFontOutline, TTF_CloseFont, TTF_Init,
-    SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, SDL_HINT_RENDER_VSYNC, SDL_HINT_RENDER_DRIVER, SDL_HINT_RENDER_DIRECT3D_THREADSAFE
+    SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, SDL_HINT_RENDER_VSYNC, SDL_HINT_RENDER_DRIVER, SDL_HINT_RENDER_DIRECT3D_THREADSAFE,
+    SDL_GetRendererInfo
 
 import SimpleDirectMediaLayer
 const SDL2 = SimpleDirectMediaLayer.LibSDL2
@@ -56,7 +57,7 @@ export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
     window_paused, getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL,
     image_surface
-export Game, Screen, Keys, KeyMods, MouseButton
+export Game, Screen, GameScreens, Window, Keys, KeyMods, MouseButton
 export Actor, TextActor, ImageFileActor, ImageMemActor 
 export Line, Rect, Triangle, Circle
 export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init, ImGui_ImplSDLRenderer2_NewFrame, ImGui_ImplSDL2_NewFrame,
@@ -66,16 +67,39 @@ export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init, ImGui_Imp
 # :/
 #import DocStringExtensions: TYPEDSIGNATURES
 
+
+
 # ImGuiSDLBackend
 include("imgui_impl_sdl2.jl")
 include("imgui_impl_sdlrenderer2.jl")
 
 include("keyboard.jl")
 include("timer.jl")
-include("event.jl")
 include("window.jl")
-include("resources.jl")
 include("screen.jl")
+
+
+mutable struct Game
+    screens::GameScreens
+    location::String
+    game_module::Module
+    keyboard::Keyboard
+    render_function::Function
+    update_function::Function
+    onkey_function::Function
+    onmousedown_function::Function
+    onmouseup_function::Function
+    onmousemove_function::Function
+    imgui_function::Function
+    imgui_settings::Dict{String,Any}
+    state::Vector{Dict{String,Any}}
+    socket::Vector{TCPSocket}
+    Game() = new()
+end
+
+
+include("event.jl")
+include("resources.jl")
 include("actor.jl")
 
 
@@ -94,23 +118,6 @@ function intern_string(s::String)
     end
 end
 
-mutable struct Game
-    screen::Screen
-    location::String
-    game_module::Module
-    keyboard::Keyboard
-    render_function::Function
-    update_function::Function
-    onkey_function::Function
-    onmousedown_function::Function
-    onmouseup_function::Function
-    onmousemove_function::Function
-    imgui_function::Function
-    imgui_settings::Dict{String,Any}
-    state::Vector{Dict{String,Any}}
-    socket::Vector{TCPSocket}
-    Game() = new()
-end
 
 const timer = WallTimer()
 const game = Ref{Game}()
@@ -153,72 +160,80 @@ sdlVersion = parse(Int32, replace(sdlVersion, "." => ""))
 function mainloop(g::Game)
     start!(timer)
     
-    sdlRenderer = g.screen.renderer
-    window = g.screen.window
+    # Get renderers for both screens
+    primary_renderer = g.screens.primary.renderer
+    secondary_renderer = g.screens.secondary.renderer
     
-    # create the ImGui context
+    # Create ImGui context - only initialize once
     ctx = g.imgui_settings["ctx"] = CImGui.CreateContext()
     io = g.imgui_settings["io"] = CImGui.GetIO()
-
+    
     io.BackendPlatformUserData = C_NULL
     io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable
     io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_ViewportsEnable 
     io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_NavEnableKeyboard
     io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_NavEnableGamepad
-
-    ImGui_ImplSDL2_InitForSDLRenderer(window, sdlRenderer)
-    ImGui_ImplSDLRenderer2_Init(sdlRenderer)
+    
+    # Initialize ImGui only for the primary window/renderer
+    ImGui_ImplSDL2_InitForSDLRenderer(g.screens.primary.window, primary_renderer)
+    ImGui_ImplSDLRenderer2_Init(primary_renderer)
+    
+    # Demo window state
+    show_demo_window = true
     
     quit = false
     
     try
         while !quit
-            #Don't run if game is paused by system (resizing, lost focus, etc)
-            #while window_paused[] != 0
-            #    _ = pollEvent()
-            #    sleep(0.5)
-            #end
-
-            # Handle Events
-            errorMsg = ""
-
             event_ref = Ref{SDL_Event}()
             
             while Bool(SDL_PollEvent(event_ref))
                 evt = event_ref[]
                 ImGui_ImplSDL2_ProcessEvent(evt, sdlVersion)
                 evt_ty = evt.type
-
-                @debug "evt_ty: $evt_ty evt.key.keysym.sym: $(evt.key.keysym.sym)"
                 
                 if evt_ty == SDL2.SDL_QUIT
                     quit = true
                     break
-                    
                 else
                     handleEvents!(g, evt, evt_ty)
                 end
             end
 
-            # clearing out renderer for new frame
-            SDL2.SDL_RenderClear(sdlRenderer);
+            # Start ImGui frame
+            ImGui_ImplSDLRenderer2_NewFrame()
+            ImGui_ImplSDL2_NewFrame()
+            CImGui.NewFrame()
+
+            # Clear both renderers
+            SDL2.SDL_RenderClear(primary_renderer)
+            SDL2.SDL_RenderClear(secondary_renderer)
+            
             if window_paused[] == 0
                 Base.invokelatest(g.render_function, g)
             end           
             
-            # run custom imguiSDL2 function to draw ui elements on screen
-            Base.invokelatest(g.imgui_function, g)
+            # Run ImGui only for primary window
+            if g.screens.active_screen == :primary
+                # Show demo window
+                if show_demo_window
+                    CImGui.ShowDemoWindow(Ref(show_demo_window))
+                end
+                
+                # Run custom ImGui function
+                Base.invokelatest(g.imgui_function, g)
+                
+                # Render ImGui
+                CImGui.Render()
+                ImGui_ImplSDLRenderer2_RenderDrawData(CImGui.GetDrawData(), primary_renderer)
+            end
 
-            # present rendered image to screen
-            SDL_RenderPresent(sdlRenderer)
+            # Present both renderers
+            SDL_RenderPresent(primary_renderer)
+            SDL_RenderPresent(secondary_renderer)
 
             dt = elapsed(timer)
-            # Don't let the game proceed at fewer than this frames per second. If an
-            # update takes too long, allow the game to actually slow, rather than
-            # having too big of frames.
-            min_fps = 20.0
-            max_fps = 60.0
-            dt = min(dt / 1e9, 1.0 / min_fps)
+            dt = min(dt / 1e9, 1.0 / 20.0)  # Cap at 20 FPS minimum
             start!(timer)
             Base.invokelatest(g.update_function, g, dt)
             tick!(scheduler[])
@@ -227,19 +242,19 @@ function mainloop(g::Game)
                 throw(QuitException())
             end
 
-            # Small sleep to prevent CPU hogging
             sleep(0.001)
         end
     catch err
         @warn "Error in renderloop!" exception=err
         Base.show_backtrace(stderr, catch_backtrace())
     finally
-        ImGui_ImplSDLRenderer2_Shutdown();
-        #ImGui_ImplSDL2_Shutdown();
-
+        ImGui_ImplSDLRenderer2_Shutdown()
         CImGui.DestroyContext(ctx)
-        SDL2.SDL_DestroyRenderer(sdlRenderer);
-        SDL2.SDL_DestroyWindow(window);
+        
+        SDL2.SDL_DestroyRenderer(primary_renderer)
+        SDL2.SDL_DestroyWindow(g.screens.primary.window)
+        SDL2.SDL_DestroyRenderer(secondary_renderer)
+        SDL2.SDL_DestroyWindow(g.screens.secondary.window)
         SDL2.SDL_Quit()
     end
 end
@@ -295,16 +310,20 @@ function handleMousePan(g::Game, e, t)
 end
 
 function handleWindowEvent(g::Game, e, t)
-    # manage window focus
-    if (g.screen.window_id == e.window.windowID) && !g.screen.has_focus
-        g.screen.has_focus = true
-        @debug "Window $(e.window.windowID) gained focus"
-
-    elseif g.screen.has_focus
-        g.screen.has_focus = false
-        @debug "Window $(e.window.windowID) lost focus"
-
+    window_id = e.window.windowID
+    
+    # Update active screen based on window focus
+    if window_id == SDL2.SDL_GetWindowID(g.screens.primary.window)
+        g.screens.active_screen = :primary
+        g.screens.primary.has_focus = true
+        g.screens.secondary.has_focus = false
+    elseif window_id == SDL2.SDL_GetWindowID(g.screens.secondary.window)
+        g.screens.active_screen = :secondary
+        g.screens.primary.has_focus = false
+        g.screens.secondary.has_focus = true
     end
+    
+    @debug "Window $window_id focus changed. Active screen: $(g.screens.active_screen)"
 end
 
 
@@ -397,7 +416,7 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
     g.onmousedown_function = getfn(g.game_module, :on_mouse_down, 3)
     g.onmousemove_function = getfn(g.game_module, :on_mouse_move, 2)
     g.state = Vector{Dict{String,Dict}}([Dict("imgui"=>Dict("username"=>"", "password"=>""))])
-    g.screen = initscreen(g.game_module, name)
+    g.screens = initscreens(g.game_module, name)
     g.imgui_settings = Dict(
         "menu_active"=>true,
         "show_login"=>false,
@@ -405,7 +424,8 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
         "console_history"=>Vector{String}(),
         "io"=>CImGui.GetIO()
     )
-    clear(g.screen)
+    clear(g.screens.primary)
+    clear(g.screens.secondary)
     
     return g
 end
@@ -470,13 +490,14 @@ function initSDL()
 end
 
 function quitSDL(g)
-    # Need to close the callback before quitting SDL to prevent it from hanging
-    # https://github.com/n0name/2D_Engine/issues/3
     @debug "Quitting the game"
     clear!(scheduler[])
-    SDL_DelEventWatch(window_event_watcher_cfunc[], g.screen.window)
-    SDL_DestroyRenderer(g.screen.renderer)
-    SDL_DestroyWindow(g.screen.window)
+    SDL_DelEventWatch(window_event_watcher_cfunc[], g.screens.primary.window)
+    SDL_DelEventWatch(window_event_watcher_cfunc[], g.screens.secondary.window)
+    SDL2.SDL_DestroyRenderer(g.screens.primary.renderer)
+    SDL2.SDL_DestroyWindow(g.screens.primary.window)
+    SDL2.SDL_DestroyRenderer(g.screens.secondary.renderer)
+    SDL2.SDL_DestroyWindow(g.screens.secondary.window)
     
     #Run all finalisers
     GC.gc();GC.gc();
@@ -489,15 +510,27 @@ function quitSDL()
     Mix_CloseAudio()
     TTF_Quit()
     Mix_Quit()
-    SDL_Quit()
+    SDL2.SDL_Quit()
 end
 
 function main()
-    if length(ARGS) < 1
-        throw(ArgumentError("No file to run"))
+    SDL2.Init(UInt32(SDL2.INIT_VIDEO))
+    
+    screens = create_screens()
+    game_state = GameState()
+    
+    running = true
+    while running
+        running = process_events!(game_state, screens)
+        render_game(game_state, screens)
     end
-    jlf = ARGS[1]
-    rungame(jlf)
+    
+    # Cleanup
+    SDL2.DestroyRenderer(screens.primary.renderer)
+    SDL2.DestroyWindow(screens.primary.window)
+    SDL2.DestroyRenderer(screens.secondary.renderer)
+    SDL2.DestroyWindow(screens.secondary.window)
+    SDL2.Quit()
 end
 
 # Add ImGui memory management settings
@@ -513,6 +546,56 @@ function configure_imgui_memory()
     style.WindowPadding = ImVec2(4, 4)
     style.ItemSpacing = ImVec2(4, 2)
     style.ItemInnerSpacing = ImVec2(2, 2)
+end
+
+function render_game(game_state, screens::GameScreens)
+    @debug "Rendering game state"
+    
+    # Check renderer states
+    if screens.primary.renderer == C_NULL
+        @error "Primary renderer is NULL"
+        return
+    end
+    if screens.secondary.renderer == C_NULL
+        @error "Secondary renderer is NULL"
+        return
+    end
+    
+    # Get renderer info for debugging
+    primary_info = Ref{SDL_RendererInfo}()
+    secondary_info = Ref{SDL_RendererInfo}()
+    if SDL_GetRendererInfo(screens.primary.renderer, primary_info) == 0
+        @debug "Primary renderer info: $(unsafe_string(primary_info[].name))"
+    end
+    if SDL_GetRendererInfo(screens.secondary.renderer, secondary_info) == 0
+        @debug "Secondary renderer info: $(unsafe_string(secondary_info[].name))"
+    end
+    
+    # Render primary screen
+    SDL_SetRenderDrawColor(screens.primary.renderer, 255, 255, 255, 255)
+    SDL_RenderClear(screens.primary.renderer)
+    
+    # Draw all actors that belong to primary screen
+    for actor in game_state.actors
+        if actor.current_window == :primary
+            @debug "Drawing actor $(actor.label) on primary screen"
+            draw(actor, screens)
+        end
+    end
+    SDL_RenderPresent(screens.primary.renderer)
+    
+    # Render secondary screen
+    SDL_SetRenderDrawColor(screens.secondary.renderer, 255, 255, 255, 255)
+    SDL_RenderClear(screens.secondary.renderer)
+    
+    # Draw all actors that belong to secondary screen
+    for actor in game_state.actors
+        if actor.current_window == :secondary
+            @debug "Drawing actor $(actor.label) on secondary screen"
+            draw(actor, screens)
+        end
+    end
+    SDL_RenderPresent(screens.secondary.renderer)
 end
 
 end # module

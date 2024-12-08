@@ -46,8 +46,8 @@ module Editor
         io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable | CImGui.ImGuiConfigFlags_NavEnableKeyboard | CImGui.ImGuiConfigFlags_NavEnableGamepad
 
         io.BackendPlatformUserData = C_NULL
-        ImGui_ImplSDL2_InitForSDLRenderer(window, renderer)
-        ImGui_ImplSDLRenderer2_Init(renderer)
+        ImGui_ImplSDL2_InitForSDLRenderer(window, sdlRenderer)
+        ImGui_ImplSDLRenderer2_Init(sdlRenderer)
         
         # setup Dear ImGui style #Todo: Make this a setting
         CImGui.StyleColorsDark()
@@ -103,10 +103,10 @@ module Editor
 
                 CImGui.Render()
 
-                SDL2.SDL_RenderSetScale(renderer, unsafe_load(io.DisplayFramebufferScale.x), unsafe_load(io.DisplayFramebufferScale.y));
-                SDL2.SDL_SetRenderDrawColor(renderer, (UInt8)(round(clear_color[1] * 255)), (UInt8)(round(clear_color[2] * 255)), (UInt8)(round(clear_color[3] * 255)), (UInt8)(round(clear_color[4] * 255)));
-                SDL2.SDL_RenderClear(renderer);
-                ImGui_ImplSDLRenderer2_RenderDrawData(CImGui.GetDrawData());
+                SDL2.SDL_RenderSetScale(sdlRenderer, unsafe_load(io.DisplayFramebufferScale.x), unsafe_load(io.DisplayFramebufferScale.y));
+                SDL2.SDL_SetRenderDrawColor(sdlRenderer, (UInt8)(round(clear_color[1] * 255)), (UInt8)(round(clear_color[2] * 255)), (UInt8)(round(clear_color[3] * 255)), (UInt8)(round(clear_color[4] * 255)));
+                SDL2.SDL_RenderClear(sdlRenderer);
+                ImGui_ImplSDLRenderer2_RenderDrawData(CImGui.GetDrawData(), sdlRenderer);
                 SDL2.SDL_RenderPresent(renderer);
             end
         catch e
@@ -117,7 +117,7 @@ module Editor
             ImGui_ImplSDL2_Shutdown();
 
             CImGui.DestroyContext(ctx)
-            SDL2.SDL_DestroyRenderer(renderer);
+            SDL2.SDL_DestroyRenderer(sdlRenderer);
             SDL2.SDL_DestroyWindow(window);
             SDL2.SDL_Quit()
         end
