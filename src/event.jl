@@ -1,15 +1,20 @@
-function pollEvent!()
-    SDL_Event() = Array{UInt8}(zeros(56))
-    e = SDL_Event()
-    success = (SDL_PollEvent(e) != 0)
-    e, success
+# Use a pre-allocated event buffer instead of creating new ones
+const EVENT_BUFFER = Ref{SDL2.SDL_Event}()
+
+function pollEvents!()
+    while Bool(SDL2.SDL_PollEvent(EVENT_BUFFER))
+        evt = EVENT_BUFFER[]
+        # ... event handling ...
+    end
+
+    return evt
 end
 
 function getEventType(e::Array{UInt8})
     bitcat(UInt32, e[4:-1:1])
 end
 
-function getEventType(e::SDL_Event)
+function getEventType(e::SDL2.SDL_Event)
     bitcat(UInt32, e[4:-1:1])
 end
 

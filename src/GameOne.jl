@@ -56,7 +56,7 @@ export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
     window_paused, getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL,
     image_surface
-export Game, Keys, KeyMods, MouseButton
+export Game, Screen, Keys, KeyMods, MouseButton
 export Actor, TextActor, ImageFileActor, ImageMemActor 
 export Line, Rect, Triangle, Circle
 export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init, ImGui_ImplSDLRenderer2_NewFrame, ImGui_ImplSDL2_NewFrame,
@@ -84,6 +84,15 @@ const HEIGHTSYMBOL = :SCREEN_HEIGHT
 const WIDTHSYMBOL = :SCREEN_WIDTH
 const SCREENSYMBOL = :SCREEN_NAME
 const BACKSYMBOL = :BACKGROUND
+
+# Add at module level
+const STRING_POOL = Dict{String, String}()
+
+function intern_string(s::String)
+    get!(STRING_POOL, s) do
+        s
+    end
+end
 
 mutable struct Game
     screen::Screen
@@ -489,6 +498,21 @@ function main()
     end
     jlf = ARGS[1]
     rungame(jlf)
+end
+
+# Add ImGui memory management settings
+function configure_imgui_memory()
+    io = CImGui.GetIO()
+    
+    # Set smaller vertex/index buffer sizes if you don't need large UIs
+    io.BackendFlags = unsafe_load(io.BackendFlags) | 
+                     CImGui.ImGuiBackendFlags_RendererHasVtxOffset
+    
+    # Configure ImGui to use less memory
+    style = CImGui.GetStyle()
+    style.WindowPadding = ImVec2(4, 4)
+    style.ItemSpacing = ImVec2(4, 2)
+    style.ItemInnerSpacing = ImVec2(2, 2)
 end
 
 end # module

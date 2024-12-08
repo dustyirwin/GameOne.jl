@@ -1,4 +1,3 @@
-
 """
 play_sound(filename::String, loops::Integer)
 
@@ -29,14 +28,23 @@ const resource_ext = Dict(
     :music=>"[mp3|ogg|wav]"
 )
 
-function image_surface(img_path::String)
-    sf = IMG_Load(img_path)
+# Add a resource cache to prevent reloading the same assets
+const RESOURCE_CACHE = Dict{String, Any}()
 
+function image_surface(img_path::String)
+    # Check cache first
+    if haskey(RESOURCE_CACHE, img_path)
+        return RESOURCE_CACHE[img_path]
+    end
+    
+    sf = IMG_Load(img_path)
     if sf == C_NULL
         throw("Error loading $img_path")
     end
-
-    sf
+    
+    # Cache the surface
+    RESOURCE_CACHE[img_path] = sf
+    return sf
 end
 
 function file_path(name::String, subdir::Symbol)
@@ -109,4 +117,16 @@ function validate_name(name::String)
     if lowercase(name) != name
         @warn("Use lowercases names for resource files. It is safer when moving between windows and unix: $name")
     end
+end
+
+# Add a cleanup function
+function clear_resource_cache!()
+    for (_, resource) in RESOURCE_CACHE
+        if resource isa Ptr{SDL_Surface}
+            SDL_FreeSurface(resource)
+        elseif resource isa Ptr{SDL_Texture}
+            SDL_DestroyTexture(resource)
+        end
+    end
+    empty!(RESOURCE_CACHE)
 end

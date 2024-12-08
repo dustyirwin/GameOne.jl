@@ -1,3 +1,34 @@
+# Use a memory pool for frequently created/destroyed actors
+mutable struct ActorPool{T}
+    active::Vector{T}
+    inactive::Vector{T}
+    max_size::Int
+end
+
+function ActorPool(T::Type, max_size::Int=1000)
+    ActorPool(T[], T[], max_size)
+end
+
+function get_actor(pool::ActorPool{T}) where T
+    if !isempty(pool.inactive)
+        actor = pop!(pool.inactive)
+        push!(pool.active, actor)
+        return actor
+    elseif length(pool.active) < pool.max_size
+        actor = T()  # Assuming default constructor exists
+        push!(pool.active, actor)
+        return actor
+    end
+    return nothing  # Pool is full
+end
+
+function release_actor!(pool::ActorPool, actor)
+    idx = findfirst(==(actor), pool.active)
+    if idx !== nothing
+        deleteat!(pool.active, idx)
+        push!(pool.inactive, actor)
+    end
+end
 
 mutable struct Actor
     id::String
