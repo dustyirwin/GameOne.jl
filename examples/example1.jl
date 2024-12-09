@@ -9,14 +9,18 @@ pwd()
 #using Images
 using GameOne
 
-# Width of the game window
-SCREEN_WIDTH = 800
-# Height of the game window
-SCREEN_HEIGHT = 600
-# Background color of the game window
-BACKGROUND = colorant"black"
+# Primary window dimensions
+const PRIMARY_WIDTH = 800
+const PRIMARY_HEIGHT = 600
+const PRIMARY_BACKGROUND = colorant"black"
+
+# Secondary window dimensions
+const SECONDARY_WIDTH = 400  # Half the width of primary
+const SECONDARY_HEIGHT = 600
+const SECONDARY_BACKGROUND = colorant"black"
+
 # Title of the game window
-SCREEN_NAME = "Main"
+const SCREEN_NAME = "Main"
 
 # Globals to store the velocity of the actor
 global a_dx = 3  # Positive value to move right initially
@@ -83,8 +87,8 @@ alien_image_path = joinpath("examples", "images", "alien.png")
 @assert isfile(alien_image_path) "Alien image not found at: $alien_image_path"
 alien = ImageFileActor("alien", [alien_image_path], current_window=UInt32(1))  # 1 for primary
 @debug "Created alien actor with image: $alien_image_path"
-alien.x = SCREEN_WIDTH ÷ 2  # Start in the middle of the screen
-alien.y = SCREEN_HEIGHT ÷ 2  # Start in the middle of the screen
+alien.x = PRIMARY_WIDTH ÷ 2  # Start in the middle of the screen
+alien.y = PRIMARY_HEIGHT ÷ 2  # Start in the middle of the screen
 
 # sound effects
 eep_wav = joinpath(@__DIR__, "sounds", "283201-RubberBallBouncing7.wav")
@@ -99,15 +103,15 @@ label = TextActor(
     pt_size=24,
     current_window=UInt32(1)  # 1 for primary
 )
-label.x = SCREEN_WIDTH ÷ 4  # Start at 1/4 of screen width
-label.y = SCREEN_HEIGHT ÷ 4  # Start at 1/4 of screen height
+label.x = PRIMARY_WIDTH ÷ 4  # Start at 1/4 of screen width
+label.y = PRIMARY_HEIGHT ÷ 4  # Start at 1/4 of screen height
 
 # Load a custom animation with dual screen support
 anim_fns = ["$(@__DIR__)/images/FireElem1/Visible$i.png" for i in 0:7]
 anim = ImageFileActor("fireelem", anim_fns, current_window=UInt32(1))  # 1 for primary
 anim.data[:next_frame] = true
-anim.x = SCREEN_WIDTH ÷ 3  # Start at 1/3 of screen width
-anim.y = SCREEN_HEIGHT ÷ 3  # Start at 1/3 of screen height
+anim.x = PRIMARY_WIDTH ÷ 3  # Start at 1/3 of screen width
+anim.y = PRIMARY_HEIGHT ÷ 3  # Start at 1/3 of screen height
 
 # Initialize velocities for all actors globally
 global dx_alien = 2  # Alien velocity
@@ -156,61 +160,61 @@ function update(g::Game)
     end
 
     # Check boundaries and handle screen transitions for alien
-    if alien.current_window == UInt32(1) && alien.x > SCREEN_WIDTH - alien.w  # Right edge of primary
+    if alien.current_window == UInt32(1) && alien.x > PRIMARY_WIDTH - alien.w  # Right edge of primary
         alien.current_window = UInt32(2)  # Switch to secondary
-        alien.x = 2
+        alien.x = 2  # Place at left edge of secondary window
         play_sound(eep_wav)
     elseif alien.current_window == UInt32(2) && alien.x < 2  # Left edge of secondary
         alien.current_window = UInt32(1)  # Switch to primary
-        alien.x = SCREEN_WIDTH - alien.w - 2
+        alien.x = PRIMARY_WIDTH - alien.w - 2  # Place at right edge of primary
         play_sound(eep_wav)
     elseif (alien.current_window == UInt32(1) && alien.x < 2) ||  # Left edge of primary
-           (alien.current_window == UInt32(2) && alien.x > SCREEN_WIDTH - alien.w)  # Right edge of secondary
+           (alien.current_window == UInt32(2) && alien.x > SECONDARY_WIDTH - alien.w)  # Right edge of secondary
         dx_alien = -dx_alien  # Bounce back
         play_sound(eep_wav)
     end
     
-    if alien.y > SCREEN_HEIGHT - alien.h || alien.y < 2
+    if alien.y > PRIMARY_HEIGHT - alien.h || alien.y < 2
         dy_alien = -dy_alien
         play_sound(eep_wav)
     end
 
     # Check boundaries and handle screen transitions for text
-    if label.current_window == UInt32(1) && label.x > SCREEN_WIDTH - label.w  # Right edge of primary
+    if label.current_window == UInt32(1) && label.x > PRIMARY_WIDTH - label.w  # Right edge of primary
         label.current_window = UInt32(2)  # Switch to secondary
-        label.x = 2
+        label.x = 2  # Place at left edge of secondary window
         play_sound(eep_wav)
     elseif label.current_window == UInt32(2) && label.x < 2  # Left edge of secondary
         label.current_window = UInt32(1)  # Switch to primary
-        label.x = SCREEN_WIDTH - label.w - 2
+        label.x = PRIMARY_WIDTH - label.w - 2  # Place at right edge of primary
         play_sound(eep_wav)
     elseif (label.current_window == UInt32(1) && label.x < 2) ||  # Left edge of primary
-           (label.current_window == UInt32(2) && label.x > SCREEN_WIDTH - label.w)  # Right edge of secondary
+           (label.current_window == UInt32(2) && label.x > SECONDARY_WIDTH - label.w)  # Right edge of secondary
         dx_label = -dx_label  # Bounce back
         play_sound(eep_wav)
     end
     
-    if label.y > SCREEN_HEIGHT - label.h || label.y < 2
+    if label.y > PRIMARY_HEIGHT - label.h || label.y < 2
         dy_label = -dy_label
         play_sound(eep_wav)
     end
 
     # Check boundaries and handle screen transitions for FireElem
-    if anim.current_window == UInt32(1) && anim.x > SCREEN_WIDTH - anim.w  # Right edge of primary
+    if anim.current_window == UInt32(1) && anim.x > PRIMARY_WIDTH - anim.w  # Right edge of primary
         anim.current_window = UInt32(2)  # Switch to secondary
-        anim.x = 2
+        anim.x = 2  # Place at left edge of secondary window
         play_sound(eep_wav)
     elseif anim.current_window == UInt32(2) && anim.x < 2  # Left edge of secondary
         anim.current_window = UInt32(1)  # Switch to primary
-        anim.x = SCREEN_WIDTH - anim.w - 2
+        anim.x = PRIMARY_WIDTH - anim.w - 2  # Place at right edge of primary
         play_sound(eep_wav)
     elseif (anim.current_window == UInt32(1) && anim.x < 2) ||  # Left edge of primary
-           (anim.current_window == UInt32(2) && anim.x > SCREEN_WIDTH - anim.w)  # Right edge of secondary
+           (anim.current_window == UInt32(2) && anim.x > SECONDARY_WIDTH - anim.w)  # Right edge of secondary
         dx_anim = -dx_anim  # Bounce back
         play_sound(eep_wav)
     end
     
-    if anim.y > SCREEN_HEIGHT - anim.h || anim.y < 2
+    if anim.y > PRIMARY_HEIGHT - anim.h || anim.y < 2
         dy_anim = -dy_anim
         play_sound(eep_wav)
     end

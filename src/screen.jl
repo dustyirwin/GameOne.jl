@@ -17,6 +17,13 @@
         surface = SDL_CreateRGBSurface(w, h, 32, 0, 155, 155, 155, 0)
         new(name, win, renderer, h, w, surface, SDL_GetWindowID(win))
     end
+
+    # Constructor with offset
+    function Screen(name, w, h, background, offset_x::Int)
+        win, renderer = makeWinRenderer(name, w, h, offset_x=offset_x)
+        surface = SDL_CreateRGBSurface(w, h, 32, 0, 155, 155, 155, 0)
+        new(name, win, renderer, h, w, surface, SDL_GetWindowID(win))
+    end
 end
 
 #non ARGB colorant is converted to ARGB
@@ -362,12 +369,21 @@ function create_screen(title, width, height; offset_x=20, offset_y=20)
 end
 
 function initscreens(gm::Module, name::String)
-    h = getifdefined(gm, HEIGHTSYMBOL, 600)
-    w = getifdefined(gm, WIDTHSYMBOL, 800)
-    background = getifdefined(gm, BACKSYMBOL, SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0))
+    # Get primary screen dimensions and background
+    primary_h = getifdefined(gm, PRIMARY_HEIGHT, 600)
+    primary_w = getifdefined(gm, PRIMARY_WIDTH, 800)
+    primary_background = getifdefined(gm, PRIMARY_BACKGROUND, SDL_CreateRGBSurface(0, primary_w, primary_h, 32, 0, 0, 0, 0))
     
-    primary = Screen(name * " Primary", w, h, background)
-    secondary = Screen(name * " Secondary", w, h, background)
+    # Get secondary screen dimensions and background
+    secondary_h = getifdefined(gm, SECONDARY_HEIGHT, 600)
+    secondary_w = getifdefined(gm, SECONDARY_WIDTH, 400)
+    secondary_background = getifdefined(gm, SECONDARY_BACKGROUND, SDL_CreateRGBSurface(0, secondary_w, secondary_h, 32, 0, 0, 0, 0))
+    
+    # Create primary screen
+    primary = Screen(name * " Primary", primary_w, primary_h, primary_background)
+    
+    # Create secondary screen with offset and its own dimensions
+    secondary = Screen(name * " Secondary", secondary_w, secondary_h, secondary_background, 850)
     
     screens = GameScreens(primary, secondary, UInt32(1))  # Initialize with 1 for primary
     

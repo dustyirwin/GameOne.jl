@@ -5,11 +5,11 @@ const window_event_watcher_cfunc = Ref(Ptr{Nothing}(0))
 
 const window_paused = Threads.Atomic{UInt8}(0) # Whether or not the game should be running (if lost focus)
 
-function makeWinRenderer(title = "GameOne", w=1920, h=1080)
+function makeWinRenderer(title = "GameOne", w=1920, h=1080; offset_x=0)
     global winWidth, winHeight, winWidth_highDPI, winHeight_highDPI
 
     win = SDL_CreateWindow(title,
-        Int32(SDL_WINDOWPOS_CENTERED), 
+        Int32(SDL_WINDOWPOS_CENTERED + offset_x), 
         Int32(SDL_WINDOWPOS_CENTERED), Int32(w), Int32(h),
         UInt32(SDL_WINDOW_METAL|SDL_WINDOW_SHOWN|SDL_WINDOW_RESIZABLE)
     );

@@ -104,10 +104,14 @@ include("actor.jl")
 
 
 # Magic variables to check for in the game module
-const HEIGHTSYMBOL = :SCREEN_HEIGHT
-const WIDTHSYMBOL = :SCREEN_WIDTH
-const SCREENSYMBOL = :SCREEN_NAME
-const BACKSYMBOL = :BACKGROUND
+const PRIMARY_HEIGHT = :PRIMARY_HEIGHT
+const PRIMARY_WIDTH = :PRIMARY_WIDTH
+const SECONDARY_HEIGHT = :SECONDARY_HEIGHT
+const SECONDARY_WIDTH = :SECONDARY_WIDTH
+const PRIMARY_SCREEN_NAME = :PRIMARY_SCREEN_NAME
+const SECONDARY_SCREEN_NAME = :SECONDARY_SCREEN_NAME
+const PRIMARY_BACKGROUND = :PRIMARY_BACKGROUND
+const SECONDARY_BACKGROUND = :SECONDARY_BACKGROUND
 
 # Add at module level
 const STRING_POOL = Dict{String, String}()
@@ -125,18 +129,27 @@ const playing = Ref{Bool}(false)
 const paused = Ref{Bool}(false)
 
 function initscreen(gm::Module, name::String)
-    h = getifdefined(gm, HEIGHTSYMBOL, 600,)
-    w = getifdefined(gm, WIDTHSYMBOL, 800,)
-    background = getifdefined(gm, BACKSYMBOL, SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0))
+    primary_h = getifdefined(gm, PRIMARY_HEIGHT, 600)
+    primary_w = getifdefined(gm, PRIMARY_WIDTH, 800)
 
-    #if !(background isa Colorant)
-    #    background = image_surface(background)
-    #end
+    secondary_h = getifdefined(gm, SECONDARY_HEIGHT, 600)
+    secondary_w = getifdefined(gm, SECONDARY_WIDTH, 400)
+
+    primary_background = getifdefined(gm, PRIMARY_BACKGROUND, SDL_CreateRGBSurface(0, primary_w, primary_h, 32, 0, 0, 0, 0))
+    secondary_background = getifdefined(gm, SECONDARY_BACKGROUND, SDL_CreateRGBSurface(0, secondary_w, secondary_h, 32, 0, 0, 0, 0))
     
-    s = Screen(name, w, h, background)
-    clear(s)
+    # Create primary screen
+    primary = Screen(name * " Primary", primary_w, primary_h, primary_background)
+    clear(primary)
     
-    return s
+    # Create secondary screen with offset (850 pixels to the right)
+    secondary = Screen(name * " Secondary", secondary_w, secondary_h, secondary_background)
+    clear(secondary)
+    
+    # Create GameScreens struct with UInt32 active_screen
+    screens = GameScreens(primary, secondary, UInt32(1))  # Initialize with 1 for primary
+    
+    return screens
 end
 
 getifdefined(m, s, v) = isdefined(m, s) ? getfield(m, s) : v
