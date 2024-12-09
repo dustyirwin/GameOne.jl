@@ -493,7 +493,7 @@ end
 
 function quitSDL(g)
     @debug "Quitting the game"
-    clear!(scheduler[])
+    clear!(scheduler[])    
     SDL_DelEventWatch(window_event_watcher_cfunc[], g.screens.primary.window)
     SDL_DelEventWatch(window_event_watcher_cfunc[], g.screens.secondary.window)
     SDL2.SDL_DestroyRenderer(g.screens.primary.renderer)

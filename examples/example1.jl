@@ -44,11 +44,31 @@ end
 
 function imgui(g::Game)
     if g.screens.active_screen == UInt32(1)  # Only render ImGui on primary screen
-        @info "Rendering ImGui frame on primary screen"
-        
-        # Show demo window
-        show_demo = true  # Keep demo window visible
-        CImGui.ShowDemoWindow(Ref{Bool}(show_demo))
+        # Wrap ImGui calls in try-catch to prevent crashes
+        try
+            # Create a proper window with Begin/End
+            if CImGui.Begin("Debug Window")
+                # Demo window toggle
+                show_demo = Ref{Bool}(false)
+                if CImGui.Button("Demo")
+                    show_demo[] = !show_demo[]
+                end
+                
+                if show_demo[]
+                    CImGui.ShowDemoWindow(show_demo)
+                end
+
+                # Text input using fixed buffer
+                @cstatic begin
+                    buffer = zeros(UInt8, 100)
+                    CImGui.InputText("Input", buffer, length(buffer))
+                    text = String(buffer[1:findfirst(iszero, buffer)-1])
+                end
+            end
+            CImGui.End()
+        catch e
+            @warn "ImGui error: $e"
+        end
     end
 end
 
