@@ -49,6 +49,27 @@
     end
 end
 
+mutable struct GameScreens
+    primary::Screen
+    secondary::Union{Screen, Nothing}
+    active_screen::UInt32
+    
+    # Constructor for single screen
+    function GameScreens(primary::Screen)
+        new(primary, nothing, UInt32(1))
+    end
+    
+    # Constructor for dual screens
+    function GameScreens(primary::Screen, secondary::Screen)
+        new(primary, secondary, UInt32(1))
+    end
+    
+    # Constructor for dual screens with specified active screen
+    function GameScreens(primary::Screen, secondary::Screen, active_screen::UInt32)
+        new(primary, secondary, active_screen)
+    end
+end
+
 #non ARGB colorant is converted to ARGB
 #ARGB colorant is rerturned as is
 # non colorant is returned as is (required since background is stored as an Union )
@@ -275,6 +296,11 @@ function draw(s::Screen, r::Rect; c::Colorant=colorant"black", fill=false)
     SDL_SetRenderDrawBlendMode(s.renderer, old_blend_mode[])
 end
 
+function draw(screens::GameScreens, mr::MoveableRect; c::Colorant=colorant"black", fill=false)
+    screen = screens.active_screen == UInt32(1) ? screens.primary : screens.secondary
+    draw(screen, mr; c=c, fill=fill)
+end
+
 function draw(s::Screen, mr::MoveableRect; c::Colorant=colorant"black", fill=false)
     draw(s, mr.position, c=c, fill=fill)
 end
@@ -391,27 +417,6 @@ function cleanup_old_textures!(tm::TextureManager)
             delete!(tm.textures, tex)
             delete!(tm.last_used, tex)
         end
-    end
-end
-
-mutable struct GameScreens
-    primary::Screen
-    secondary::Union{Screen, Nothing}
-    active_screen::UInt32
-    
-    # Constructor for single screen
-    function GameScreens(primary::Screen)
-        new(primary, nothing, UInt32(1))
-    end
-    
-    # Constructor for dual screens
-    function GameScreens(primary::Screen, secondary::Screen)
-        new(primary, secondary, UInt32(1))
-    end
-    
-    # Constructor for dual screens with specified active screen
-    function GameScreens(primary::Screen, secondary::Screen, active_screen::UInt32)
-        new(primary, secondary, active_screen)
     end
 end
 
