@@ -20,7 +20,8 @@ const SECONDARY_HEIGHT = 600
 const SECONDARY_BACKGROUND = colorant"black"
 
 # Title of the game window
-const SCREEN_NAME = "Main"
+const PRIMARY_NAME = "Main"
+const SECONDARY_NAME = "Secondary"
 
 # Globals to store the velocity of the actor
 global a_dx = 3  # Positive value to move right initially
@@ -28,6 +29,15 @@ global a_dy = 3  # Positive value to move down initially
 global t_dx = 2
 global t_dy = 2
 
+# Create rectangles with proper dimensions and initial window assignments
+const red_rect = MoveableRect(PRIMARY_WIDTH ÷ 2, PRIMARY_HEIGHT ÷ 2, 100, 100, 1)
+const blue_rect = MoveableRect(50, 50, 50, 50, 2)
+
+# Initialize velocities for rectangles
+global dx_red = 3
+global dy_red = 3
+global dx_blue = 4
+global dy_blue = 4
 
 """
     HelpMarker(msg::AbstractString)
@@ -126,27 +136,36 @@ global dy_anim = 2
 play_music("$(@__DIR__)/examples/music/radetzky_ogg")
 
 # The draw function is called by the framework
-function draw(g::Game)
-    #@debug "Drawing actors..."
-    #@debug "Alien position: ($(alien.x), $(alien.y)), window: $(alien.current_window)"
-    #@debug "Label position: ($(label.x), $(label.y)), window: $(label.current_window)"
-    #@debug "FireElem position: ($(anim.x), $(anim.y)), window: $(anim.current_window)"
+function draw(g::Game)    
+    # Draw existing actors on their respective screens
+    draw(g.screens, alien)
+    draw(g.screens, label)
+    draw(g.screens, anim)
     
-    # Draw actors on their respective screens
-    draw(alien, g.screens)
-    draw(label, g.screens)
-    draw(anim, g.screens)
+    # Draw rectangles on their respective screens
+    if red_rect.current_window == UInt32(1)
+        draw(g.screens.primary, red_rect; c=colorant"red", fill=false)
+    else
+        draw(g.screens.secondary, red_rect; c=colorant"red", fill=true)
+    end
+    
+    if blue_rect.current_window == UInt32(1)
+        draw(g.screens.primary, blue_rect; c=colorant"blue", fill=true)
+    else
+        draw(g.screens.secondary, blue_rect; c=colorant"blue", fill=false)
+    end
 end
 
 # Update function to handle movement and screen transitions for all actors
 function update(g::Game)
     global dx_alien, dy_alien, dx_label, dy_label, dx_anim, dy_anim
+    global dx_red, dy_red, dx_blue, dy_blue
     
     if Bool(window_paused[])
         return
     end
 
-    # Update positions
+    # Update positions for existing actors
     alien.x += dx_alien
     alien.y += dy_alien
     label.x += dx_label
@@ -154,9 +173,59 @@ function update(g::Game)
     anim.x += dx_anim
     anim.y += dy_anim
 
+    # Update rectangle positions
+    red_rect.position.x += dx_red
+    red_rect.position.y += dy_red
+    blue_rect.position.x += dx_blue
+    blue_rect.position.y += dy_blue
+
     # Handle FireElem animation
     if anim.data[:next_frame] && now() - anim.data[:then] > Millisecond(120)
         next_frame!(anim)
+    end
+
+    # Handle screen transitions and bouncing for red rectangle
+    if red_rect.current_window == UInt32(1)
+        # Primary window bounds for red rectangle
+        if red_rect.position.x > PRIMARY_WIDTH - red_rect.position.w
+            red_rect.current_window = UInt32(2)  # Switch to secondary
+            red_rect.position.x = 0
+        elseif red_rect.position.x < 0
+            dx_red = -dx_red  # Bounce off left edge
+        end
+    else  # In secondary window
+        if red_rect.position.x > SECONDARY_WIDTH - red_rect.position.w
+            dx_red = -dx_red  # Bounce off right edge
+        elseif red_rect.position.x < 0
+            red_rect.current_window = UInt32(1)  # Switch to primary
+            red_rect.position.x = PRIMARY_WIDTH - red_rect.position.w
+        end
+    end
+    # Vertical bouncing (same for both windows)
+    if red_rect.position.y > PRIMARY_HEIGHT - red_rect.position.h || red_rect.position.y < 0
+        dy_red = -dy_red
+    end
+
+    # Handle screen transitions and bouncing for blue rectangle
+    if blue_rect.current_window == UInt32(1)
+        # Primary window bounds for blue rectangle
+        if blue_rect.position.x > PRIMARY_WIDTH - blue_rect.position.w
+            blue_rect.current_window = UInt32(2)  # Switch to secondary
+            blue_rect.position.x = 0
+        elseif blue_rect.position.x < 0
+            dx_blue = -dx_blue  # Bounce off left edge
+        end
+    else  # In secondary window
+        if blue_rect.position.x > SECONDARY_WIDTH - blue_rect.position.w
+            dx_blue = -dx_blue  # Bounce off right edge
+        elseif blue_rect.position.x < 0
+            blue_rect.current_window = UInt32(1)  # Switch to primary
+            blue_rect.position.x = PRIMARY_WIDTH - blue_rect.position.w
+        end
+    end
+    # Vertical bouncing (same for both windows)
+    if blue_rect.position.y > PRIMARY_HEIGHT - blue_rect.position.h || blue_rect.position.y < 0
+        dy_blue = -dy_blue
     end
 
     # Check boundaries and handle screen transitions for alien
@@ -164,7 +233,7 @@ function update(g::Game)
         alien.current_window = UInt32(2)  # Switch to secondary
         alien.x = 2  # Place at left edge of secondary window
         play_sound(eep_wav)
-    elseif alien.current_window == UInt32(2) && alien.x < 2  # Left edge of secondary
+    elseif alien.current_window == UInt32(2) && alien.position.x < 2  # Left edge of secondary
         alien.current_window = UInt32(1)  # Switch to primary
         alien.x = PRIMARY_WIDTH - alien.w - 2  # Place at right edge of primary
         play_sound(eep_wav)

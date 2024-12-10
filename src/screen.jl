@@ -65,6 +65,15 @@ mutable struct Rect <: Geom
     h::Int
 end
 
+mutable struct MoveableRect
+    position::Rect
+    current_window::UInt32
+
+    function MoveableRect(x::Int, y::Int, w::Int, h::Int, current_window::Int)
+        new(Rect(Int(x), Int(y), Int(w), Int(h)), UInt32(current_window))
+    end
+end
+
 Rect(x::Tuple, y::Tuple) = Rect(x[1], x[2], y[1], y[2])
 
 import Base:+
@@ -226,14 +235,12 @@ end
 
 function Base.fill(s::Screen, sf::Ptr{SDL_Surface})
     texture = SDL_CreateTextureFromSurface(s.renderer, sf)
-    SDL_RenderCopy(s.renderer, texture, C_NULL, C_NULL)
+    SDL_RenderCopyEx(s.renderer, texture, C_NULL, C_NULL, 0, C_NULL, SDL_FLIP_NONE)
     SDL_DestroyTexture(texture)
 end
 
-# draws only on main screen...
-draw(l::T, args...; kv...) where {T<:Geom} = draw(game[].screen, l, args...; kv...)
 
-function draw(s::Screen, l::Line, c::Colorant=colorant"black")
+function draw(s::Screen, l::Line; c::Colorant=colorant"black")
     SDL_SetRenderDrawColor(
         s.renderer,
         sdl_colors(c)...,
@@ -241,23 +248,41 @@ function draw(s::Screen, l::Line, c::Colorant=colorant"black")
     SDL_RenderDrawLine(s.renderer, Cint.((l.x1, l.y1, l.x2, l.y2))...)
 end
 
-function draw(s::Screen, r::Rect, c::Colorant=colorant"black"; fill=false)
-    SDL_SetRenderDrawColor(
-        s.renderer,
-        sdl_colors(c)...,
-    )
+function draw(s::Screen, r::Rect; c::Colorant=colorant"black", fill=false)
+    # Save current renderer color
+    old_r = Ref{UInt8}()
+    old_g = Ref{UInt8}()
+    old_b = Ref{UInt8}()
+    old_a = Ref{UInt8}()
+    SDL_GetRenderDrawColor(s.renderer, old_r, old_g, old_b, old_a)
+    
+    # Set blend mode for proper transparency
+    old_blend_mode = Ref{SDL_BlendMode}()
+    SDL_GetRenderDrawBlendMode(s.renderer, old_blend_mode)
+    SDL_SetRenderDrawBlendMode(s.renderer, SDL_BLENDMODE_BLEND)
+    
+    # Set new color and draw
+    SDL_SetRenderDrawColor(s.renderer, sdl_colors(c)...)
     sr = convert(SDL_Rect, r)
     if !fill
-        SDL_RenderDrawRect(s.renderer, Ref(sr))
+        SDL2.SDL_RenderDrawRect(s.renderer, Ref(sr))
     else
-        SDL_RenderFillRect(s.renderer, Ref(sr))
+        SDL2.SDL_RenderFillRect(s.renderer, Ref(sr))
     end
+    
+    # Restore previous renderer state
+    SDL_SetRenderDrawColor(s.renderer, old_r[], old_g[], old_b[], old_a[])
+    SDL_SetRenderDrawBlendMode(s.renderer, old_blend_mode[])
+end
+
+function draw(s::Screen, mr::MoveableRect; c::Colorant=colorant"black", fill=false)
+    draw(s, mr.position, c=c, fill=fill)
 end
 
 sdl_colors(c::Colorant) = sdl_colors(convert(ARGB{FixedPointNumbers.Normed{UInt8,8}}, c))
 sdl_colors(c::ARGB) = Int.(reinterpret.((red(c), green(c), blue(c), alpha(c))))
 
-function draw(s::Screen, tr::Triangle, c::Colorant=colorant"black"; fill=false)
+function draw(s::Screen, tr::Triangle; c::Colorant=colorant"black", fill=false)
     p1, p2, p3 = Cint.(tr.p1), Cint.(tr.p2), Cint.(tr.p3)
     SDL_SetRenderDrawColor(s.renderer, sdl_colors(c)...)
     SDL_RenderDrawLines(s.renderer, [p1; p2; p3; p1], Cint(4))
@@ -299,7 +324,7 @@ function draw(s::Screen, tr::Triangle, c::Colorant=colorant"black"; fill=false)
 end
 
 # improved circle drawing algorithm. slower but fills completely. needs optimization
-function draw(s::Screen, circle::Circle, c::Colorant=colorant"black"; fill=false)
+function draw(s::Screen, circle::Circle; c::Colorant=colorant"black", fill=false)
     # define the center and needed sides of circle
     centerX = Cint(circle.x)
     centerY = Cint(circle.y)
@@ -429,23 +454,26 @@ function create_screen(title, width, height; offset_x=20, offset_y=20)
     return Screen(window, renderer, width, height)
 end
 
-function initscreens(gm::Module, name::String)
+function initscreens(gm::Module)
+    primary_name = getifdefined(gm, :PRIMARY_NAME, "Main")
+    secondary_name = getifdefined(gm, :SECONDARY_NAME, "Secondary")
+
     # Get primary screen dimensions and background
-    primary_h = getifdefined(gm, PRIMARY_HEIGHT, 600)
-    primary_w = getifdefined(gm, PRIMARY_WIDTH, 800)
+    primary_h = getifdefined(gm, :PRIMARY_HEIGHT, 600)
+    primary_w = getifdefined(gm, :PRIMARY_WIDTH, 800)
     
     # Get secondary screen dimensions and background
-    secondary_h = getifdefined(gm, SECONDARY_HEIGHT, 600)
-    secondary_w = getifdefined(gm, SECONDARY_WIDTH, 400)
+    secondary_h = getifdefined(gm, :SECONDARY_HEIGHT, 600)
+    secondary_w = getifdefined(gm, :SECONDARY_WIDTH, 400)
     
     # Create primary screen
-    primary_win, primary_renderer = makeWinRenderer(name * " Primary", primary_w, primary_h)
-    primary = Screen(name * " Primary", primary_win, primary_renderer, Int32(primary_w), Int32(primary_h))
+    primary_win, primary_renderer = makeWinRenderer(primary_name, primary_w, primary_h)
+    primary = Screen(primary_name, primary_win, primary_renderer, Int32(primary_w), Int32(primary_h))
     clear(primary)
     
     # Create secondary screen with offset
-    secondary_win, secondary_renderer = makeWinRenderer(name * " Secondary", secondary_w, secondary_h, offset_x=850)
-    secondary = Screen(name * " Secondary", secondary_win, secondary_renderer, Int32(secondary_w), Int32(secondary_h))
+    secondary_win, secondary_renderer = makeWinRenderer(secondary_name, secondary_w, secondary_h, offset_x=850)
+    secondary = Screen(secondary_name, secondary_win, secondary_renderer, Int32(secondary_w), Int32(secondary_h))
     clear(secondary)
     
     screens = GameScreens(primary, secondary, UInt32(1))  # Initialize with 1 for primary

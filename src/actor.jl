@@ -290,7 +290,7 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
     return a
 end
 
-function draw(a::Actor, screens::GameScreens=game[].screens)
+function draw(screens::GameScreens, a::Actor; kv...)
     # Debug logging
     #@debug "Drawing actor $(a.label) on window $(a.current_window)"
     #@debug "Actor position: ($(a.x), $(a.y))"
@@ -434,6 +434,12 @@ function draw(a::Actor, screens::GameScreens=game[].screens)
     end
 end
 
+# custom Rect draw function (for 2px card border)
+function draw(screens::GameScreens, r::Rect; fill=true, c::Colorant=colorant"violet")
+    screen = r.current_window == 1 ? screens.primary : screens.secondary
+    draw(screen, r, c=c, fill=fill)
+end
+
 function Base.setproperty!(s::Actor, p::Symbol, x)
     
     if hasfield(Actor, p)
@@ -529,25 +535,3 @@ function collide(c, d)
 end
 
 rect(a::Actor) = a.position
-
-function handle_mouse_motion!(game_state, evt, screens::GameScreens)
-    if game_state.dragging_actor !== nothing
-        x, y = Int(evt.motion.x), Int(evt.motion.y)
-        actor = game_state.dragging_actor
-        
-        # Update actor position
-        actor.x = x - game_state.drag_offset_x
-        actor.y = y - game_state.drag_offset_y
-        
-        # Check if we've dragged to window edge and switch windows if needed
-        if screens.active_screen == UInt32(1) && x >= screens.primary.width - 10
-            actor.current_window = UInt32(2)
-            # Adjust position for new window
-            actor.x = 0
-        elseif screens.active_screen == UInt32(2) && x <= 10
-            actor.current_window = UInt32(1)
-            # Adjust position for new window
-            actor.x = screens.primary.width - 20
-        end
-    end
-end

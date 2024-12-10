@@ -36,10 +36,9 @@ using Reexport: @reexport
     SDL_WINDOW_INPUT_FOCUS,SDL_WINDOW_MOUSE_FOCUS,SDL_WINDOW_FOREIGN,SDL_WINDOW_ALWAYS_ON_TOP,SDL_WINDOW_SKIP_TASKBAR,SDL_WINDOW_UTILITY,
     SDL_WINDOW_TOOLTIP,SDL_WINDOW_POPUP_MENU, SDL_WINDOW_METAL,SDL_WINDOW_VULKAN,SDL_WINDOW_HIDDEN,SDL_WINDOW_BORDERLESS,
     SDL_WINDOW_FULLSCREEN_DESKTOP,SDL_WINDOW_FULLSCREEN,SDL_WINDOW_OPENGL,
-    
+    SDL_GetRenderDrawColor, SDL_GetRenderDrawBlendMode, SDL_SetRenderDrawBlendMode,
     SDL_SetTextureBlendMode, SDL_CreateRGBSurface, SDL_CreateRGBSurfaceWithFormat, SDL_CreateRGBSurfaceWithFormatFrom,
     SDL_CreateRenderer, SDL_CreateTexture, SDL_SetRenderDrawBlendMode, SDL_SetRenderDrawColor, SDL_RenderClear, SDL_DelEventWatch,
-    SDL_GetWindowSize, SDL_GetWindowFlags, SDL_GetWindowSurface, SDL_Quit, SDL_RWFromFile, SDL_RenderCopy, SDL_RenderDrawRect,
     MIX_INIT_FLAC, MIX_INIT_MP3, MIX_INIT_OGG, Mix_Init, Mix_OpenAudio, Mix_HaltMusic, Mix_HaltChannel, Mix_CloseAudio, 
     Mix_Quit, Mix_LoadWAV_RW, AUDIO_S16SYS, Mix_PlayChannelTimed, Mix_PlayMusic, Mix_PlayingMusic, Mix_FreeChunk, 
     Mix_FreeMusic, Mix_VolumeMusic, Mix_Volume, Mix_PausedMusic, Mix_ResumeMusic, Mix_LoadMUS, Mix_PauseMusic,
@@ -59,7 +58,7 @@ export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique,
     image_surface
 export Game, Screen, GameScreens, Window, Keys, KeyMods, MouseButton
 export Actor, TextActor, ImageFileActor, ImageMemActor 
-export Line, Rect, Triangle, Circle
+export Line, Rect, Triangle, Circle, MoveableRect
 export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init, ImGui_ImplSDLRenderer2_NewFrame, ImGui_ImplSDL2_NewFrame,
     ImGui_ImplSDLRenderer2_RenderDrawData, ImGuiDockNodeFlags_PassthruCentralNode, TextDisabled, PushItemFlag, PopItemFlag,
     ImGui_ImplSDLRenderer2_Shutdown#, ImGui_ImplSDL2_Shutdown
@@ -128,29 +127,6 @@ const game = Ref{Game}()
 const playing = Ref{Bool}(false)
 const paused = Ref{Bool}(false)
 
-function initscreen(gm::Module, name::String)
-    primary_h = getifdefined(gm, PRIMARY_HEIGHT, 600)
-    primary_w = getifdefined(gm, PRIMARY_WIDTH, 800)
-
-    secondary_h = getifdefined(gm, SECONDARY_HEIGHT, 600)
-    secondary_w = getifdefined(gm, SECONDARY_WIDTH, 400)
-
-    primary_background = getifdefined(gm, PRIMARY_BACKGROUND, SDL_CreateRGBSurface(0, primary_w, primary_h, 32, 0, 0, 0, 0))
-    secondary_background = getifdefined(gm, SECONDARY_BACKGROUND, SDL_CreateRGBSurface(0, secondary_w, secondary_h, 32, 0, 0, 0, 0))
-    
-    # Create primary screen
-    primary = Screen(name * " Primary", primary_w, primary_h, primary_background)
-    clear(primary)
-    
-    # Create secondary screen with offset (850 pixels to the right)
-    secondary = Screen(name * " Secondary", secondary_w, secondary_h, secondary_background)
-    clear(secondary)
-    
-    # Create GameScreens struct with UInt32 active_screen
-    screens = GameScreens(primary, secondary, UInt32(1))  # Initialize with 1 for primary
-    
-    return screens
-end
 
 getifdefined(m, s, v) = isdefined(m, s) ? getfield(m, s) : v
 
@@ -183,7 +159,7 @@ function mainloop(g::Game)
     
     io.BackendPlatformUserData = C_NULL
     io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable
-    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_ViewportsEnable 
+    #io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_ViewportsEnable 
     io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_NavEnableKeyboard
     io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_NavEnableGamepad
     
@@ -192,7 +168,7 @@ function mainloop(g::Game)
     ImGui_ImplSDLRenderer2_Init(primary_renderer)
     
     # Demo window state
-    show_demo_window = true
+    show_demo_window = false
     
     quit = false
     
@@ -425,13 +401,13 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
 
     g.imgui_function = getfn(g.game_module, :imgui, 2)
     g.update_function = getfn(g.game_module, :update, 2)
-    g.render_function = getfn(g.game_module, :draw, 3)
+    g.render_function = getfn(g.game_module, :draw, 2)
     g.onkey_function = getfn(g.game_module, :on_key_down, 3)
     g.onmouseup_function = getfn(g.game_module, :on_mouse_up, 3)
     g.onmousedown_function = getfn(g.game_module, :on_mouse_down, 3)
     g.onmousemove_function = getfn(g.game_module, :on_mouse_move, 2)
     g.state = Vector{Dict{String,Dict}}([Dict("imgui"=>Dict("username"=>"", "password"=>""))])
-    g.screens = initscreens(g.game_module, name)
+    g.screens = initscreens(g.game_module)
     g.imgui_settings = Dict(
         "menu_active"=>true,
         "show_login"=>false,
