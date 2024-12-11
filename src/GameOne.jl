@@ -296,7 +296,8 @@ function handleMouseClick(g::Game, e, t)
 end
 
 function handleMousePan(g::Game, e, t)
-    @debug "Mouse Move" e.x, e.y
+    #win_id = e.windowID
+    @debug "Mouse Move" e.x e.y Int(e.windowID)
     Base.invokelatest(g.onmousemove_function, g, (e.x, e.y))
 end
 

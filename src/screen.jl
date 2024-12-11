@@ -477,7 +477,7 @@ function initscreens(gm::Module)
     clear(primary)
     
     # Create secondary screen with offset
-    secondary_win, secondary_renderer = makeWinRenderer(secondary_name, secondary_w, secondary_h, offset_x=850)
+    secondary_win, secondary_renderer = makeWinRenderer(secondary_name, secondary_w, secondary_h)
     secondary = Screen(secondary_name, secondary_win, secondary_renderer, Int32(secondary_w), Int32(secondary_h))
     clear(secondary)
     

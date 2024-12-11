@@ -4,7 +4,6 @@ const EVENT_BUFFER = Ref{SDL2.SDL_Event}()
 function pollEvents!()
     while Bool(SDL2.SDL_PollEvent(EVENT_BUFFER))
         evt = EVENT_BUFFER[]
-        # ... event handling ...
     end
 
     return evt
@@ -69,36 +68,53 @@ function process_events!(game_state, screens::GameScreens)
         primary_window_id = SDL2.SDL_GetWindowID(screens.primary.window)
         secondary_window_id = SDL2.SDL_GetWindowID(screens.secondary.window)
         
-        # Get window information
-        current_screen = if window_id == primary_window_id
-            screens.active_screen = UInt32(1)
-            "PRIMARY"
-        elseif window_id == secondary_window_id
-            screens.active_screen = UInt32(2)
-            "SECONDARY"
-        else
-            "UNKNOWN"
+        # Handle window focus events
+        if evt.type == SDL2.WINDOWEVENT
+            if evt.window.event == SDL2.WINDOWEVENT_FOCUS_GAINED
+                if window_id == primary_window_id
+                    screens.active_screen = UInt32(1)
+                    screens.primary.has_focus = true
+                    screens.secondary.has_focus = false
+                elseif window_id == secondary_window_id
+                    screens.active_screen = UInt32(2)
+                    screens.primary.has_focus = false
+                    screens.secondary.has_focus = true
+                end
+            end
         end
         
-        # Handle mouse events with enhanced logging
-        if evt.type == SDL2.MOUSEBUTTONDOWN
-            x, y = Int(evt.button.x), Int(evt.button.y)
-            button = evt.button.button
-            button_name = get_mouse_button_name(button)
-            @info "MOUSE EVENT" event="BUTTON DOWN" button=button_name screen=current_screen x=x y=y window_id=window_id
-            handle_mouse_button!(game_state, evt, screens)
-        elseif evt.type == SDL2.MOUSEBUTTONUP
-            x, y = Int(evt.button.x), Int(evt.button.y)
-            button = evt.button.button
-            button_name = get_mouse_button_name(button)
-            @info "MOUSE EVENT" event="BUTTON UP" button=button_name screen=current_screen x=x y=y window_id=window_id
-            handle_mouse_button!(game_state, evt, screens)
-        elseif evt.type == SDL2.MOUSEMOTION
-            x, y = Int(evt.motion.x), Int(evt.motion.y)
-            if game_state.dragging_actor !== nothing
-                @info "MOUSE EVENT" event="MOTION" screen=current_screen x=x y=y window_id=window_id actor=game_state.dragging_actor.label
+        # Only process mouse events for the window that has focus
+        if evt.type in [SDL2.MOUSEBUTTONDOWN, SDL2.MOUSEBUTTONUP, SDL2.MOUSEMOTION]
+            current_screen = if window_id == primary_window_id && screens.primary.has_focus
+                screens.active_screen = UInt32(1)
+                "PRIMARY"
+            elseif window_id == secondary_window_id && screens.secondary.has_focus
+                screens.active_screen = UInt32(2)
+                "SECONDARY"
+            else
+                continue  # Skip event processing for unfocused windows
             end
-            handle_mouse_motion!(game_state, evt, screens)
+            
+            # Process mouse events only for the focused window
+            if evt.type == SDL2.MOUSEBUTTONDOWN
+                x, y = Int(evt.button.x), Int(evt.button.y)
+                button = evt.button.button
+                button_name = get_mouse_button_name(button)
+                @info "MOUSE EVENT" event="BUTTON DOWN" button=button_name screen=current_screen x=x y=y window_id=window_id
+                handle_mouse_button!(game_state, evt, screens)
+            elseif evt.type == SDL2.MOUSEBUTTONUP
+                x, y = Int(evt.button.x), Int(evt.button.y)
+                button = evt.button.button
+                button_name = get_mouse_button_name(button)
+                @info "MOUSE EVENT" event="BUTTON UP" button=button_name screen=current_screen x=x y=y window_id=window_id
+                handle_mouse_button!(game_state, evt, screens)
+            elseif evt.type == SDL2.MOUSEMOTION
+                x, y = Int(evt.motion.x), Int(evt.motion.y)
+                if game_state.dragging_actor !== nothing
+                    @info "MOUSE EVENT" event="MOTION" screen=current_screen x=x y=y window_id=window_id actor=game_state.dragging_actor.label
+                end
+                handle_mouse_motion!(game_state, evt, screens)
+            end
         end
     end
     return true
