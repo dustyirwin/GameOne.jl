@@ -300,24 +300,6 @@ function handleMousePan(g::Game, e, t)
     Base.invokelatest(g.onmousemove_function, g, (e.x, e.y))
 end
 
-function handleWindowEvent(g::Game, e, t)
-    window_id = e.window.windowID
-    
-    # Update active screen based on window focus
-    if window_id == SDL2.SDL_GetWindowID(g.screens.primary.window)
-        g.screens.active_screen = UInt32(1)
-        g.screens.primary.has_focus = true
-        g.screens.secondary.has_focus = false
-    elseif window_id == SDL2.SDL_GetWindowID(g.screens.secondary.window)
-        g.screens.active_screen = UInt32(2)
-        g.screens.primary.has_focus = false
-        g.screens.secondary.has_focus = true
-    end
-    
-    @debug "Window $window_id focus changed. Active screen: $(g.screens.active_screen)"
-end
-
-
 getKeySym(e) = bitcat(UInt32, e[24:-1:21])
 getKeyRepeat(e) = bitcat(UInt8, e[14:-1:14])
 getKeyMod(e) = bitcat(UInt16, e[26:-1:25])

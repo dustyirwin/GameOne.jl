@@ -1,7 +1,7 @@
 name = "GameOne"
 uuid = "9da27670-f782-11e9-1da1-f53579315bfe"
 authors = ["Dustin Irwin"]
-version = "0.3.0"
+version = "0.3.1"
 
 [deps]
 CImGui = "5d785b6c-b76f-510e-a07c-3070796c7e87"
@@ -20,7 +20,7 @@ Sockets = "6462fe0b-24de-5631-8697-dd941f90decc"
 Colors = "0.10, 0.11, 0.12, 0.13"
 Printf = "1.11.0"
 julia = "1.9, 1.10, 1.11, 1.12"
-CImGui = "2.3.0"
+#CImGui = "2.3.0"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
