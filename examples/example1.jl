@@ -95,7 +95,7 @@ end
 # Create an `ImageActor` object from a PNG file
 alien_image_path = joinpath("examples", "images", "alien.png")
 @assert isfile(alien_image_path) "Alien image not found at: $alien_image_path"
-alien = ImageFileActor("alien", [alien_image_path], current_window=UInt32(1))  # 1 for primary
+alien = ImageFileActor("alien", [alien_image_path], current_screen=UInt32(1))  # 1 for primary
 @debug "Created alien actor with image: $alien_image_path"
 alien.x = PRIMARY_WIDTH ÷ 2  # Start in the middle of the screen
 alien.y = PRIMARY_HEIGHT ÷ 2  # Start in the middle of the screen
@@ -111,14 +111,14 @@ label = TextActor(
     "$(@__DIR__)/fonts/OpenSans-Regular.ttf",
     outline_size=1,
     pt_size=24,
-    current_window=UInt32(1)  # 1 for primary
+    current_screen=UInt32(1)  # 1 for primary
 )
 label.x = PRIMARY_WIDTH ÷ 4  # Start at 1/4 of screen width
 label.y = PRIMARY_HEIGHT ÷ 4  # Start at 1/4 of screen height
 
 # Load a custom animation with dual screen support
 anim_fns = ["$(@__DIR__)/images/FireElem1/Visible$i.png" for i in 0:7]
-anim = ImageFileActor("fireelem", anim_fns, current_window=UInt32(1))  # 1 for primary
+anim = ImageFileActor("fireelem", anim_fns, current_screen=UInt32(1))  # 1 for primary
 anim.data[:next_frame] = true
 anim.x = PRIMARY_WIDTH ÷ 3  # Start at 1/3 of screen width
 anim.y = PRIMARY_HEIGHT ÷ 3  # Start at 1/3 of screen height
@@ -143,13 +143,13 @@ function draw(g::Game)
     draw(g.screens, anim)
     
     # Draw rectangles on their respective screens
-    if red_rect.current_window == UInt32(1)
+    if red_rect.current_screen == UInt32(1)
         draw(g.screens.primary, red_rect; c=colorant"red", fill=false)
     else
         draw(g.screens.secondary, red_rect; c=colorant"red", fill=true)
     end
     
-    if blue_rect.current_window == UInt32(1)
+    if blue_rect.current_screen == UInt32(1)
         draw(g.screens.primary, blue_rect; c=colorant"blue", fill=true)
     else
         draw(g.screens.secondary, blue_rect; c=colorant"blue", fill=false)
@@ -185,10 +185,10 @@ function update(g::Game)
     end
 
     # Handle screen transitions and bouncing for red rectangle
-    if red_rect.current_window == UInt32(1)
+    if red_rect.current_screen == UInt32(1)
         # Primary window bounds for red rectangle
         if red_rect.position.x > PRIMARY_WIDTH - red_rect.position.w
-            red_rect.current_window = UInt32(2)  # Switch to secondary
+            red_rect.current_screen = UInt32(2)  # Switch to secondary
             red_rect.position.x = 0
         elseif red_rect.position.x < 0
             dx_red = -dx_red  # Bounce off left edge
@@ -197,7 +197,7 @@ function update(g::Game)
         if red_rect.position.x > SECONDARY_WIDTH - red_rect.position.w
             dx_red = -dx_red  # Bounce off right edge
         elseif red_rect.position.x < 0
-            red_rect.current_window = UInt32(1)  # Switch to primary
+            red_rect.current_screen = UInt32(1)  # Switch to primary
             red_rect.position.x = PRIMARY_WIDTH - red_rect.position.w
         end
     end
@@ -207,10 +207,10 @@ function update(g::Game)
     end
 
     # Handle screen transitions and bouncing for blue rectangle
-    if blue_rect.current_window == UInt32(1)
+    if blue_rect.current_screen == UInt32(1)
         # Primary window bounds for blue rectangle
         if blue_rect.position.x > PRIMARY_WIDTH - blue_rect.position.w
-            blue_rect.current_window = UInt32(2)  # Switch to secondary
+            blue_rect.current_screen = UInt32(2)  # Switch to secondary
             blue_rect.position.x = 0
         elseif blue_rect.position.x < 0
             dx_blue = -dx_blue  # Bounce off left edge
@@ -219,7 +219,7 @@ function update(g::Game)
         if blue_rect.position.x > SECONDARY_WIDTH - blue_rect.position.w
             dx_blue = -dx_blue  # Bounce off right edge
         elseif blue_rect.position.x < 0
-            blue_rect.current_window = UInt32(1)  # Switch to primary
+            blue_rect.current_screen = UInt32(1)  # Switch to primary
             blue_rect.position.x = PRIMARY_WIDTH - blue_rect.position.w
         end
     end
@@ -229,16 +229,16 @@ function update(g::Game)
     end
 
     # Check boundaries and handle screen transitions for alien
-    if alien.current_window == UInt32(1) && alien.x > PRIMARY_WIDTH - alien.w  # Right edge of primary
-        alien.current_window = UInt32(2)  # Switch to secondary
+    if alien.current_screen == UInt32(1) && alien.x > PRIMARY_WIDTH - alien.w  # Right edge of primary
+        alien.current_screen = UInt32(2)  # Switch to secondary
         alien.x = 2  # Place at left edge of secondary window
         play_sound(eep_wav)
-    elseif alien.current_window == UInt32(2) && alien.position.x < 2  # Left edge of secondary
-        alien.current_window = UInt32(1)  # Switch to primary
+    elseif alien.current_screen == UInt32(2) && alien.position.x < 2  # Left edge of secondary
+        alien.current_screen = UInt32(1)  # Switch to primary
         alien.x = PRIMARY_WIDTH - alien.w - 2  # Place at right edge of primary
         play_sound(eep_wav)
-    elseif (alien.current_window == UInt32(1) && alien.x < 2) ||  # Left edge of primary
-           (alien.current_window == UInt32(2) && alien.x > SECONDARY_WIDTH - alien.w)  # Right edge of secondary
+    elseif (alien.current_screen == UInt32(1) && alien.x < 2) ||  # Left edge of primary
+           (alien.current_screen == UInt32(2) && alien.x > SECONDARY_WIDTH - alien.w)  # Right edge of secondary
         dx_alien = -dx_alien  # Bounce back
         play_sound(eep_wav)
     end
@@ -249,16 +249,16 @@ function update(g::Game)
     end
 
     # Check boundaries and handle screen transitions for text
-    if label.current_window == UInt32(1) && label.x > PRIMARY_WIDTH - label.w  # Right edge of primary
-        label.current_window = UInt32(2)  # Switch to secondary
+    if label.current_screen == UInt32(1) && label.x > PRIMARY_WIDTH - label.w  # Right edge of primary
+        label.current_screen = UInt32(2)  # Switch to secondary
         label.x = 2  # Place at left edge of secondary window
         play_sound(eep_wav)
-    elseif label.current_window == UInt32(2) && label.x < 2  # Left edge of secondary
-        label.current_window = UInt32(1)  # Switch to primary
+    elseif label.current_screen == UInt32(2) && label.x < 2  # Left edge of secondary
+        label.current_screen = UInt32(1)  # Switch to primary
         label.x = PRIMARY_WIDTH - label.w - 2  # Place at right edge of primary
         play_sound(eep_wav)
-    elseif (label.current_window == UInt32(1) && label.x < 2) ||  # Left edge of primary
-           (label.current_window == UInt32(2) && label.x > SECONDARY_WIDTH - label.w)  # Right edge of secondary
+    elseif (label.current_screen == UInt32(1) && label.x < 2) ||  # Left edge of primary
+           (label.current_screen == UInt32(2) && label.x > SECONDARY_WIDTH - label.w)  # Right edge of secondary
         dx_label = -dx_label  # Bounce back
         play_sound(eep_wav)
     end
@@ -269,16 +269,16 @@ function update(g::Game)
     end
 
     # Check boundaries and handle screen transitions for FireElem
-    if anim.current_window == UInt32(1) && anim.x > PRIMARY_WIDTH - anim.w  # Right edge of primary
-        anim.current_window = UInt32(2)  # Switch to secondary
+    if anim.current_screen == UInt32(1) && anim.x > PRIMARY_WIDTH - anim.w  # Right edge of primary
+        anim.current_screen = UInt32(2)  # Switch to secondary
         anim.x = 2  # Place at left edge of secondary window
         play_sound(eep_wav)
-    elseif anim.current_window == UInt32(2) && anim.x < 2  # Left edge of secondary
-        anim.current_window = UInt32(1)  # Switch to primary
+    elseif anim.current_screen == UInt32(2) && anim.x < 2  # Left edge of secondary
+        anim.current_screen = UInt32(1)  # Switch to primary
         anim.x = PRIMARY_WIDTH - anim.w - 2  # Place at right edge of primary
         play_sound(eep_wav)
-    elseif (anim.current_window == UInt32(1) && anim.x < 2) ||  # Left edge of primary
-           (anim.current_window == UInt32(2) && anim.x > SECONDARY_WIDTH - anim.w)  # Right edge of secondary
+    elseif (anim.current_screen == UInt32(1) && anim.x < 2) ||  # Left edge of primary
+           (anim.current_screen == UInt32(2) && anim.x > SECONDARY_WIDTH - anim.w)  # Right edge of secondary
         dx_anim = -dx_anim  # Bounce back
         play_sound(eep_wav)
     end

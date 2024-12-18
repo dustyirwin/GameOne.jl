@@ -41,24 +41,24 @@ mutable struct Actor
     angle::Float64
     alpha::UInt8
     data::Dict{Symbol,Any}
-    current_window::UInt32  # 1 for primary, 2 for secondary
+    current_screen::UInt32  # 1 for primary, 2 for secondary
 
     # Add constructor with type conversions
     function Actor(id::String, label::String, surfaces, textures, position::SDL_Rect, 
                   scale::Vector, rotate_center, angle::Number, alpha::Number, 
-                  data::Dict{Symbol,Any}, current_window=UInt32(1))
+                  data::Dict{Symbol,Any}, current_screen=UInt32(1))
         new(id, label, surfaces, textures, position, 
             convert(Vector{Float32}, scale), 
             rotate_center,
             convert(Float64, angle),
             convert(UInt8, alpha),
-            data, current_window)
+            data, current_screen)
     end
 end
 
 function TextActor(text::String, font_path::String; id=randstring(10), x = 0, y = 0, pt_size = 24,
     font_color = Int[255, 255, 255, 255], outline_color = Int[0, 0, 0, 225],
-    wrap_length = 800, outline_size = 0, current_window=UInt32(1), kv...)
+    wrap_length = 800, outline_size = 0, current_screen=UInt32(1), kv...)
 
     @assert isfile(font_path) "Font file for $text not found: $font_path"
 
@@ -112,7 +112,7 @@ function TextActor(text::String, font_path::String; id=randstring(10), x = 0, y 
             :mouse_offset => Int32[0, 0],
             :font_color => font_color,
             :type=>"text",
-            :current_window => current_window,
+            :current_screen => current_screen,
             )
         )
         
@@ -224,7 +224,7 @@ function ImageMemActor(img_name::String, img; x=0, y=0, kv...)
 end
 
 function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16); x=0, y=0, 
-    frame_delays=[], anim=false, webp_path="", current_window=UInt32(1), kv...)
+    frame_delays=[], anim=false, webp_path="", current_screen=UInt32(1), kv...)
     
     n = Int32.(length(img_fns))
     frame_delays = isempty(frame_delays) ? [ Millisecond(100) for _ in 1:n ] : frame_delays
@@ -278,7 +278,7 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
             :frame_delays => frame_delays,
             :mouse_offset => Int32[0, 0],
             :type => "imagefile",
-            :current_window => current_window,
+            :current_screen => current_screen,
         )
     )
 
@@ -292,11 +292,11 @@ end
 
 function draw(screens::GameScreens, a::Actor; kv...)
     # Debug logging
-    #@debug "Drawing actor $(a.label) on window $(a.current_window)"
+    #@debug "Drawing actor $(a.label) on window $(a.current_screen)"
     #@debug "Actor position: ($(a.x), $(a.y))"
     
-    # Determine which screen to draw on based on actor's current_window
-    screen = a.current_window == 1 ? screens.primary : screens.secondary
+    # Determine which screen to draw on based on actor's current_screen
+    screen = a.current_screen == 1 ? screens.primary : screens.secondary
     
     # Check if we need to recreate textures for the current renderer
     if !isempty(a.textures) && haskey(a.data, :last_renderer) && a.data[:last_renderer] !== screen.renderer
@@ -436,7 +436,7 @@ end
 
 # custom Rect draw function (for 2px card border)
 function draw(screens::GameScreens, r::Rect; fill=true, c::Colorant=colorant"violet")
-    screen = r.current_window == 1 ? screens.primary : screens.secondary
+    screen = r.current_screen == 1 ? screens.primary : screens.secondary
     draw(screen, r, c=c, fill=fill)
 end
 

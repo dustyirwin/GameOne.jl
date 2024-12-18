@@ -88,10 +88,10 @@ end
 
 mutable struct MoveableRect
     position::Rect
-    current_window::UInt32
+    current_screen::UInt32
 
-    function MoveableRect(x::Int, y::Int, w::Int, h::Int, current_window::Int)
-        new(Rect(Int(x), Int(y), Int(w), Int(h)), UInt32(current_window))
+    function MoveableRect(x::Int, y::Int, w::Int, h::Int, current_screen::Int)
+        new(Rect(Int(x), Int(y), Int(w), Int(h)), UInt32(current_screen))
     end
 end
 

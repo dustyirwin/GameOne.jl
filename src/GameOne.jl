@@ -244,59 +244,6 @@ function mainloop(g::Game)
     end
 end
 
-function handleEvents!(g::Game, e, t)
-    global playing, paused
-
-    if (t == SDL_KEYDOWN || t == SDL_KEYUP)
-        handleKeyPress(g::Game, e.key, t)
-    
-    elseif (t == SDL_MOUSEBUTTONUP || t == SDL_MOUSEBUTTONDOWN)
-        handleMouseClick(g::Game, e.button, t)
-        #TODO elseif (t == MOUSEWHEEL); handleMouseScroll(e)
-    
-    elseif (t == SDL_MOUSEMOTION)
-        handleMousePan(g::Game, e.motion, t)
-
-    elseif (t == SDL_WINDOWEVENT)
-        handleWindowEvent(g::Game, e, t)
-    
-    #elseif (t == SDL_QUIT)
-    #    paused[] = playing[] = false
-    end
-end
-
-function handleKeyPress(g::Game, e, t)
-    keySym = e.keysym.sym
-    keyMod = e.keysym.mod
-    @debug "Keyboard" keySym, keyMod
-    if (t == SDL_KEYDOWN)
-        push!(g.keyboard, keySym)
-        Base.invokelatest(g.onkey_function, g, keySym, keyMod)
-        
-    elseif (t == SDL_KEYUP)
-        delete!(g.keyboard, keySym)
-    end
-
-    #keyRepeat = (getKeyRepeat(e) != 0)
-end
-
-function handleMouseClick(g::Game, e, t)
-    window_id = e.windowID
-    @debug "Mouse Button" e.x e.y window_id
-    
-    if (t == SDL_MOUSEBUTTONUP)
-        Base.invokelatest(g.onmouseup_function, g, (e.x, e.y), MouseButtons.MouseButton(e.button))
-    elseif (t == SDL_MOUSEBUTTONDOWN)
-        Base.invokelatest(g.onmousedown_function, g, (e.x, e.y), MouseButtons.MouseButton(e.button))
-    end
-end
-
-function handleMousePan(g::Game, e, t)
-    #win_id = e.windowID
-    @debug "Mouse Move" e.x e.y Int(e.windowID)
-    Base.invokelatest(g.onmousemove_function, g, (e.x, e.y))
-end
-
 getKeySym(e) = bitcat(UInt32, e[24:-1:21])
 getKeyRepeat(e) = bitcat(UInt8, e[14:-1:14])
 getKeyMod(e) = bitcat(UInt16, e[26:-1:25])
@@ -382,9 +329,9 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
     g.update_function = getfn(g.game_module, :update, 2)
     g.render_function = getfn(g.game_module, :draw, 2)
     g.onkey_function = getfn(g.game_module, :on_key_down, 3)
-    g.onmouseup_function = getfn(g.game_module, :on_mouse_up, 3)
-    g.onmousedown_function = getfn(g.game_module, :on_mouse_down, 3)
-    g.onmousemove_function = getfn(g.game_module, :on_mouse_move, 2)
+    g.onmouseup_function = getfn(g.game_module, :on_mouse_up, 4)
+    g.onmousedown_function = getfn(g.game_module, :on_mouse_down, 4)
+    g.onmousemove_function = getfn(g.game_module, :on_mouse_move, 3)
     g.state = Vector{Dict{String,Dict}}([Dict("imgui"=>Dict("username"=>"", "password"=>""))])
     g.screens = initscreens(g.game_module)
     g.imgui_settings = Dict(
@@ -481,91 +428,6 @@ function quitSDL()
     TTF_Quit()
     Mix_Quit()
     SDL2.SDL_Quit()
-end
-
-function main()
-    SDL2.Init(UInt32(SDL2.INIT_VIDEO))
-    
-    screens = create_screens()
-    game_state = GameState()
-    
-    running = true
-    while running
-        running = process_events!(game_state, screens)
-        render_game(game_state, screens)
-    end
-    
-    # Cleanup
-    SDL2.DestroyRenderer(screens.primary.renderer)
-    SDL2.DestroyWindow(screens.primary.window)
-    SDL2.DestroyRenderer(screens.secondary.renderer)
-    SDL2.DestroyWindow(screens.secondary.window)
-    SDL2.Quit()
-end
-
-# Add ImGui memory management settings
-function configure_imgui_memory()
-    io = CImGui.GetIO()
-    
-    # Set smaller vertex/index buffer sizes if you don't need large UIs
-    io.BackendFlags = unsafe_load(io.BackendFlags) | 
-                     CImGui.ImGuiBackendFlags_RendererHasVtxOffset
-    
-    # Configure ImGui to use less memory
-    style = CImGui.GetStyle()
-    style.WindowPadding = ImVec2(4, 4)
-    style.ItemSpacing = ImVec2(4, 2)
-    style.ItemInnerSpacing = ImVec2(2, 2)
-end
-
-function render_game(game_state, screens::GameScreens)
-    @debug "Rendering game state"
-    
-    # Check renderer states
-    if screens.primary.renderer == C_NULL
-        @error "Primary renderer is NULL"
-        return
-    end
-    if screens.secondary.renderer == C_NULL
-        @error "Secondary renderer is NULL"
-        return
-    end
-    
-    # Get renderer info for debugging
-    primary_info = Ref{SDL_RendererInfo}()
-    secondary_info = Ref{SDL_RendererInfo}()
-    if SDL_GetRendererInfo(screens.primary.renderer, primary_info) == 0
-        @debug "Primary renderer info: $(unsafe_string(primary_info[].name))"
-    end
-    if SDL_GetRendererInfo(screens.secondary.renderer, secondary_info) == 0
-        @debug "Secondary renderer info: $(unsafe_string(secondary_info[].name))"
-    end
-    
-    # Render primary screen
-    SDL_SetRenderDrawColor(screens.primary.renderer, 255, 255, 255, 255)
-    SDL_RenderClear(screens.primary.renderer)
-    
-    # Draw all actors that belong to primary screen
-    for actor in game_state.actors
-        if actor.current_window == UInt32(1)
-            @debug "Drawing actor $(actor.label) on primary screen"
-            draw(actor, screens)
-        end
-    end
-    SDL_RenderPresent(screens.primary.renderer)
-    
-    # Render secondary screen
-    SDL_SetRenderDrawColor(screens.secondary.renderer, 255, 255, 255, 255)
-    SDL_RenderClear(screens.secondary.renderer)
-    
-    # Draw all actors that belong to secondary screen
-    for actor in game_state.actors
-        if actor.current_window == UInt32(2)
-            @debug "Drawing actor $(actor.label) on secondary screen"
-            draw(actor, screens)
-        end
-    end
-    SDL_RenderPresent(screens.secondary.renderer)
 end
 
 end # module

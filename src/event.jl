@@ -41,133 +41,58 @@ function bitcat(::Type{T}, arr)::T where T<:Number
     out
 end
 
-function get_mouse_button_name(button::UInt8)
-    if button == SDL2.BUTTON_LEFT
-        return "LEFT"
-    elseif button == SDL2.BUTTON_RIGHT
-        return "RIGHT"
-    elseif button == SDL2.BUTTON_MIDDLE
-        return "MIDDLE"
-    else
-        return "BUTTON_$button"
-    end
-end
 
-function process_events!(game_state, screens::GameScreens)
-    event_ref = Ref{SDL2.Event}()
+################################################################################
+
+function handleEvents!(g::Game, e, t)
+    global playing, paused
+
+    if (t == SDL_KEYDOWN || t == SDL_KEYUP)
+        handleKeyPress(g::Game, e.key, t)
     
-    while Bool(SDL2.PollEvent(event_ref))
-        evt = event_ref[]
-        
-        if evt.type == SDL2.QUIT
-            return false
-        end
-        
-        # Determine which window the event belongs to
-        window_id = get_window_id(evt)
-        primary_window_id = SDL2.SDL_GetWindowID(screens.primary.window)
-        secondary_window_id = SDL2.SDL_GetWindowID(screens.secondary.window)
-        
-        # Handle window focus events
-        if evt.type == SDL2.WINDOWEVENT
-            if evt.window.event == SDL2.WINDOWEVENT_FOCUS_GAINED
-                if window_id == primary_window_id
-                    screens.active_screen = UInt32(1)
-                    screens.primary.has_focus = true
-                    screens.secondary.has_focus = false
-                elseif window_id == secondary_window_id
-                    screens.active_screen = UInt32(2)
-                    screens.primary.has_focus = false
-                    screens.secondary.has_focus = true
-                end
-            end
-        end
-        
-        # Only process mouse events for the window that has focus
-        if evt.type in [SDL2.MOUSEBUTTONDOWN, SDL2.MOUSEBUTTONUP, SDL2.MOUSEMOTION]
-            current_screen = if window_id == primary_window_id && screens.primary.has_focus
-                screens.active_screen = UInt32(1)
-                "PRIMARY"
-            elseif window_id == secondary_window_id && screens.secondary.has_focus
-                screens.active_screen = UInt32(2)
-                "SECONDARY"
-            else
-                continue  # Skip event processing for unfocused windows
-            end
-            
-            # Process mouse events only for the focused window
-            if evt.type == SDL2.MOUSEBUTTONDOWN
-                x, y = Int(evt.button.x), Int(evt.button.y)
-                button = evt.button.button
-                button_name = get_mouse_button_name(button)
-                @info "MOUSE EVENT" event="BUTTON DOWN" button=button_name screen=current_screen x=x y=y window_id=window_id
-                handle_mouse_button!(game_state, evt, screens)
-            elseif evt.type == SDL2.MOUSEBUTTONUP
-                x, y = Int(evt.button.x), Int(evt.button.y)
-                button = evt.button.button
-                button_name = get_mouse_button_name(button)
-                @info "MOUSE EVENT" event="BUTTON UP" button=button_name screen=current_screen x=x y=y window_id=window_id
-                handle_mouse_button!(game_state, evt, screens)
-            elseif evt.type == SDL2.MOUSEMOTION
-                x, y = Int(evt.motion.x), Int(evt.motion.y)
-                if game_state.dragging_actor !== nothing
-                    @info "MOUSE EVENT" event="MOTION" screen=current_screen x=x y=y window_id=window_id actor=game_state.dragging_actor.label
-                end
-                handle_mouse_motion!(game_state, evt, screens)
-            end
-        end
-    end
-    return true
-end
-
-function handle_mouse_button!(game_state, evt, screens::GameScreens)
-    x, y = Int(evt.button.x), Int(evt.button.y)
-    window_id = evt.button.windowID
-    current_screen = screens.active_screen == UInt32(1) ? "PRIMARY" : "SECONDARY"
-    button_name = get_mouse_button_name(evt.button.button)
+    elseif (t == SDL_MOUSEBUTTONUP || t == SDL_MOUSEBUTTONDOWN)
+        handleMouseClick(g::Game, e.button, t)
+        #TODO elseif (t == MOUSEWHEEL); handleMouseScroll(e)
     
-    if evt.type == SDL2.MOUSEBUTTONDOWN
-        # Check for clicks on actors in the active screen
-        for actor in game_state.actors
-            if actor.current_window == screens.active_screen && collide(actor, x, y)
-                @info "ACTOR CLICKED" actor=actor.label button=button_name screen=current_screen x=x y=y window_id=window_id
-                game_state.dragging_actor = actor
-                # Store the offset between mouse and actor position for smooth dragging
-                actor.data[:mouse_offset] = Int32[x - actor.x, y - actor.y]
-                break
-            end
-        end
-    elseif evt.type == SDL2.MOUSEBUTTONUP && game_state.dragging_actor !== nothing
-        @info "ACTOR RELEASED" actor=game_state.dragging_actor.label button=button_name screen=current_screen x=x y=y window_id=window_id
-        game_state.dragging_actor = nothing
+    elseif (t == SDL_MOUSEMOTION)
+        handleMousePan(g::Game, e.motion, t)
+
+    elseif (t == SDL_WINDOWEVENT)
+        handleWindowEvent(g::Game, e, t)
+    
+    #elseif (t == SDL_QUIT)
+    #    paused[] = playing[] = false
     end
 end
 
-function handle_mouse_motion!(game_state, evt, screens::GameScreens)
-    if game_state.dragging_actor !== nothing
-        x, y = Int(evt.motion.x), Int(evt.motion.y)
-        window_id = evt.motion.windowID
-        current_screen = screens.active_screen == UInt32(1) ? "PRIMARY" : "SECONDARY"
-        actor = game_state.dragging_actor
+function handleKeyPress(g::Game, e, t)
+    keySym = e.keysym.sym
+    keyMod = e.keysym.mod
+    @debug "Keyboard" keySym, keyMod
+    if (t == SDL_KEYDOWN)
+        push!(g.keyboard, keySym)
+        Base.invokelatest(g.onkey_function, g, keySym, keyMod)
         
-        # Update actor position based on mouse movement
-        offset = actor.data[:mouse_offset]
-        actor.x = x - offset[1]
-        actor.y = y - offset[2]
-        
-        @info "ACTOR DRAGGING" actor=actor.label screen=current_screen x=x y=y window_id=window_id
-        
-        # Check if we should switch windows based on position
-        if screens.active_screen == UInt32(1) && x > SCREEN_WIDTH - actor.w
-            @info "ACTOR TRANSITION" actor=actor.label from="PRIMARY" to="SECONDARY" x=x y=y window_id=window_id
-            actor.current_window = UInt32(2)
-            actor.x = 2
-        elseif screens.active_screen == UInt32(2) && x < 2
-            @info "ACTOR TRANSITION" actor=actor.label from="SECONDARY" to="PRIMARY" x=x y=y window_id=window_id
-            actor.current_window = UInt32(1)
-            actor.x = SCREEN_WIDTH - actor.w - 2
-        end
+    elseif (t == SDL_KEYUP)
+        delete!(g.keyboard, keySym)
     end
+
+    #keyRepeat = (getKeyRepeat(e) != 0)
+end
+
+function handleMouseClick(g::Game, e, t)
+    @debug "Mouse Button" e.x e.y e.windowID
+    
+    if (t == SDL_MOUSEBUTTONUP)
+        Base.invokelatest(g.onmouseup_function, g, (e.x, e.y), MouseButtons.MouseButton(e.button), e.windowID)
+    elseif (t == SDL_MOUSEBUTTONDOWN)
+        Base.invokelatest(g.onmousedown_function, g, (e.x, e.y), MouseButtons.MouseButton(e.button), e.windowID)
+    end
+end
+
+function handleMousePan(g::Game, e, t)
+    @debug "Mouse Move" e.x e.y e.windowID
+    Base.invokelatest(g.onmousemove_function, g, (e.x, e.y), e.windowID)
 end
 
 function handleWindowEvent(g::Game, e, t)
