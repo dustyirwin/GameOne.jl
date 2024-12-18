@@ -63,10 +63,6 @@ export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init, ImGui_Imp
     ImGui_ImplSDLRenderer2_RenderDrawData, ImGuiDockNodeFlags_PassthruCentralNode, TextDisabled, PushItemFlag, PopItemFlag,
     ImGui_ImplSDLRenderer2_Shutdown#, ImGui_ImplSDL2_Shutdown
 
-# :/
-#import DocStringExtensions: TYPEDSIGNATURES
-
-
 
 # ImGuiSDLBackend
 include("imgui_impl_sdl2.jl")
@@ -77,9 +73,9 @@ include("timer.jl")
 include("window.jl")
 include("screen.jl")
 
-
 mutable struct Game
     screens::GameScreens
+    active_screen::UInt32
     location::String
     game_module::Module
     keyboard::Keyboard
