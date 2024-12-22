@@ -403,23 +403,6 @@ rect(x::Rect) = x
 rect(x::Circle) = Rect(x.left, x.top, 2 * x.r, 2 * x.r)
 line(x1, y1, x2, y2) = draw(Line(x1, y1, x2, y2))
 
-mutable struct TextureManager
-    textures::Dict{String, Ptr{SDL_Texture}}
-    last_used::Dict{Ptr{SDL_Texture}, Float64}
-    max_age::Float64  # Maximum time (in seconds) to keep unused textures
-end
-
-function cleanup_old_textures!(tm::TextureManager)
-    current_time = time()
-    for (tex, last_used) in tm.last_used
-        if current_time - last_used > tm.max_age
-            SDL_DestroyTexture(tex)
-            delete!(tm.textures, tex)
-            delete!(tm.last_used, tex)
-        end
-    end
-end
-
 # Helper function to create primary screen
 function create_primary_screen(name::String, width::Int32, height::Int32)
     Screen(name, width, height)

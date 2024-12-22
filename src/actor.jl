@@ -229,37 +229,40 @@ end
 function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16); x=0, y=0, 
     frame_delays=[], anim=false, webp_path="", current_screen=UInt32(1), kv...)
     
+    @debug "Creating ImageFileActor '$name' with $(length(img_fns)) frames"
+    
+    # Validate input paths
+    for path in img_fns
+        if !isfile(path)
+            error("Image file not found: $path")
+        end
+    end
+    
     n = Int32.(length(img_fns))
     frame_delays = isempty(frame_delays) ? [ Millisecond(100) for _ in 1:n ] : frame_delays
     
-    # Load images with error checking
-    surfaces = []
-    for fn in img_fns
-        @debug "Loading image: $fn"
-        surface = IMG_Load(fn)
-        if surface == C_NULL
-            error_msg = unsafe_string(SDL_GetError())
-            error("Failed to load image $fn: $error_msg")
-        end
-        @debug "Successfully loaded surface for $fn"
-        push!(surfaces, surface)
-    end
+    # Register the animation with the texture manager
+    register_animation(TEXTURE_MANAGER, name, img_fns)
     
-    if isempty(surfaces)
-        error("No surfaces were loaded for actor $name")
+    # Load first frame to get dimensions
+    @debug "Loading first frame to get dimensions: $(img_fns[1])"
+    surface = IMG_Load(img_fns[1])
+    if surface == C_NULL
+        error("Failed to load image $(img_fns[1]): $(unsafe_string(SDL_GetError()))")
     end
     
     # Get dimensions from first surface
-    surface = unsafe_load(surfaces[begin])
-    w, h = Int32(surface.w), Int32(surface.h)
-    @debug "Image loaded with dimensions: $(w)x$(h)"
+    surface_data = unsafe_load(surface)
+    w, h = Int32(surface_data.w), Int32(surface_data.h)
+    SDL_FreeSurface(surface)
+    @debug "Image dimensions: $(w)x$(h)"
     
     r = SDL_Rect(x, y, w, h)
     a = Actor(
         id,
         name,
-        surfaces,
-        [],
+        nothing,  # No surfaces stored directly
+        nothing,  # No textures stored directly
         r,
         [1.,1.],
         C_NULL,
@@ -282,6 +285,7 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
             :mouse_offset => Int32[0, 0],
             :type => "imagefile",
             :current_screen => current_screen,
+            :animation_name => name  # Store animation name for texture manager
         )
     )
 
@@ -289,123 +293,116 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
         setproperty!(a, k, v)
     end
     
-    @debug "Created ImageFileActor: $name with id: $id"
+    # Store reference to game screens for cleanup
+    screens_ref = Ref{Union{GameScreens, Nothing}}(nothing)
+    
+    # Register finalizer to clean up resources
+    finalizer(a) do x
+        @debug "Cleaning up resources for actor $(x.id)"
+        if screens_ref[] !== nothing
+            renderers = [
+                screens_ref[].primary.renderer,
+                screens_ref[].secondary.renderer
+            ]
+            cleanup_actor_resources(TEXTURE_MANAGER, x.id, renderers)
+            for fn in x.data[:img_fns]
+                for renderer in renderers
+                    release_texture(TEXTURE_MANAGER, renderer, fn)
+                end
+            end
+        end
+    end
+    
+    # Update screens reference when game is initialized
+    schedule_once(() -> begin
+        screens_ref[] = game[].screens
+    end, 0.0)
+    
+    @debug "Successfully created ImageFileActor: $name with id: $id"
+    return a
+end
+
+function next_frame!(a::Actor)
+    @debug "Advancing frame for actor $(a.label) (id: $(a.id))"
+    
+    if haskey(a.data, :animation_name)
+        @debug "Using texture manager animation system"
+        advance_animation_frame(TEXTURE_MANAGER, a.id, a.data[:animation_name])
+        a.data[:then] = now()
+    else
+        @debug "Actor $(a.label) has no animation_name"
+    end
+    
     return a
 end
 
 function draw(screens::GameScreens, a::Actor; kv...)
-    # Debug logging
-    #@debug "Drawing actor $(a.label) on window $(a.current_screen)"
-    #@debug "Actor position: ($(a.x), $(a.y))"
+    @debug "Drawing actor $(a.label) (id: $(a.id)) on screen $(a.current_screen)"
     
     # Determine which screen to draw on based on actor's current_screen
     screen = a.current_screen == 1 ? screens.primary : screens.secondary
     
-    # Check if we need to recreate textures for the current renderer
-    if !isempty(a.textures) && haskey(a.data, :last_renderer) && a.data[:last_renderer] !== screen.renderer
-        @debug "Switching renderers - recreating textures"
-        # Destroy old textures
-        for tx in a.textures
-            SDL_DestroyTexture(tx)
-        end
-        a.textures = []
-        
-        # Handle different actor types
-        if haskey(a.data, :type) && a.data[:type] == "text"
-            @debug "Recreating text surfaces"
-            # Recreate text surfaces
-            text_font = TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
-            outline_font = TTF_OpenFont(a.data[:font_path], a.data[:pt_size])
-            
-            if text_font == C_NULL || outline_font == C_NULL
-                @error "Failed to load font: $(unsafe_string(SDL_GetError()))"
+    # Get the current texture
+    local texture
+    if haskey(a.data, :animation_name)
+        # Animated actor using texture manager
+        @debug "Getting texture for animated actor $(a.label) on renderer $(screen.renderer)"
+        texture = get_animation_frame(TEXTURE_MANAGER, screen.renderer, a.id, a.data[:animation_name])
+    elseif haskey(a.data, :type) && a.data[:type] == "imagefile"
+        # Single image actor using texture manager
+        @debug "Getting texture for single image actor $(a.label) on renderer $(screen.renderer)"
+        path = a.data[:img_fns][1]
+        texture = get_or_load_texture(TEXTURE_MANAGER, screen.renderer, path)
+    else
+        # Legacy non-animated actors
+        @debug "Handling legacy actor $(a.label)"
+        if isempty(a.textures)
+            if a.surfaces === nothing || isempty(a.surfaces)
+                @error "No surfaces available for actor $(a.label)"
                 return
             end
             
-            fg = TTF_RenderText_Blended_Wrapped(
-                text_font, 
-                a.label, 
-                SDL_Color(a.data[:font_color]...), 
-                UInt32(a.data[:wrap_length])
-            )
-            
-            if fg == C_NULL
-                @error "Failed to render text surface: $(unsafe_string(SDL_GetError()))"
-                return
-            end
-            
-            surface = if a.data[:outline_size] > 0
-                TTF_SetFontOutline(outline_font, Int32(a.data[:outline_size]))
-                bg = TTF_RenderText_Blended_Wrapped(
-                    outline_font, 
-                    a.label, 
-                    SDL_Color(a.data[:outline_color]...), 
-                    UInt32(a.data[:wrap_length])
-                )
-                SDL_UpperBlitScaled(fg, C_NULL, bg, Int32[a.data[:outline_size], a.data[:outline_size], a.w, a.h])
-                bg
-            else
-                fg
-            end
-            
-            push!(a.surfaces, surface)
-            TTF_CloseFont(text_font)
-            TTF_CloseFont(outline_font)
-            
-        elseif haskey(a.data, :img_fns)
-            # Handle image-based actors
-            @debug "Reloading surfaces from image files"
-            a.surfaces = []
-            for fn in a.data[:img_fns]
-                surface = IMG_Load(fn)
-                if surface == C_NULL
-                    error_msg = unsafe_string(SDL_GetError())
-                    @error "Failed to reload image $fn: $error_msg"
+            @debug "Creating texture for legacy actor $(a.label)"
+            for (i, sf) in enumerate(a.surfaces)
+                if sf == C_NULL
+                    @error "Surface $i is NULL for actor $(a.label)"
                     continue
                 end
-                push!(a.surfaces, surface)
-            end
-        end
-    end
-    
-    if isempty(a.textures)
-        @debug "Creating textures for actor $(a.label)"
-        for (i, sf) in enumerate(a.surfaces)
-            if sf == C_NULL
-                @error "Surface $i is NULL for actor $(a.label)"
-                continue
+                
+                tx = SDL_CreateTextureFromSurface(screen.renderer, sf)
+                if tx == C_NULL
+                    error_msg = unsafe_string(SDL_GetError())
+                    @error "Failed to create texture $i for $(a.label): $error_msg"
+                    continue
+                end
+                push!(a.textures, tx)
+                @debug "Created texture $i for legacy actor $(a.label)"
             end
             
-            tx = SDL_CreateTextureFromSurface(screen.renderer, sf)
-            if tx == C_NULL
-                error_msg = unsafe_string(SDL_GetError())
-                @error "Failed to create texture $i for $(a.label): $error_msg"
-                continue
+            for sf in a.surfaces
+                SDL_FreeSurface(sf)
             end
-            push!(a.textures, tx)
-            @debug "Successfully created texture $i for $(a.label)"
+            a.surfaces = []
         end
         
-        # Store the renderer we created the textures with
-        a.data[:last_renderer] = screen.renderer
-        
-        for sf in a.surfaces
-            SDL_FreeSurface(sf)
-            sf=nothing
+        if isempty(a.textures)
+            @error "No valid textures for actor $(a.label)"
+            return
         end
-        a.surfaces = []
+        
+        texture = a.textures[begin]
     end
-
-    if isempty(a.textures)
-        @error "No valid textures for actor $(a.label)"
+    
+    if texture == C_NULL
+        @error "Invalid texture for actor $(a.label)"
         return
     end
-
-    #@debug "Setting up rendering for $(a.label) with $(length(a.textures)) textures"
+    
+    @debug "Setting up rendering for $(a.label) on renderer $(screen.renderer)"
     
     if a.alpha < 255
-        SDL_SetTextureBlendMode(a.textures[begin], SDL_BLENDMODE_BLEND)
-        SDL_SetTextureAlphaMod(a.textures[begin], a.alpha)
+        SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND)
+        SDL_SetTextureAlphaMod(texture, a.alpha)
     end
 
     local flip = if a.w < 0 && a.h < 0
@@ -421,9 +418,9 @@ function draw(screens::GameScreens, a::Actor; kv...)
     # Draw on the appropriate screen
     result = SDL_RenderCopyEx(
         screen.renderer,
-        a.textures[begin],
+        texture,
         C_NULL,
-        Ref(SDL_Rect(Int32[a.x, a.y, ceil(a.w * a.scale[1]), ceil(a.h * a.scale[2])]...)),
+        Ref(SDL_Rect(Int32[a.x, a.y, ceil(Int32(abs(a.w)) * a.scale[1]), ceil(Int32(abs(a.h)) * a.scale[2])]...)),
         a.angle,
         a.rotate_center,
         flip,
@@ -433,7 +430,7 @@ function draw(screens::GameScreens, a::Actor; kv...)
         error_msg = unsafe_string(SDL_GetError())
         @error "Failed to render actor $(a.label): $error_msg"
     else
-        #@debug "Successfully rendered actor $(a.label)"
+        @debug "Successfully rendered actor $(a.label) on renderer $(screen.renderer)"
     end
 end
 
@@ -538,3 +535,134 @@ function collide(c, d)
 end
 
 rect(a::Actor) = a.position
+
+# Texture management system
+mutable struct TextureManager
+    # Map from (renderer_ptr, image_path) to SDL texture pointer
+    textures::Dict{Tuple{Ptr{SDL2.SDL_Renderer}, String}, Ptr{SDL_Texture}}
+    # Map from (renderer_ptr, image_path) to reference count
+    ref_counts::Dict{Tuple{Ptr{SDL2.SDL_Renderer}, String}, Int}
+    # Map from animation name to array of texture paths
+    animations::Dict{String, Vector{String}}
+    # Map from animation name to current frame index for each actor
+    frame_indices::Dict{Tuple{String, String}, Int}  # (actor_id, anim_name) => current_frame
+    
+    TextureManager() = new(Dict(), Dict(), Dict(), Dict())
+end
+
+# Global texture manager instance
+const TEXTURE_MANAGER = TextureManager()
+
+function get_or_load_texture(manager::TextureManager, renderer::Ptr{SDL2.SDL_Renderer}, path::String)::Ptr{SDL_Texture}
+    @debug "get_or_load_texture called for path: $path with renderer: $renderer"
+    
+    key = (renderer, path)
+    if haskey(manager.textures, key)
+        @debug "Found existing texture for $path on renderer $renderer"
+        manager.ref_counts[key] += 1
+        return manager.textures[key]
+    end
+    
+    @debug "Loading new texture for $path on renderer $renderer"
+    if !isfile(path)
+        error("Image file not found: $path")
+    end
+    
+    surface = IMG_Load(path)
+    if surface == C_NULL
+        error("Failed to load image $path: $(unsafe_string(SDL_GetError()))")
+    end
+    
+    @debug "Created surface for $path"
+    
+    # Create texture for this specific renderer
+    texture = SDL_CreateTextureFromSurface(renderer, surface)
+    SDL_FreeSurface(surface)
+    
+    if texture == C_NULL
+        error("Failed to create texture from $path: $(unsafe_string(SDL_GetError()))")
+    end
+    
+    # Set texture blend mode
+    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND)
+    
+    @debug "Successfully created texture for $path on renderer $renderer"
+    
+    manager.textures[key] = texture
+    manager.ref_counts[key] = 1
+    return texture
+end
+
+function register_animation(manager::TextureManager, name::String, frame_paths::Vector{String})
+    @debug "Registering animation '$name' with $(length(frame_paths)) frames"
+    manager.animations[name] = frame_paths
+end
+
+function get_animation_frame(manager::TextureManager, renderer::Ptr{SDL2.SDL_Renderer}, actor_id::String, anim_name::String)::Ptr{SDL2.SDL_Texture}
+    @debug "Getting animation frame for actor $actor_id, animation $anim_name"
+    
+    if !haskey(manager.animations, anim_name)
+        error("Animation '$anim_name' not found in texture manager")
+    end
+    
+    frame_paths = manager.animations[anim_name]
+    key = (actor_id, anim_name)
+    
+    if !haskey(manager.frame_indices, key)
+        @debug "Initializing frame index for actor $actor_id, animation $anim_name"
+        manager.frame_indices[key] = 1
+    end
+    
+    current_frame = manager.frame_indices[key]
+    path = frame_paths[current_frame]
+    
+    @debug "Using frame $current_frame (path: $path) for actor $actor_id"
+    return get_or_load_texture(manager, renderer, path)
+end
+
+function advance_animation_frame(manager::TextureManager, actor_id::String, anim_name::String)
+    @debug "Advancing animation frame for actor $actor_id, animation $anim_name"
+    
+    key = (actor_id, anim_name)
+    if haskey(manager.frame_indices, key)
+        frame_paths = manager.animations[anim_name]
+        current_frame = manager.frame_indices[key]
+        next_frame = mod1(current_frame + 1, length(frame_paths))
+        manager.frame_indices[key] = next_frame
+        @debug "Advanced from frame $current_frame to $next_frame"
+    else
+        @warn "No frame index found for actor $actor_id, animation $anim_name"
+    end
+end
+
+function release_texture(manager::TextureManager, renderer::Ptr{SDL2.SDL_Renderer}, path::String)
+    key = (renderer, path)
+    if haskey(manager.ref_counts, key)
+        manager.ref_counts[key] -= 1
+        if manager.ref_counts[key] <= 0
+            if haskey(manager.textures, key)
+                SDL_DestroyTexture(manager.textures[key])
+                delete!(manager.textures, key)
+            end
+            delete!(manager.ref_counts, key)
+        end
+    end
+end
+
+function cleanup_actor_resources(manager::TextureManager, actor_id::String, renderers::Vector{Ptr{SDL2.SDL_Renderer}})
+    # Remove animation frame indices for this actor
+    for key in keys(manager.frame_indices)
+        if key[1] == actor_id
+            delete!(manager.frame_indices, key)
+        end
+    end
+    
+    # Clean up textures for all renderers
+    for renderer in renderers
+        for (key, _) in manager.textures
+            if key[1] == renderer
+                release_texture(manager, renderer, key[2])
+            end
+        end
+    end
+end

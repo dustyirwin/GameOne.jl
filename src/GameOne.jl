@@ -55,7 +55,7 @@ export SDL2, BackendPlatformUserData
 export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
     window_paused, getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL,
-    image_surface
+    image_surface, next_frame!, cleanup_old_textures!
 export Game, Screen, GameScreens, Window, Keys, KeyMods, MouseButton
 export Actor, TextActor, ImageFileActor, ImageMemActor 
 export Line, Rect, Triangle, Circle, MoveableRect

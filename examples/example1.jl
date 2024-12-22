@@ -86,12 +86,6 @@ function imgui(g::Game)
     end
 end
 
-function next_frame!(a::Actor)
-    circshift!(a.textures, -1)
-    a.data[:then] = now()
-    return a
-end
-
 # Create an `ImageActor` object from a PNG file
 alien_image_path = joinpath("examples", "images", "alien.png")
 @assert isfile(alien_image_path) "Alien image not found at: $alien_image_path"
@@ -118,8 +112,7 @@ label.y = PRIMARY_HEIGHT ÷ 4  # Start at 1/4 of screen height
 
 # Load a custom animation with dual screen support
 anim_fns = ["$(@__DIR__)/images/FireElem1/Visible$i.png" for i in 0:7]
-anim = ImageFileActor("fireelem", anim_fns, current_screen=UInt32(1))  # 1 for primary
-anim.data[:next_frame] = true
+anim = ImageFileActor("fireelem", anim_fns, current_screen=UInt32(1), anim=true)  # Set anim=true
 anim.x = PRIMARY_WIDTH ÷ 3  # Start at 1/3 of screen width
 anim.y = PRIMARY_HEIGHT ÷ 3  # Start at 1/3 of screen height
 
@@ -180,7 +173,7 @@ function update(g::Game)
     blue_rect.position.y += dy_blue
 
     # Handle FireElem animation
-    if anim.data[:next_frame] && now() - anim.data[:then] > Millisecond(120)
+    if now() - anim.data[:then] > Millisecond(120)
         next_frame!(anim)
     end
 
