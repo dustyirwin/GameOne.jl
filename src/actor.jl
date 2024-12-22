@@ -42,17 +42,20 @@ mutable struct Actor
     alpha::UInt8
     data::Dict{Symbol,Any}
     current_screen::UInt32  # 1 for primary, 2 for secondary
+    z::Int32
 
     # Add constructor with type conversions
     function Actor(id::String, label::String, surfaces, textures, position::SDL_Rect, 
                   scale::Vector, rotate_center, angle::Number, alpha::Number, 
-                  data::Dict{Symbol,Any}, current_screen=UInt32(1))
+                  data::Dict{Symbol,Any}, current_screen=UInt32(1), z::Int32=Int32(0))
         new(id, label, surfaces, textures, position, 
             convert(Vector{Float32}, scale), 
             rotate_center,
             convert(Float64, angle),
             convert(UInt8, alpha),
-            data, current_screen)
+            data, 
+            current_screen, 
+            z)
     end
 end
 

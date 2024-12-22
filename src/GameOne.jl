@@ -198,20 +198,17 @@ function mainloop(g::Game)
                 Base.invokelatest(g.render_function, g)
             end           
             
-            # Run ImGui only for primary window
-            if g.screens.active_screen == UInt32(1)
-                # Show demo window
-                if show_demo_window
-                    CImGui.ShowDemoWindow(Ref(show_demo_window))
-                end
-                
-                # Run custom ImGui function
-                Base.invokelatest(g.imgui_function, g)
-                
-                # Render ImGui
-                CImGui.Render()
-                ImGui_ImplSDLRenderer2_RenderDrawData(CImGui.GetDrawData(), primary_renderer)
+            # Show demo window
+            if show_demo_window
+                CImGui.ShowDemoWindow(Ref(show_demo_window))
             end
+            
+            # Run custom ImGui function
+            Base.invokelatest(g.imgui_function, g)
+            
+            # Render ImGui
+            CImGui.Render()
+            ImGui_ImplSDLRenderer2_RenderDrawData(CImGui.GetDrawData(), primary_renderer)
 
             # Present both renderers
             SDL_RenderPresent(primary_renderer)
