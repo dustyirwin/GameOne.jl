@@ -420,7 +420,7 @@ function draw(screens::GameScreens, a::Actor; kv...)
         screen.renderer,
         texture,
         C_NULL,
-        Ref(SDL_Rect(Int32[a.x, a.y, ceil(Int32(abs(a.w)) * a.scale[1]), ceil(Int32(abs(a.h)) * a.scale[2])]...)),
+        Ref(SDL_Rect(Int32[a.x, a.y, ceil(Int32,a.w * a.scale[1]), ceil(Int32, a.h * a.scale[2])]...)),
         a.angle,
         a.rotate_center,
         flip,
