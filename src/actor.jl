@@ -246,15 +246,19 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
     
     # Load first frame to get dimensions
     @debug "Loading first frame to get dimensions: $(img_fns[1])"
-    surface = IMG_Load(img_fns[1])
-    if surface == C_NULL
+    surfaces = [ IMG_Load(fn) for fn in img_fns ]
+    if any(isnothing, surfaces)
         error("Failed to load image $(img_fns[1]): $(unsafe_string(SDL_GetError()))")
     end
     
     # Get dimensions from first surface
-    surface_data = unsafe_load(surface)
+    surface_data = unsafe_load(surfaces[1])
     w, h = Int32(surface_data.w), Int32(surface_data.h)
-    SDL_FreeSurface(surface)
+    
+    for sf in surfaces
+        SDL_FreeSurface(sf)
+    end
+    
     @debug "Image dimensions: $(w)x$(h)"
     
     r = SDL_Rect(x, y, w, h)
