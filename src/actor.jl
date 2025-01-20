@@ -241,24 +241,24 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
     n = Int32.(length(img_fns))
     frame_delays = isempty(frame_delays) ? [ Millisecond(100) for _ in 1:n ] : frame_delays
     
-    # Register the animation with the texture manager
-    register_animation(TEXTURE_MANAGER, name, img_fns)
+    # Register the animation with the texture manager using the actor's name
+    if isempty(webp_path)
+        register_animation(TEXTURE_MANAGER, name, img_fns)
+    else
+        register_animation(TEXTURE_MANAGER, name, [webp_path])
+    end
     
     # Load first frame to get dimensions
     @debug "Loading first frame to get dimensions: $(img_fns[1])"
-    surfaces = [ IMG_Load(fn) for fn in img_fns ]
-    if any(isnothing, surfaces)
+    surface = IMG_Load(img_fns[1])
+    if surface == C_NULL
         error("Failed to load image $(img_fns[1]): $(unsafe_string(SDL_GetError()))")
     end
     
     # Get dimensions from first surface
-    surface_data = unsafe_load(surfaces[1])
+    surface_data = unsafe_load(surface)
     w, h = Int32(surface_data.w), Int32(surface_data.h)
-    
-    for sf in surfaces
-        SDL_FreeSurface(sf)
-    end
-    
+    SDL_FreeSurface(surface)
     @debug "Image dimensions: $(w)x$(h)"
     
     r = SDL_Rect(x, y, w, h)
@@ -289,7 +289,7 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
             :mouse_offset => Int32[0, 0],
             :type => "imagefile",
             :current_screen => current_screen,
-            :animation_name => name  # Store animation name for texture manager
+            :animation_name => name  # Use the actor's name consistently for animation
         )
     )
 
@@ -348,7 +348,7 @@ function draw(screens::GameScreens, a::Actor; kv...)
     
     # Get the current texture
     local texture
-    if haskey(a.data, :animation_name)
+    if haskey(a.data, :animation_name) && a.data[:anim]  # Only use animation system if :anim is true
         # Animated actor using texture manager
         @debug "Getting texture for animated actor $(a.label) on renderer $(screen.renderer)"
         texture = get_animation_frame(TEXTURE_MANAGER, screen.renderer, a.id, a.data[:animation_name])
@@ -424,7 +424,7 @@ function draw(screens::GameScreens, a::Actor; kv...)
         screen.renderer,
         texture,
         C_NULL,
-        Ref(SDL_Rect(Int32[a.x, a.y, ceil(Int32,a.w * a.scale[1]), ceil(Int32, a.h * a.scale[2])]...)),
+        Ref(SDL_Rect(Int32[a.x, a.y, ceil(Int32(abs(a.w)) * a.scale[1]), ceil(Int32(abs(a.h)) * a.scale[2])]...)),
         a.angle,
         a.rotate_center,
         flip,
