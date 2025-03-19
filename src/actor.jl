@@ -245,7 +245,7 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
     if isempty(webp_path)
         register_animation(TEXTURE_MANAGER, name, img_fns)
     else
-        register_animation(TEXTURE_MANAGER, name, [webp_path])
+        register_animation(TEXTURE_MANAGER, name, readdir(webp_path))
     end
     
     # Load first frame to get dimensions
