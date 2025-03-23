@@ -527,6 +527,12 @@ git-tree-sha1 = "34755bff50b6b08988cdfe5fee69c1c1b24ff810"
 uuid = "da37f231-8920-5702-a09a-bdd970cb6ddc"
 version = "1.4.0+0"
 
+[[deps.SDL2_gfx_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "SDL2_jll"]
+git-tree-sha1 = "230fe67f8f23806bc24f250525019bb7a693d717"
+uuid = "323748d4-b4be-59be-a22c-1904c60787cb"
+version = "1.0.4+0"
+
 [[deps.SDL2_image_jll]]
 deps = ["Artifacts", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pkg", "SDL2_jll", "libpng_jll", "libwebp_jll"]
 git-tree-sha1 = "5fbbda81c5d2060d03f4b57348273774b6434e75"
@@ -560,10 +566,10 @@ uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 version = "1.11.0"
 
 [[deps.SimpleDirectMediaLayer]]
-deps = ["CEnum", "ColorTypes", "SDL2_image_jll", "SDL2_jll", "SDL2_mixer_jll", "SDL2_ttf_jll", "alsa_plugins_jll"]
-path = "../SimpleDirectMediaLayer"
+deps = ["CEnum", "ColorTypes", "SDL2_gfx_jll", "SDL2_image_jll", "SDL2_jll", "SDL2_mixer_jll", "SDL2_ttf_jll", "alsa_plugins_jll"]
+git-tree-sha1 = "79737366da299bd36a58b8779a5dcdcb0364befc"
 uuid = "98e33af6-2ee5-5afd-9e75-cbc738b767c4"
-version = "0.5.1"
+version = "0.5.0"
 
 [[deps.SoXResampler_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]

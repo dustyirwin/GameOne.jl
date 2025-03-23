@@ -30,24 +30,25 @@ function release_actor!(pool::ActorPool, actor)
     end
 end
 
-mutable struct Actor
+@kwdef mutable struct Actor
     id::String
     label::String
     surfaces::Union{Vector{Ptr{SDL_Surface}}, Nothing}
     textures::Union{Vector{Ptr{SDL_Texture}}, Nothing}
-    position::SDL_Rect
-    scale::Vector{Float32}
-    rotate_center::Union{Vector{Int32},Ptr{Nothing}}
-    angle::Float64
-    alpha::UInt8
-    data::Dict{Symbol,Any}
-    current_screen::UInt32  # 1 for primary, 2 for secondary
-    z::Int32
+    position::MutableRect = MutableRect(0, 0, 0, 0)
+    scale::Vector{Float32} = [1.0, 1.0]
+    rotate_center::Union{Vector{Int32},Ptr{Nothing}} = C_NULL
+    angle::Float64 = 0.0
+    alpha::UInt8 = 255
+    data::Dict{Symbol,Any} = Dict{Symbol,Any}()
+    current_screen::UInt32 = UInt32(1)  # 1 for primary, 2 for secondary
+    z::Int32 = Int32(0)
 
     # Add constructor with type conversions
-    function Actor(id::String, label::String, surfaces, textures, position::SDL_Rect, 
+    function Actor(id::String, label::String, surfaces, textures, position::MutableRect, 
                   scale::Vector, rotate_center, angle::Number, alpha::Number, 
-                  data::Dict{Symbol,Any}, current_screen=UInt32(1), z::Int32=Int32(0))
+                  data::Dict{Symbol,Any}, current_screen=UInt32(1), z::Int32=Int32(0)
+                  )
         new(id, label, surfaces, textures, position, 
             convert(Vector{Float32}, scale), 
             rotate_center,
@@ -87,7 +88,7 @@ function TextActor(text::String, font_path::String; id=randstring(10), x = 0, y 
     TTF_CloseFont(text_font)
     TTF_CloseFont(outline_font)
     
-    r = SDL_Rect(x, y, w, h)
+    r = MutableRect(x, y, w, h)
 
     a = Actor(
         id,
@@ -186,7 +187,7 @@ function ImageMemActor(img_name::String, img; x=0, y=0, kv...)
         error("Failed to create surface: $error_msg")
     end
 
-    r = SDL_Rect(x, y, w, h)
+    r = MutableRect(x, y, w, h)
     a = Actor(
         randstring(10),
         img_name,
@@ -261,7 +262,7 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
     SDL_FreeSurface(surface)
     @debug "Image dimensions: $(w)x$(h)"
     
-    r = SDL_Rect(x, y, w, h)
+    r = MutableRect(x, y, w, h)
     a = Actor(
         id,
         name,
@@ -411,7 +412,7 @@ function draw(screens::GameScreens, a::Actor; kv...)
 
     # Update flip flag handling
     flip = if a.w < 0 && a.h < 0
-        SDL_FLIP_BOTH
+        SDL_RendererFlip(Cint(SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL))
     elseif a.h < 0
         SDL_FLIP_VERTICAL
     elseif a.w < 0

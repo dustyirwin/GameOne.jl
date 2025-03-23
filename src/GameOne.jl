@@ -23,7 +23,7 @@ using Reexport: @reexport
     SDL_SetWindowFullscreen, SDL_SetHint, SDL_HINT_RENDER_SCALE_QUALITY, SDL_RenderPresent, 
     SDL_HasIntersection, SDL_Rect, SDL_RenderFillRect, SDL_CreateTextureFromSurface, SDL_TEXTUREACCESS_TARGET,
     SDL_BlendMode, SDL_Surface, SDL_WINDOW_FULLSCREEN, IMG_Load, SDL_SetRenderTarget,
-    SDL_PIXELFORMAT_ARGB32, SDL_UpperBlitScaled, SDL_FreeSurface, SDL_FLIP_NONE, SDL_FLIP_BOTH, SDL_FLIP_VERTICAL, 
+    SDL_PIXELFORMAT_ARGB32, SDL_UpperBlitScaled, SDL_FreeSurface, SDL_RendererFlip,SDL_FLIP_NONE, SDL_FLIP_VERTICAL, 
     SDL_FLIP_HORIZONTAL, SDL_RenderCopyEx, SDL_PollEvent, SDL_TEXTINPUT, SDL_KEYDOWN, SDL_KEYUP, SDL_MOUSEBUTTONDOWN, 
     SDL_MOUSEBUTTONUP, SDL_GetError, SDL_INIT_VIDEO, SDL_INIT_AUDIO, SDL_WINDOWEVENT, SDL_QUIT, SDL_MOUSEMOTION, 
     SDL_MOUSEWHEEL, SDL_GetClipboardText, SDL_SetClipboardText, SDL_GetError, SDL_StopTextInput, SDL_StartTextInput, SDL_GL_MULTISAMPLEBUFFERS, 
@@ -61,8 +61,20 @@ export Actor, TextActor, ImageFileActor, ImageMemActor
 export Line, Rect, Triangle, Circle, MoveableRect
 export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init, ImGui_ImplSDLRenderer2_NewFrame, ImGui_ImplSDL2_NewFrame,
     ImGui_ImplSDLRenderer2_RenderDrawData, ImGuiDockNodeFlags_PassthruCentralNode, TextDisabled, PushItemFlag, PopItemFlag,
-    ImGui_ImplSDLRenderer2_Shutdown#, ImGui_ImplSDL2_Shutdown
+    ImGui_ImplSDLRenderer2_Shutdown#, ImGui_ImplSDL2_Shutdown   
 
+
+# custom mutable Rect type
+@kwdef mutable struct MutableRect
+    x::Integer = Int32(0)
+    y::Integer = Int32(0)
+    w::Integer = Int32(0)
+    h::Integer = Int32(0)
+end
+
+Base.convert(::Type{SDL_Rect}, mrect::MutableRect) = SDL_Rect(Int32(mrect.x), Int32(mrect.y), Int32(mrect.w), Int32(mrect.h))
+Base.convert(::Type{MutableRect}, sdlrect::SDL_Rect) = MutableRect(Int32(sdlrect.x), Int32(sdlrect.y), Int32(sdlrect.w), Int32(sdlrect.h))
+Base.convert(::Type{Vector{Float32}}, v::Vector{Float64}) = Float32.(v)
 
 # ImGuiSDLBackend
 include("imgui_impl_sdl2.jl")
