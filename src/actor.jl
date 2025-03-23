@@ -409,7 +409,8 @@ function draw(screens::GameScreens, a::Actor; kv...)
         SDL_SetTextureAlphaMod(texture, a.alpha)
     end
 
-    local flip = if a.w < 0 && a.h < 0
+    # Update flip flag handling
+    flip = if a.w < 0 && a.h < 0
         SDL_FLIP_BOTH
     elseif a.h < 0
         SDL_FLIP_VERTICAL
@@ -424,7 +425,7 @@ function draw(screens::GameScreens, a::Actor; kv...)
         screen.renderer,
         texture,
         C_NULL,
-        Ref(SDL_Rect(Int32[a.x, a.y, ceil(Int32(abs(a.w)) * a.scale[1]), ceil(Int32(abs(a.h)) * a.scale[2])]...)),
+        Ref(SDL_Rect(Int32[a.x, a.y, ceil(Int32(a.w) * a.scale[1]), ceil(Int32(a.h) * a.scale[2])]...)),
         a.angle,
         a.rotate_center,
         flip,
@@ -441,7 +442,19 @@ end
 # custom Rect draw function (for 2px card border)
 function draw(screens::GameScreens, r::Rect; fill=true, c::Colorant=colorant"violet")
     screen = r.current_screen == 1 ? screens.primary : screens.secondary
-    draw(screen, r, c=c, fill=fill)
+
+    # Update flip flag handling
+    flip = if r.w < 0 && r.h < 0
+        SDL_FLIP_BOTH
+    elseif r.h < 0
+        SDL_FLIP_VERTICAL
+    elseif r.w < 0
+        SDL_FLIP_HORIZONTAL
+    else
+        SDL_FLIP_NONE
+    end
+
+    draw(screen, r, c=c, fill=fill, flip=flip)
 end
 
 function Base.setproperty!(s::Actor, p::Symbol, x)
