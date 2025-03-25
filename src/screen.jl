@@ -80,18 +80,29 @@ to_ARGB(c::Colorant) = ARGB(c)
 abstract type Geom end
 
 mutable struct Rect <: Geom
-    x::Int
-    y::Int
-    w::Int
-    h::Int
+    x::Int32
+    y::Int32
+    w::Int32
+    h::Int32
 end
 
 mutable struct MoveableRect
     position::Rect
+    x::Int32
+    y::Int32
+    w::Int32
+    h::Int32
     current_screen::UInt32
 
-    function MoveableRect(x::Int, y::Int, w::Int, h::Int, current_screen::Int)
-        new(Rect(Int(x), Int(y), Int(w), Int(h)), UInt32(current_screen))
+    function MoveableRect(x, y, w, h, current_screen)
+        new(
+            Rect(Int32(x), Int32(y), Int32(w), Int32(h)),
+            Int32(x),
+            Int32(y),
+            Int32(w),
+            Int32(h),
+            UInt32(current_screen)
+        )
     end
 end
 
@@ -149,11 +160,11 @@ Base.convert(T::Type{SDL_Rect}, r::Rect) = SDL_Rect(Cint.((r.x, r.y, r.w, r.h)).
 
 function Base.setproperty!(s::Geom, p::Symbol, x)
     if hasfield(typeof(s), p)
-        setfield!(s, p, Int(round(x)))
+        setfield!(s, p, Int32(round(x)))
     else
         v = getPos(Val(p), s, x)
-        setfield!(s, :x, Int(round(v[1])))
-        setfield!(s, :y, Int(round(v[2])))
+        setfield!(s, :x, Int32(round(v[1])))
+        setfield!(s, :y, Int32(round(v[2])))
     end
 end
 
@@ -300,6 +311,7 @@ function draw(screens::GameScreens, mr::MoveableRect; c::Colorant=colorant"black
     screen = screens.active_screen == UInt32(1) ? screens.primary : screens.secondary
     draw(screen, mr; c=c, fill=fill)
 end
+
 
 function draw(s::Screen, mr::MoveableRect; c::Colorant=colorant"black", fill=false)
     draw(s, mr.position, c=c, fill=fill)

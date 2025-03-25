@@ -35,7 +35,7 @@ end
     label::String
     surfaces::Union{Vector{Ptr{SDL_Surface}}, Nothing}
     textures::Union{Vector{Ptr{SDL_Texture}}, Nothing}
-    position::MutableRect = MutableRect(0, 0, 0, 0)
+    position::MoveableRect = MoveableRect(0, 0, 0, 0, 1)
     scale::Vector{Float32} = [1.0, 1.0]
     rotate_center::Union{Vector{Int32},Ptr{Nothing}} = C_NULL
     angle::Float64 = 0.0
@@ -45,7 +45,7 @@ end
     z::Int32 = Int32(0)
 
     # Add constructor with type conversions
-    function Actor(id::String, label::String, surfaces, textures, position::MutableRect, 
+    function Actor(id::String, label::String, surfaces, textures, position::MoveableRect, 
                   scale::Vector, rotate_center, angle::Number, alpha::Number, 
                   data::Dict{Symbol,Any}, current_screen=UInt32(1), z::Int32=Int32(0)
                   )
@@ -75,7 +75,7 @@ function TextActor(text::String, font_path::String; id=randstring(10), x = 0, y 
     end
     
     surface = unsafe_load(fg)
-    w, h = Int32(surface.w), Int32(surface.h)
+    w, h = surface.w, surface.h
     fg = if outline_size > 0
         TTF_SetFontOutline(outline_font, Int32(outline_size))
         bg = TTF_RenderText_Blended_Wrapped(outline_font, text, SDL_Color(outline_color...), UInt32(wrap_length))
@@ -88,7 +88,7 @@ function TextActor(text::String, font_path::String; id=randstring(10), x = 0, y 
     TTF_CloseFont(text_font)
     TTF_CloseFont(outline_font)
     
-    r = MutableRect(x, y, w, h)
+    r = MoveableRect(x, y, w, h, 1)
 
     a = Actor(
         id,
@@ -187,7 +187,7 @@ function ImageMemActor(img_name::String, img; x=0, y=0, kv...)
         error("Failed to create surface: $error_msg")
     end
 
-    r = MutableRect(x, y, w, h)
+    r = MoveableRect(x, y, w, h, 1)
     a = Actor(
         randstring(10),
         img_name,
@@ -262,7 +262,7 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
     SDL_FreeSurface(surface)
     @debug "Image dimensions: $(w)x$(h)"
     
-    r = MutableRect(x, y, w, h)
+    r = MoveableRect(x, y, w, h, 1)
     a = Actor(
         id,
         name,
@@ -298,18 +298,21 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
         setproperty!(a, k, v)
     end
     
-    # Store reference to game screens for cleanup
+    #= Store reference to game screens for cleanup
     screens_ref = Ref{Union{GameScreens, Nothing}}(nothing)
     
     # Register finalizer to clean up resources
     finalizer(a) do x
+        
         @debug "Cleaning up resources for actor $(x.id)"
+        
         if screens_ref[] !== nothing
             renderers = [
                 screens_ref[].primary.renderer,
                 screens_ref[].secondary.renderer
             ]
             cleanup_actor_resources(TEXTURE_MANAGER, x.id, renderers)
+            
             for fn in x.data[:img_fns]
                 for renderer in renderers
                     release_texture(TEXTURE_MANAGER, renderer, fn)
@@ -322,6 +325,7 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
     schedule_once(() -> begin
         screens_ref[] = game[].screens
     end, 0.0)
+    =#
     
     @debug "Successfully created ImageFileActor: $name with id: $id"
     return a

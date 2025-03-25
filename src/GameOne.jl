@@ -50,8 +50,9 @@ import SimpleDirectMediaLayer
 const SDL2 = SimpleDirectMediaLayer.LibSDL2
 global const BackendPlatformUserData = Ref{Any}(C_NULL)
 
+@reexport import SimpleDirectMediaLayer: TTF_Init
 # GameOne exports
-export SDL2, BackendPlatformUserData
+export SDL2, BackendPlatformUserData, initSDL, SDL_Quit
 export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
     window_paused, getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL,
@@ -64,18 +65,6 @@ export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init, ImGui_Imp
     ImGui_ImplSDLRenderer2_Shutdown#, ImGui_ImplSDL2_Shutdown   
 
 
-# custom mutable Rect type
-@kwdef mutable struct MutableRect
-    x::Integer = Int32(0)
-    y::Integer = Int32(0)
-    w::Integer = Int32(0)
-    h::Integer = Int32(0)
-end
-
-Base.convert(::Type{SDL_Rect}, mrect::MutableRect) = SDL_Rect(Int32(mrect.x), Int32(mrect.y), Int32(mrect.w), Int32(mrect.h))
-Base.convert(::Type{MutableRect}, sdlrect::SDL_Rect) = MutableRect(Int32(sdlrect.x), Int32(sdlrect.y), Int32(sdlrect.w), Int32(sdlrect.h))
-Base.convert(::Type{Vector{Float32}}, v::Vector{Float64}) = Float32.(v)
-
 # ImGuiSDLBackend
 include("imgui_impl_sdl2.jl")
 include("imgui_impl_sdlrenderer2.jl")
@@ -84,6 +73,12 @@ include("keyboard.jl")
 include("timer.jl")
 include("window.jl")
 include("screen.jl")
+
+
+Base.convert(::Type{SDL_Rect}, mrect::MoveableRect) = SDL_Rect(Int32(mrect.x), Int32(mrect.y), Int32(mrect.w), Int32(mrect.h))
+Base.convert(::Type{MoveableRect}, sdlrect::SDL_Rect) = MoveableRect(Int32(sdlrect.x), Int32(sdlrect.y), Int32(sdlrect.w), Int32(sdlrect.h), 1)
+Base.convert(::Type{Vector{Float32}}, v::Vector{Float64}) = Float32.(v)
+Base.convert(::Type{Vector{Int32}}, v::Vector{Int64}) = Int32.(v)
 
 mutable struct Game
     screens::GameScreens
@@ -152,7 +147,6 @@ SDL2.SDL_GetVersion(ver)
 global sdlVersion = string(unsafe_load(ver).major, ".", unsafe_load(ver).minor, ".", unsafe_load(ver).patch)
 println("SDL version: ", sdlVersion)
 sdlVersion = parse(Int32, replace(sdlVersion, "." => ""))
-
 
 function mainloop(g::Game)
     start!(timer)
@@ -341,12 +335,12 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
     g.onmouseup_function = getfn(g.game_module, :on_mouse_up, 4)
     g.onmousedown_function = getfn(g.game_module, :on_mouse_down, 4)
     g.onmousemove_function = getfn(g.game_module, :on_mouse_move, 3)
-    g.state = Vector{Dict{String,Dict}}([Dict("imgui"=>Dict("username"=>"", "password"=>""))])
+    g.state = Vector{Dict{String,Dict}}([Dict("imgui"=>Dict("username"=>""))])
     g.screens = initscreens(g.game_module)
     g.imgui_settings = Dict(
         "menu_active"=>true,
-        "show_login"=>false,
-        "show_menu"=>false,
+        "show_login"=>true,
+        "show_menu"=>true,
         "console_history"=>Vector{String}(),
         "io"=>CImGui.GetIO()
     )

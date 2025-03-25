@@ -1,13 +1,7 @@
-ENV["JULIA_DEBUG"] = "GameOne"
 
-pwd()
-
-#cd("examples")
-#using Pkg
-#Pkg.activate(".")
-
-#using Images
 using GameOne
+
+TTF_Init() # Initialize SDL_ttf
 
 # Primary window dimensions
 const PRIMARY_WIDTH = 800
@@ -87,12 +81,12 @@ function imgui(g::Game)
 end
 
 # Create an `ImageActor` object from a PNG file
-alien_image_path = joinpath("examples", "images", "alien.png")
+alien_image_path = joinpath(@__DIR__,"images", "alien.png")
 @assert isfile(alien_image_path) "Alien image not found at: $alien_image_path"
 alien = ImageFileActor("alien", [alien_image_path], current_screen=UInt32(1))  # 1 for primary
 @debug "Created alien actor with image: $alien_image_path"
-alien.x = PRIMARY_WIDTH ÷ 2  # Start in the middle of the screen
-alien.y = PRIMARY_HEIGHT ÷ 2  # Start in the middle of the screen
+alien.position.x = PRIMARY_WIDTH ÷ 2  # Start in the middle of the screen
+alien.position.y = PRIMARY_HEIGHT ÷ 2  # Start in the middle of the screen
 
 # sound effects
 eep_wav = joinpath(@__DIR__, "sounds", "283201-RubberBallBouncing7.wav")
@@ -102,19 +96,21 @@ harp = joinpath(@__DIR__, "sounds", "harp-glissando-descending-short-103886.mp3"
 # Create text actor with dual screen support
 label = TextActor(
     "this is some example text",
-    "$(@__DIR__)/fonts/OpenSans-Regular.ttf",
+    joinpath(@__DIR__,"fonts","OpenSans-Regular.ttf"),
     outline_size=1,
     pt_size=24,
     current_screen=UInt32(1)  # 1 for primary
 )
-label.x = PRIMARY_WIDTH ÷ 4  # Start at 1/4 of screen width
-label.y = PRIMARY_HEIGHT ÷ 4  # Start at 1/4 of screen height
+label.position.x = PRIMARY_WIDTH ÷ 4  # Start at 1/4 of screen width
+label.position.y = PRIMARY_HEIGHT ÷ 4  # Start at 1/4 of screen height
+#= 
+=#
 
 # Load a custom animation with dual screen support
 anim_fns = ["$(@__DIR__)/images/FireElem1/Visible$i.png" for i in 0:7]
 anim = ImageFileActor("fireelem", anim_fns, current_screen=UInt32(1), anim=true)  # Set anim=true
-anim.x = PRIMARY_WIDTH ÷ 3  # Start at 1/3 of screen width
-anim.y = PRIMARY_HEIGHT ÷ 3  # Start at 1/3 of screen height
+anim.position.x = PRIMARY_WIDTH ÷ 3  # Start at 1/3 of screen width
+anim.position.y = PRIMARY_HEIGHT ÷ 3  # Start at 1/3 of screen height
 
 # Initialize velocities for all actors globally
 global dx_alien = 2  # Alien velocity
@@ -131,21 +127,21 @@ play_music("$(@__DIR__)/examples/music/radetzky_ogg")
 # The draw function is called by the framework
 function draw(g::Game)    
     # Draw existing actors on their respective screens
-    draw(g.screens, alien)
-    draw(g.screens, label)
-    draw(g.screens, anim)
+    GameOne.draw(g.screens, alien)
+    GameOne.draw(g.screens, label)
+    GameOne.draw(g.screens, anim)
     
     # Draw rectangles on their respective screens
     if red_rect.current_screen == UInt32(1)
-        draw(g.screens.primary, red_rect; c=colorant"red", fill=false)
+        GameOne.draw(g.screens.primary, red_rect; c=colorant"red", fill=false)
     else
-        draw(g.screens.secondary, red_rect; c=colorant"red", fill=true)
+        GameOne.draw(g.screens.secondary, red_rect; c=colorant"red", fill=true)
     end
     
     if blue_rect.current_screen == UInt32(1)
-        draw(g.screens.primary, blue_rect; c=colorant"blue", fill=true)
+        GameOne.draw(g.screens.primary, blue_rect; c=colorant"blue", fill=true)
     else
-        draw(g.screens.secondary, blue_rect; c=colorant"blue", fill=false)
+        GameOne.draw(g.screens.secondary, blue_rect; c=colorant"blue", fill=false)
     end
 end
 
@@ -293,3 +289,5 @@ function update(g::Game)
     end
 end
 
+# Optionally, add cleanup at the end
+atexit(TTF_Quit)
