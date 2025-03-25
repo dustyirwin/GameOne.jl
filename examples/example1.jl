@@ -1,4 +1,6 @@
 
+module Example1
+
 using GameOne
 
 TTF_Init() # Initialize SDL_ttf
@@ -291,3 +293,5 @@ end
 
 # Optionally, add cleanup at the end
 atexit(TTF_Quit)
+
+end # module Example1

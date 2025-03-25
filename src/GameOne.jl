@@ -269,13 +269,13 @@ getMouseMoveY(e) = bitcat(Int32, e[28:-1:25])
 
     The zero argument method should be used from the game source file itself when is being executed directly
 """
-function rungame(jlf::String, external::Bool=true; socket::Union{TCPSocket,Nothing}=nothing)
+function rungame(jlf::String, external::Bool=true, mod::Module=Main; socket::Union{TCPSocket,Nothing}=nothing)
     # The optional argument `external` is used to determine whether the zero or single argument version 
     # has been called. End users should never have to use this argument directly. 
     # external=true means rungame has been called from the REPl or run script, with the game file as input
     # external=false means rungame has been called at the bottom of the game file itself
     global playing, paused
-    g = initgame(jlf::String, external; socket=socket)
+    g = initgame(jlf::String, external, mod; socket=socket)
     try
         playing[] = paused[] = true
         mainloop(g)
@@ -292,7 +292,7 @@ function rungame()
     rungame(abspath(PROGRAM_FILE), false)
 end
 
-function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=nothing)
+function initgame(jlf::String, external::Bool, mod::Module=Main; socket::Union{TCPSocket,Nothing}=nothing)
     if !isfile(jlf)
         ArgumentError("File not found: $jlf")
     end
@@ -317,7 +317,7 @@ function initgame(jlf::String, external::Bool; socket::Union{TCPSocket,Nothing}=
         g.game_module = game_module
         g.location = dirname(jlf)
     else
-        g.game_module = Main
+        g.game_module = mod
         g.location = pwd()
     end
 
