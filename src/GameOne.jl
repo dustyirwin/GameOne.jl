@@ -275,7 +275,7 @@ function rungame(jlf::String, external::Bool=true; mod::Module=Main, socket::Uni
     # external=true means rungame has been called from the REPl or run script, with the game file as input
     # external=false means rungame has been called at the bottom of the game file itself
     global playing, paused
-    g = initgame(jlf::String, external, mod; socket=socket)
+    g = initgame(jlf::String, external; mod=mod, socket=socket)
     try
         playing[] = paused[] = true
         mainloop(g)
@@ -292,7 +292,7 @@ function rungame()
     rungame(abspath(PROGRAM_FILE), false)
 end
 
-function initgame(jlf::String, external::Bool, mod::Module=Main; socket::Union{TCPSocket,Nothing}=nothing)
+function initgame(jlf::String, external::Bool; mod::Module=Main, socket::Union{TCPSocket,Nothing}=nothing)
     if !isfile(jlf)
         ArgumentError("File not found: $jlf")
     end

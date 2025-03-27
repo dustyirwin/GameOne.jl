@@ -1,5 +1,5 @@
 
-module Example1
+#module Example1
 
 using GameOne
 
@@ -295,4 +295,4 @@ end
 # Optionally, add cleanup at the end
 atexit(TTF_Quit)
 
-end # module Example1
+#end # module Example1
