@@ -4,6 +4,7 @@ module Example1
 using GameOne
 
 TTF_Init() # Initialize SDL_ttf
+Mix_Init(MIX_INIT_MP3) # Initialize SDL_mixer
 
 # Primary window dimensions
 const PRIMARY_WIDTH = 800
@@ -59,7 +60,7 @@ function imgui(g::Game)
             # Create a proper window with Begin/End
             if CImGui.Begin("Debug Window")
                 # Demo window toggle
-                show_demo = Ref{Bool}(false)
+                show_demo = Ref{Bool}(true)
                 if CImGui.Button("Demo")
                     show_demo[] = !show_demo[]
                 end
@@ -109,7 +110,7 @@ label.position.y = PRIMARY_HEIGHT ÷ 4  # Start at 1/4 of screen height
 =#
 
 # Load a custom animation with dual screen support
-anim_fns = ["$(@__DIR__)/images/FireElem1/Visible$i.png" for i in 0:7]
+anim_fns = [joinpath(@__DIR__,"images","FireElem1","Visible$i.png") for i in 0:7]
 anim = ImageFileActor("fireelem", anim_fns, current_screen=UInt32(1), anim=true)  # Set anim=true
 anim.position.x = PRIMARY_WIDTH ÷ 3  # Start at 1/3 of screen width
 anim.position.y = PRIMARY_HEIGHT ÷ 3  # Start at 1/3 of screen height
@@ -124,7 +125,7 @@ global dy_anim = 2
 
 # Start playing background music
 
-play_music("$(@__DIR__)/examples/music/radetzky_ogg")
+play_music(joinpath(@__DIR__,"music","radetzky.ogg"))
 
 # The draw function is called by the framework
 function draw(g::Game)    

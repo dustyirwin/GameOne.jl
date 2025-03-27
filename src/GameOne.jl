@@ -50,14 +50,14 @@ import SimpleDirectMediaLayer
 const SDL2 = SimpleDirectMediaLayer.LibSDL2
 global const BackendPlatformUserData = Ref{Any}(C_NULL)
 
-@reexport import SimpleDirectMediaLayer: TTF_Init
+@reexport using SimpleDirectMediaLayer
 # GameOne exports
 export SDL2, BackendPlatformUserData, initSDL, SDL_Quit
 export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
     window_paused, getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL,
     image_surface, next_frame!, cleanup_old_textures!
-export Game, Screen, GameScreens, Window, Keys, KeyMods, MouseButton
+export Game, Screen, GameScreens, Window, Keys, KeyMods, MouseButton, MIX_DEFAULT_FORMAT
 export Actor, TextActor, ImageFileActor, ImageMemActor 
 export Line, Rect, Triangle, Circle, MoveableRect
 export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init, ImGui_ImplSDLRenderer2_NewFrame, ImGui_ImplSDL2_NewFrame,
@@ -269,7 +269,7 @@ getMouseMoveY(e) = bitcat(Int32, e[28:-1:25])
 
     The zero argument method should be used from the game source file itself when is being executed directly
 """
-function rungame(jlf::String, external::Bool=true, mod::Module=Main; socket::Union{TCPSocket,Nothing}=nothing)
+function rungame(jlf::String, external::Bool=true; mod::Module=Main, socket::Union{TCPSocket,Nothing}=nothing)
     # The optional argument `external` is used to determine whether the zero or single argument version 
     # has been called. End users should never have to use this argument directly. 
     # external=true means rungame has been called from the REPl or run script, with the game file as input
