@@ -228,7 +228,7 @@ function ImageMemActor(img_name::String, img; x=0, y=0, kv...)
 end
 
 function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16); x=0, y=0, 
-    frame_delays=[], anim=false, anim_dir="", current_screen=UInt32(1), kv...)
+    frame_delays=[], anim=false, webp_path="", current_screen=UInt32(1), kv...)
     
     @debug "Creating ImageFileActor '$name' with $(length(img_fns)) frames"
     
@@ -243,14 +243,14 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
     frame_delays = isempty(frame_delays) ? [ Millisecond(100) for _ in 1:n ] : frame_delays
     
     # Create a unique animation name for this instance
-    unique_anim_name = "$(name)_$(id)"
+    #unique_anim_name = "$(name)_$(id)"
     
     # Register the animation with the texture manager using the unique name
-    if isempty(anim_dir)
-        register_animation(TEXTURE_MANAGER, unique_anim_name, img_fns)
-    else
-        register_animation(TEXTURE_MANAGER, unique_anim_name, readdir(anim_dir))
-    end
+    #if isempty(anim_dir)
+    register_animation(TEXTURE_MANAGER, name, img_fns)
+    #else
+    #    register_animation(TEXTURE_MANAGER, name, img_fns)
+    #end
     
     # Load first frame to get dimensions
     @debug "Loading first frame to get dimensions: $(img_fns[1])"
@@ -280,7 +280,7 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
             :anim => anim,
             :label => name,
             :img_fns => img_fns,
-            :anim_dir => anim_dir,
+            :webp_path => webp_path,
             :sz => [w, h],
             :fade_in => false,
             :fade_out => false,
@@ -293,7 +293,7 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
             :mouse_offset => Int32[0, 0],
             :type => "imagefile",
             :current_screen => current_screen,
-            :animation_name => unique_anim_name  # Use unique animation name
+            :animation_name => name  # Use unique animation name
         )
     )
 
