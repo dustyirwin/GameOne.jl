@@ -228,7 +228,7 @@ function ImageMemActor(img_name::String, img; x=0, y=0, kv...)
 end
 
 function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16); x=0, y=0, 
-    frame_delays=[], anim=false, webp_path="", current_screen=UInt32(1), kv...)
+    frame_delays=[], anim=false, anim_dir="", current_screen=UInt32(1), kv...)
     
     @debug "Creating ImageFileActor '$name' with $(length(img_fns)) frames"
     
@@ -242,11 +242,14 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
     n = Int32.(length(img_fns))
     frame_delays = isempty(frame_delays) ? [ Millisecond(100) for _ in 1:n ] : frame_delays
     
-    # Register the animation with the texture manager using the actor's name
-    if isempty(webp_path)
-        register_animation(TEXTURE_MANAGER, name, img_fns)
+    # Create a unique animation name for this instance
+    unique_anim_name = "$(name)_$(id)"
+    
+    # Register the animation with the texture manager using the unique name
+    if isempty(anim_dir)
+        register_animation(TEXTURE_MANAGER, unique_anim_name, img_fns)
     else
-        register_animation(TEXTURE_MANAGER, name, readdir(webp_path))
+        register_animation(TEXTURE_MANAGER, unique_anim_name, readdir(anim_dir))
     end
     
     # Load first frame to get dimensions
@@ -277,7 +280,7 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
             :anim => anim,
             :label => name,
             :img_fns => img_fns,
-            :webp_path => webp_path,
+            :anim_dir => anim_dir,
             :sz => [w, h],
             :fade_in => false,
             :fade_out => false,
@@ -290,42 +293,13 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
             :mouse_offset => Int32[0, 0],
             :type => "imagefile",
             :current_screen => current_screen,
-            :animation_name => name  # Use the actor's name consistently for animation
+            :animation_name => unique_anim_name  # Use unique animation name
         )
     )
 
     for (k, v) in kv
         setproperty!(a, k, v)
     end
-    
-    #= Store reference to game screens for cleanup
-    screens_ref = Ref{Union{GameScreens, Nothing}}(nothing)
-    
-    # Register finalizer to clean up resources
-    finalizer(a) do x
-        
-        @debug "Cleaning up resources for actor $(x.id)"
-        
-        if screens_ref[] !== nothing
-            renderers = [
-                screens_ref[].primary.renderer,
-                screens_ref[].secondary.renderer
-            ]
-            cleanup_actor_resources(TEXTURE_MANAGER, x.id, renderers)
-            
-            for fn in x.data[:img_fns]
-                for renderer in renderers
-                    release_texture(TEXTURE_MANAGER, renderer, fn)
-                end
-            end
-        end
-    end
-    
-    # Update screens reference when game is initialized
-    schedule_once(() -> begin
-        screens_ref[] = game[].screens
-    end, 0.0)
-    =#
     
     @debug "Successfully created ImageFileActor: $name with id: $id"
     return a
@@ -638,8 +612,38 @@ function get_animation_frame(manager::TextureManager, renderer::Ptr{SDL2.SDL_Ren
     current_frame = manager.frame_indices[key]
     path = frame_paths[current_frame]
     
+    # Create a unique texture key that includes the renderer
+    texture_key = (renderer, path)
+    
+    # If we already have this texture for this renderer, return it
+    if haskey(manager.textures, texture_key)
+        @debug "Found existing texture for $path on renderer $renderer"
+        manager.ref_counts[texture_key] += 1
+        return manager.textures[texture_key]
+    end
+    
+    # Otherwise create a new texture for this renderer
+    @debug "Creating new texture for $path on renderer $renderer"
+    surface = IMG_Load(path)
+    if surface == C_NULL
+        error("Failed to load image $path: $(unsafe_string(SDL_GetError()))")
+    end
+    
+    texture = SDL_CreateTextureFromSurface(renderer, surface)
+    SDL_FreeSurface(surface)
+    
+    if texture == C_NULL
+        error("Failed to create texture from $path: $(unsafe_string(SDL_GetError()))")
+    end
+    
+    # Set texture blend mode
+    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND)
+    
+    manager.textures[texture_key] = texture
+    manager.ref_counts[texture_key] = 1
+    
     @debug "Using frame $current_frame (path: $path) for actor $actor_id"
-    return get_or_load_texture(manager, renderer, path)
+    return texture
 end
 
 function advance_animation_frame(manager::TextureManager, actor_id::String, anim_name::String)

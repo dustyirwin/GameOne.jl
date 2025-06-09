@@ -269,13 +269,13 @@ getMouseMoveY(e) = bitcat(Int32, e[28:-1:25])
 
     The zero argument method should be used from the game source file itself when is being executed directly
 """
-function rungame(jlf::String, external::Bool=true; mod::Module=Main, socket::Union{TCPSocket,Nothing}=nothing)
+function rungame(jlf::String, external::Bool=true; game_mods::Dict{String,Module}=Dict("Main"=>Main), socket::Union{TCPSocket,Nothing}=nothing)
     # The optional argument `external` is used to determine whether the zero or single argument version 
     # has been called. End users should never have to use this argument directly. 
     # external=true means rungame has been called from the REPl or run script, with the game file as input
     # external=false means rungame has been called at the bottom of the game file itself
     global playing, paused
-    g = initgame(jlf::String, external; mod=mod, socket=socket)
+    g = initgame(jlf::String, external; game_mods=game_mods, socket=socket)
     try
         playing[] = paused[] = true
         mainloop(g)
@@ -292,18 +292,35 @@ function rungame()
     rungame(abspath(PROGRAM_FILE), false)
 end
 
-function initgame(jlf::String, external::Bool; mod::Module=Main, socket::Union{TCPSocket,Nothing}=nothing)
-    if !isfile(jlf)
+function initgame(jlf::String, external::Bool; game_mods::Dict{String,Module}=Dict(), socket::Union{TCPSocket,Nothing}=nothing)
+    if !isfile(jlf) && external
         ArgumentError("File not found: $jlf")
     end
 
-    # setting up hints for SDL to run on Mac
-    SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal")
-    SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1")
-    SDL_SetHint(SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0")
+    # Setting render hints with proper SDL2 prefix
+    if Sys.isapple()
+        SDL_SetHint(SDL2.SDL_HINT_RENDER_DRIVER, "metal")
+    elseif Sys.iswindows()
+        SDL_SetHint(SDL2.SDL_HINT_RENDER_DRIVER, "d3d")
+    else
+        SDL_SetHint(SDL2.SDL_HINT_RENDER_DRIVER, "opengl")
+    end
 
-    name = titlecase(replace(basename(jlf), ".jl" => ""))
+    SDL_SetHint(SDL2.SDL_HINT_RENDER_SCALE_QUALITY, "best")
+    SDL_SetHint(SDL2.SDL_HINT_RENDER_VSYNC, "1")
+
+    name = replace(basename(jlf), ".jl" => "")
+    
+    # init SDL
     initSDL()
+
+    # init TTF 
+    TTF_Init()
+
+    # Initialize mixer
+    Mix_Init(MIX_INIT_MP3 | MIX_INIT_OGG)
+    Mix_OpenAudio(44100, SDL2.MIX_DEFAULT_FORMAT, 2, 2048)
+
     game[] = Game()
     scheduler[] = Scheduler()
     g = game[]
@@ -317,7 +334,7 @@ function initgame(jlf::String, external::Bool; mod::Module=Main, socket::Union{T
         g.game_module = game_module
         g.location = dirname(jlf)
     else
-        g.game_module = mod
+        g.game_module = game_mods[name]
         g.location = pwd()
     end
 
