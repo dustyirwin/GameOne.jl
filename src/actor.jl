@@ -131,6 +131,9 @@ function update_text_actor!(a::Actor, new_text::String; font_path=a.data[:font_p
     font_color = a.data[:font_color], outline_color = a.data[:outline_color], wrap_length = a.data[:wrap_length],
     outline_size = a.data[:outline_size])
 
+    # Clean up old cached textures for this actor
+    cleanup_legacy_actor_textures(TEXTURE_MANAGER, a.id)
+
     font = TTF_OpenFont(font_path, pt_size)
     outline_font = TTF_OpenFont(font_path, pt_size)
     
