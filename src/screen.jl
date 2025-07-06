@@ -308,7 +308,15 @@ function draw(s::Screen, r::Rect; c::Colorant=colorant"black", fill=false)
 end
 
 function draw(screens::GameScreens, mr::MoveableRect; c::Colorant=colorant"black", fill=false)
-    screen = screens.active_screen == UInt32(1) ? screens.primary : screens.secondary
+    # Handle both logical screen IDs (1, 2) and actual SDL window IDs
+    screen = if mr.current_screen == UInt32(1) || mr.current_screen == screens.primary.window_id
+        screens.primary
+    elseif mr.current_screen == UInt32(2) || mr.current_screen == screens.secondary.window_id
+        screens.secondary
+    else
+        # Default to primary if screen ID doesn't match
+        screens.primary
+    end
     draw(screen, mr; c=c, fill=fill)
 end
 

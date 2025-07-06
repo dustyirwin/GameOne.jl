@@ -324,8 +324,17 @@ function draw(screens::GameScreens, a::Actor; kv...)
     @debug "Drawing actor $(a.label) (id: $(a.id)) on screen $(a.current_screen)"
     
     # Determine which screen to draw on based on actor's current_screen
-    screen = a.current_screen == 1 ? screens.primary : screens.secondary
-    
+    # Handle both logical screen IDs (1, 2) and actual SDL window IDs
+    screen = if a.current_screen == UInt32(1) || a.current_screen == screens.primary.window_id
+        screens.primary
+    elseif a.current_screen == UInt32(2) || a.current_screen == screens.secondary.window_id
+        screens.secondary
+    else
+        # Default to primary if screen ID doesn't match
+        @warn "Unknown screen ID $(a.current_screen) for actor $(a.label), defaulting to primary"
+        screens.primary
+    end
+    @debug "Using screen $(screen.window_id) for actor $(a.label)"
     # Get the current texture
     local texture
     if haskey(a.data, :animation_name) && a.data[:anim]  # Only use animation system if :anim is true
@@ -424,7 +433,15 @@ end
 
 # custom Rect draw function (for 2px card border)
 function draw(screens::GameScreens, r::Rect; fill=true, c::Colorant=colorant"violet")
-    screen = r.current_screen == 1 ? screens.primary : screens.secondary
+    # Handle both logical screen IDs (1, 2) and actual SDL window IDs
+    screen = if r.current_screen == UInt32(1) || r.current_screen == screens.primary.window_id
+        screens.primary
+    elseif r.current_screen == UInt32(2) || r.current_screen == screens.secondary.window_id
+        screens.secondary
+    else
+        # Default to primary if screen ID doesn't match
+        screens.primary
+    end
 
     # Update flip flag handling
     flip = if r.w < 0 && r.h < 0
