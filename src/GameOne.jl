@@ -314,13 +314,6 @@ function initgame(jlf::String, external::Bool; game_mods::Dict{String,Module}=Di
     # init SDL
     initSDL()
 
-    # init TTF 
-    TTF_Init()
-
-    # Initialize mixer
-    Mix_Init(MIX_INIT_MP3 | MIX_INIT_OGG)
-    Mix_OpenAudio(44100, SDL2.MIX_DEFAULT_FORMAT, 2, 2048)
-
     game[] = Game()
     scheduler[] = Scheduler()
     g = game[]

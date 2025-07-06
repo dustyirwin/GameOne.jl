@@ -257,6 +257,7 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
     surface = IMG_Load(img_fns[1])
     if surface == C_NULL
         error("Failed to load image $(img_fns[1]): $(unsafe_string(SDL_GetError()))")
+        return nothing
     end
     
     # Get dimensions from first surface
@@ -337,43 +338,46 @@ function draw(screens::GameScreens, a::Actor; kv...)
         path = a.data[:img_fns][1]
         texture = get_or_load_texture(TEXTURE_MANAGER, screen.renderer, path)
     else
-        # Legacy non-animated actors
+        # Legacy non-animated actors - use per-renderer texture creation
         @debug "Handling legacy actor $(a.label)"
-        if isempty(a.textures)
+        
+        # For legacy actors, we need to create textures per renderer
+        # Check if we have a cached texture for this specific renderer
+        texture_key = (screen.renderer, "legacy_$(a.id)")
+        
+        if haskey(TEXTURE_MANAGER.textures, texture_key)
+            @debug "Found existing legacy texture for $(a.label) on renderer $(screen.renderer)"
+            texture = TEXTURE_MANAGER.textures[texture_key]
+        else
+            # Need to create texture for this renderer
             if a.surfaces === nothing || isempty(a.surfaces)
                 @error "No surfaces available for actor $(a.label)"
                 return
             end
             
-            @debug "Creating texture for legacy actor $(a.label)"
-            for (i, sf) in enumerate(a.surfaces)
-                if sf == C_NULL
-                    @error "Surface $i is NULL for actor $(a.label)"
-                    continue
-                end
-                
-                tx = SDL_CreateTextureFromSurface(screen.renderer, sf)
-                if tx == C_NULL
-                    error_msg = unsafe_string(SDL_GetError())
-                    @error "Failed to create texture $i for $(a.label): $error_msg"
-                    continue
-                end
-                push!(a.textures, tx)
-                @debug "Created texture $i for legacy actor $(a.label)"
+            @debug "Creating new legacy texture for $(a.label) on renderer $(screen.renderer)"
+            sf = a.surfaces[begin]
+            if sf == C_NULL
+                @error "Surface is NULL for actor $(a.label)"
+                return
             end
             
-            for sf in a.surfaces
-                SDL_FreeSurface(sf)
+            texture = SDL_CreateTextureFromSurface(screen.renderer, sf)
+            if texture == C_NULL
+                error_msg = unsafe_string(SDL_GetError())
+                @error "Failed to create texture for $(a.label): $error_msg"
+                return
             end
-            a.surfaces = []
+            
+            # Set texture blend mode
+            SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND)
+            
+            # Cache the texture in the texture manager
+            TEXTURE_MANAGER.textures[texture_key] = texture
+            TEXTURE_MANAGER.ref_counts[texture_key] = 1
+            
+            @debug "Created and cached legacy texture for $(a.label) on renderer $(screen.renderer)"
         end
-        
-        if isempty(a.textures)
-            @error "No valid textures for actor $(a.label)"
-            return
-        end
-        
-        texture = a.textures[begin]
     end
     
     if texture == C_NULL
@@ -561,12 +565,14 @@ function get_or_load_texture(manager::TextureManager, renderer::Ptr{SDL2.SDL_Ren
     
     @debug "Loading new texture for $path on renderer $renderer"
     if !isfile(path)
-        error("Image file not found: $path")
+        @error "Image file not found: $path"
+        return C_NULL
     end
     
     surface = IMG_Load(path)
     if surface == C_NULL
-        error("Failed to load image $path: $(unsafe_string(SDL_GetError()))")
+        @error "Failed to load image $path: $(unsafe_string(SDL_GetError()))"
+        return C_NULL
     end
     
     @debug "Created surface for $path"
@@ -577,6 +583,7 @@ function get_or_load_texture(manager::TextureManager, renderer::Ptr{SDL2.SDL_Ren
     
     if texture == C_NULL
         error("Failed to create texture from $path: $(unsafe_string(SDL_GetError()))")
+        return C_NULL
     end
     
     # Set texture blend mode
@@ -598,7 +605,8 @@ function get_animation_frame(manager::TextureManager, renderer::Ptr{SDL2.SDL_Ren
     @debug "Getting animation frame for actor $actor_id, animation $anim_name"
     
     if !haskey(manager.animations, anim_name)
-        error("Animation '$anim_name' not found in texture manager")
+        @error "Animation '$anim_name' not found in texture manager"
+        return C_NULL
     end
     
     frame_paths = manager.animations[anim_name]
@@ -626,14 +634,16 @@ function get_animation_frame(manager::TextureManager, renderer::Ptr{SDL2.SDL_Ren
     @debug "Creating new texture for $path on renderer $renderer"
     surface = IMG_Load(path)
     if surface == C_NULL
-        error("Failed to load image $path: $(unsafe_string(SDL_GetError()))")
+        @error "Failed to load image $path: $(unsafe_string(SDL_GetError()))"
+        return C_NULL
     end
     
     texture = SDL_CreateTextureFromSurface(renderer, surface)
     SDL_FreeSurface(surface)
     
     if texture == C_NULL
-        error("Failed to create texture from $path: $(unsafe_string(SDL_GetError()))")
+        @error "Failed to create texture from $path: $(unsafe_string(SDL_GetError()))"
+        return C_NULL
     end
     
     # Set texture blend mode
@@ -683,12 +693,36 @@ function cleanup_actor_resources(manager::TextureManager, actor_id::String, rend
         end
     end
     
+    # Clean up legacy actor textures
+    cleanup_legacy_actor_textures(manager, actor_id)
+    
     # Clean up textures for all renderers
     for renderer in renderers
         for (key, _) in manager.textures
             if key[1] == renderer
                 release_texture(manager, renderer, key[2])
             end
+        end
+    end
+end
+
+# Cleanup function for legacy actors
+function cleanup_legacy_actor_textures(manager::TextureManager, actor_id::String)
+    # Find and remove all legacy textures for this actor
+    keys_to_remove = []
+    for (key, _) in manager.textures
+        if length(key) >= 2 && key[2] == "legacy_$(actor_id)"
+            push!(keys_to_remove, key)
+        end
+    end
+    
+    for key in keys_to_remove
+        if haskey(manager.textures, key)
+            SDL_DestroyTexture(manager.textures[key])
+            delete!(manager.textures, key)
+        end
+        if haskey(manager.ref_counts, key)
+            delete!(manager.ref_counts, key)
         end
     end
 end
