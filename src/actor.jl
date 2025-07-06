@@ -337,12 +337,6 @@ function draw(screens::GameScreens, a::Actor; kv...)
         @warn "Unknown screen ID $(a.current_screen) for actor $(a.label), defaulting to primary"
         screens.primary
     end
-    
-    # Extra debug logging for stage elements
-    if a.label in ["Hand", "Battlefield", "Library", "Exile", "Grave", "background"]
-        @info "Stage element $(a.label): current_screen=$(a.current_screen), drawing to screen $(screen.window_id)"
-    end
-    
     @debug "Using screen $(screen.window_id) for actor $(a.label)"
     # Get the current texture
     local texture
