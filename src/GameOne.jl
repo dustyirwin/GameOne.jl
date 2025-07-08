@@ -155,19 +155,31 @@ function mainloop(g::Game)
     primary_renderer = g.screens.primary.renderer
     secondary_renderer = g.screens.secondary.renderer
     
-    # Create ImGui context - only initialize once
-    ctx = g.imgui_settings["ctx"] = CImGui.CreateContext()
-    io = g.imgui_settings["io"] = CImGui.GetIO()
+    # Create separate ImGui contexts for each screen
+    primary_ctx = g.imgui_settings["primary_ctx"] = CImGui.CreateContext()
+    secondary_ctx = g.imgui_settings["secondary_ctx"] = CImGui.CreateContext()
     
-    io.BackendPlatformUserData = C_NULL
-    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable
-    #io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_ViewportsEnable 
-    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_NavEnableKeyboard
-    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_NavEnableGamepad
-    
-    # Initialize ImGui only for the primary window/renderer
+    # Initialize primary context
+    CImGui.SetCurrentContext(primary_ctx)
+    primary_io = g.imgui_settings["primary_io"] = CImGui.GetIO()
+    primary_io.ConfigFlags = unsafe_load(primary_io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable
+    primary_io.ConfigFlags = unsafe_load(primary_io.ConfigFlags) | CImGui.ImGuiConfigFlags_NavEnableKeyboard
+    primary_io.ConfigFlags = unsafe_load(primary_io.ConfigFlags) | CImGui.ImGuiConfigFlags_NavEnableGamepad
     ImGui_ImplSDL2_InitForSDLRenderer(g.screens.primary.window, primary_renderer)
     ImGui_ImplSDLRenderer2_Init(primary_renderer)
+    
+    # Initialize secondary context
+    CImGui.SetCurrentContext(secondary_ctx)
+    secondary_io = g.imgui_settings["secondary_io"] = CImGui.GetIO()
+    secondary_io.ConfigFlags = unsafe_load(secondary_io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable
+    secondary_io.ConfigFlags = unsafe_load(secondary_io.ConfigFlags) | CImGui.ImGuiConfigFlags_NavEnableKeyboard
+    secondary_io.ConfigFlags = unsafe_load(secondary_io.ConfigFlags) | CImGui.ImGuiConfigFlags_NavEnableGamepad
+    ImGui_ImplSDL2_InitForSDLRenderer(g.screens.secondary.window, secondary_renderer)
+    ImGui_ImplSDLRenderer2_Init(secondary_renderer)
+    
+    # Store context and renderer info
+    g.imgui_settings["primary_renderer"] = primary_renderer
+    g.imgui_settings["secondary_renderer"] = secondary_renderer
     
     # Demo window state
     show_demo_window = false
@@ -180,21 +192,47 @@ function mainloop(g::Game)
             
             while Bool(SDL_PollEvent(event_ref))
                 evt = event_ref[]
-                ImGui_ImplSDL2_ProcessEvent(evt, sdlVersion)
+                
+                # Process events for both ImGui contexts
+                # We need to route events to the appropriate context based on window focus
+                primary_window_id = SDL2.SDL_GetWindowID(g.screens.primary.window)
+                secondary_window_id = SDL2.SDL_GetWindowID(g.screens.secondary.window)
+                
+                # Route ImGui events to appropriate context
+                if evt.type == SDL2.SDL_WINDOWEVENT && evt.window.windowID == primary_window_id
+                    CImGui.SetCurrentContext(g.imgui_settings["primary_ctx"])
+                    ImGui_ImplSDL2_ProcessEvent(evt, sdlVersion)
+                elseif evt.type == SDL2.SDL_WINDOWEVENT && evt.window.windowID == secondary_window_id
+                    CImGui.SetCurrentContext(g.imgui_settings["secondary_ctx"])
+                    ImGui_ImplSDL2_ProcessEvent(evt, sdlVersion)
+                else
+                    # Process general events for both contexts
+                    CImGui.SetCurrentContext(g.imgui_settings["primary_ctx"])
+                    ImGui_ImplSDL2_ProcessEvent(evt, sdlVersion)
+                    CImGui.SetCurrentContext(g.imgui_settings["secondary_ctx"])
+                    ImGui_ImplSDL2_ProcessEvent(evt, sdlVersion)
+                end
+                
                 evt_ty = evt.type
                 
-                if evt_ty == SDL2.SDL_QUIT
+                # Handle window events specifically
+                if evt_ty == SDL2.SDL_WINDOWEVENT
+                    window_event = evt.window.event
+                    window_id = evt.window.windowID
+                    
+                    if window_event == SDL2.SDL_WINDOWEVENT_CLOSE
+                        if window_id == primary_window_id || window_id == secondary_window_id
+                            quit = true
+                            break
+                        end
+                    end
+                elseif evt_ty == SDL2.SDL_QUIT
                     quit = true
                     break
                 else
                     handleEvents!(g, evt, evt_ty)
                 end
             end
-
-            # Start ImGui frame
-            ImGui_ImplSDLRenderer2_NewFrame()
-            ImGui_ImplSDL2_NewFrame()
-            CImGui.NewFrame()
 
             # Clear both renderers
             SDL2.SDL_RenderClear(primary_renderer)
@@ -203,19 +241,48 @@ function mainloop(g::Game)
             if window_paused[] == 0
                 Base.invokelatest(g.render_function, g)
             end           
-            
+
             # Show demo window
             if show_demo_window
+                # Show demo on primary screen
+                CImGui.SetCurrentContext(g.imgui_settings["primary_ctx"])
                 CImGui.ShowDemoWindow(Ref(show_demo_window))
             end
             
-            # Run custom ImGui function
+            # RENDER PRIMARY SCREEN ImGui
+            CImGui.SetCurrentContext(g.imgui_settings["primary_ctx"])
+            ImGui_ImplSDLRenderer2_NewFrame()
+            ImGui_ImplSDL2_NewFrame()
+            CImGui.NewFrame()
+            
+            # Set context flag for primary screen
+            g.imgui_settings["current_screen"] = "primary"
+            
+            # Run custom ImGui function for primary screen
             Base.invokelatest(g.imgui_function, g)
             
-            # Render ImGui
+            # Render primary screen ImGui
             CImGui.Render()
-            ImGui_ImplSDLRenderer2_RenderDrawData(CImGui.GetDrawData(), primary_renderer)
-
+            primary_draw_data = CImGui.GetDrawData()
+            ImGui_ImplSDLRenderer2_RenderDrawData(primary_draw_data, primary_renderer)
+            
+            # RENDER SECONDARY SCREEN ImGui
+            CImGui.SetCurrentContext(g.imgui_settings["secondary_ctx"])
+            ImGui_ImplSDLRenderer2_NewFrame()
+            ImGui_ImplSDL2_NewFrame()
+            CImGui.NewFrame()
+            
+            # Set context flag for secondary screen
+            g.imgui_settings["current_screen"] = "secondary"
+            
+            # Run custom ImGui function for secondary screen
+            Base.invokelatest(g.imgui_function, g)
+            
+            # Render secondary screen ImGui
+            CImGui.Render()
+            secondary_draw_data = CImGui.GetDrawData()
+            ImGui_ImplSDLRenderer2_RenderDrawData(secondary_draw_data, secondary_renderer)
+            
             # Present both renderers
             SDL_RenderPresent(primary_renderer)
             SDL_RenderPresent(secondary_renderer)
@@ -236,8 +303,16 @@ function mainloop(g::Game)
         @warn "Error in renderloop!" exception=err
         Base.show_backtrace(stderr, catch_backtrace())
     finally
+        # Cleanup both ImGui contexts
+        CImGui.SetCurrentContext(g.imgui_settings["primary_ctx"])
         ImGui_ImplSDLRenderer2_Shutdown()
-        CImGui.DestroyContext(ctx)
+        ImGui_ImplSDL2_Shutdown()
+        CImGui.DestroyContext(g.imgui_settings["primary_ctx"])
+        
+        CImGui.SetCurrentContext(g.imgui_settings["secondary_ctx"])
+        ImGui_ImplSDLRenderer2_Shutdown()
+        ImGui_ImplSDL2_Shutdown()
+        CImGui.DestroyContext(g.imgui_settings["secondary_ctx"])
         
         SDL2.SDL_DestroyRenderer(primary_renderer)
         SDL2.SDL_DestroyWindow(g.screens.primary.window)

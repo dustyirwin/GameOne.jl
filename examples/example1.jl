@@ -54,32 +54,130 @@ function HelpMarker(msg::AbstractString)
 end
 
 function imgui(g::Game)
-    if g.screens.active_screen == UInt32(1)  # Only render ImGui on primary screen
-        # Wrap ImGui calls in try-catch to prevent crashes
-        try
-            # Create a proper window with Begin/End
-            if CImGui.Begin("Debug Window")
-                # Demo window toggle
-                show_demo = Ref{Bool}(true)
-                if CImGui.Button("Demo")
-                    show_demo[] = !show_demo[]
-                end
+    try
+        current_screen = get(g.imgui_settings, "current_screen", "primary")
+        
+        if current_screen == "primary"
+            # PRIMARY SCREEN ImGui windows
+            CImGui.SetNextWindowPos(ImVec2(10, 10), CImGui.ImGuiCond_FirstUseEver)
+            CImGui.SetNextWindowSize(ImVec2(300, 250), CImGui.ImGuiCond_FirstUseEver)
+            if CImGui.Begin("Primary Debug Window")
+                CImGui.Text("🖥️ Primary Screen Controls")
                 
-                if show_demo[]
-                    CImGui.ShowDemoWindow(show_demo)
+                # Demo window toggle
+                @cstatic show_demo=false begin
+                    if CImGui.Button("Toggle Demo")
+                        show_demo = !show_demo
+                    end
+                    
+                    if show_demo
+                        CImGui.ShowDemoWindow(Ref(show_demo))
+                    end
                 end
 
-                # Text input using fixed buffer
+                # Text input
                 @cstatic begin
                     buffer = zeros(UInt8, 100)
-                    CImGui.InputText("Input", buffer, length(buffer))
-                    text = String(buffer[1:findfirst(iszero, buffer)-1])
+                    CImGui.InputText("Primary Input", buffer, length(buffer))
+                end
+                
+                CImGui.Separator()
+                CImGui.Text("Screen Status:")
+                CImGui.Text("Active Screen: $(g.screens.active_screen)")
+                CImGui.Text("Primary has focus: $(g.screens.primary.has_focus)")
+                CImGui.Text("Secondary has focus: $(g.screens.secondary.has_focus)")
+                
+                CImGui.Separator()
+                CImGui.Text("Controls:")
+                if CImGui.Button("Play Sound")
+                    play_sound(eep_wav)
+                end
+                
+                # Interactive controls
+                @cstatic slider_val=0.5 begin
+                    if CImGui.SliderFloat("Primary Slider", Ref(slider_val), 0.0, 1.0)
+                        g.imgui_settings["primary_slider"] = slider_val
+                    end
+                end
+                
+                # Display secondary screen data
+                secondary_slider = get(g.imgui_settings, "secondary_slider", 0.0)
+                CImGui.Text("Secondary Slider Value: $(round(secondary_slider, digits=3))")
+            end
+            CImGui.End()
+            
+        elseif current_screen == "secondary"
+            # SECONDARY SCREEN ImGui windows
+            CImGui.SetNextWindowPos(ImVec2(10, 10), CImGui.ImGuiCond_FirstUseEver)
+            CImGui.SetNextWindowSize(ImVec2(300, 250), CImGui.ImGuiCond_FirstUseEver)
+            if CImGui.Begin("Secondary Debug Window")
+                CImGui.Text("📺 Secondary Screen Controls")
+                
+                # Secondary-specific controls
+                @cstatic begin
+                    buffer2 = zeros(UInt8, 100)
+                    CImGui.InputText("Secondary Input", buffer2, length(buffer2))
+                end
+                
+                if CImGui.Button("Secondary Action")
+                    @info "Secondary button clicked!"
+                    play_sound(harp)
+                end
+                
+                CImGui.Separator()
+                CImGui.Text("Actor Positions:")
+                CImGui.Text("Alien: ($(Int(alien.x)), $(Int(alien.y))) Screen: $(alien.current_screen)")
+                CImGui.Text("Label: ($(Int(label.x)), $(Int(label.y))) Screen: $(label.current_screen)")
+                CImGui.Text("Anim: ($(Int(anim.x)), $(Int(anim.y))) Screen: $(anim.current_screen)")
+                
+                CImGui.Separator()
+                CImGui.Text("Velocities:")
+                CImGui.Text("Alien: dx=$(dx_alien), dy=$(dy_alien)")
+                CImGui.Text("Label: dx=$(dx_label), dy=$(dy_label)")
+                CImGui.Text("Anim: dx=$(dx_anim), dy=$(dy_anim)")
+                
+                # Interactive slider
+                @cstatic sec_slider=0.7 begin
+                    if CImGui.SliderFloat("Secondary Slider", Ref(sec_slider), 0.0, 2.0)
+                        g.imgui_settings["secondary_slider"] = sec_slider
+                    end
+                end
+                
+                # Display primary screen data
+                primary_slider = get(g.imgui_settings, "primary_slider", 0.0)
+                CImGui.Text("Primary Slider Value: $(round(primary_slider, digits=3))")
+                
+                if CImGui.Button("Reset Positions")
+                    alien.x = PRIMARY_WIDTH ÷ 2
+                    alien.y = PRIMARY_HEIGHT ÷ 2
+                    alien.current_screen = UInt32(1)
+                    
+                    label.x = PRIMARY_WIDTH ÷ 4
+                    label.y = PRIMARY_HEIGHT ÷ 4
+                    label.current_screen = UInt32(1)
+                    
+                    anim.x = PRIMARY_WIDTH ÷ 3
+                    anim.y = PRIMARY_HEIGHT ÷ 3
+                    anim.current_screen = UInt32(1)
                 end
             end
             CImGui.End()
-        catch e
-            @warn "ImGui error: $e"
+
+            # Additional secondary window for system info
+            CImGui.SetNextWindowPos(ImVec2(10, 280), CImGui.ImGuiCond_FirstUseEver)
+            CImGui.SetNextWindowSize(ImVec2(300, 200), CImGui.ImGuiCond_FirstUseEver)
+            if CImGui.Begin("System Info")
+                CImGui.Text("🔧 System Information")
+                CImGui.Text("Current Time: $(now())")
+                CImGui.Text("Window Paused: $(Bool(window_paused[]))")
+                CImGui.Text("Primary Size: $(g.screens.primary.width)x$(g.screens.primary.height)")
+                CImGui.Text("Secondary Size: $(g.screens.secondary.width)x$(g.screens.secondary.height)")
+            end
+            CImGui.End()
         end
+        
+    catch e
+        @warn "ImGui error: $e"
     end
 end
 
