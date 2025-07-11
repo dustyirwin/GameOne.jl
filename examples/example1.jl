@@ -394,3 +394,10 @@ end
 atexit(TTF_Quit)
 
 end # module Example1
+
+using GameOne
+
+# Auto-run when executed directly
+if abspath(PROGRAM_FILE) == @__FILE__
+  rungame("ex1", false, game_mods=Dict("ex1" => Example1))
+end

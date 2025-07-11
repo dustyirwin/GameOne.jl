@@ -1,8 +1,8 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.11.5"
+julia_version = "1.11.6"
 manifest_format = "2.0"
-project_hash = "f86960e6ecefc4a98ddfda15b5b5787c057d877a"
+project_hash = "d2a69f3a81586b69afcbe334bcbf908b7dc100c9"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -41,20 +41,18 @@ version = "0.4.2"
 
 [[deps.CImGui]]
 deps = ["CEnum", "CImGuiPack_jll", "CSyntax", "Compat", "DocStringExtensions", "Printf", "Statistics"]
-path = "../CImGui.jl"
+path = "/Users/dustyirwin/.julia/dev/CImGui"
 uuid = "5d785b6c-b76f-510e-a07c-3070796c7e87"
-version = "3.2.0"
+version = "3.1.1"
 
     [deps.CImGui.extensions]
     GlfwOpenGLBackend = ["GLFW", "ModernGL"]
     MakieIntegration = ["GLFW", "ModernGL", "GLMakie"]
-    SDL2Backend = ["SimpleDirectMediaLayer"]
 
     [deps.CImGui.weakdeps]
     GLFW = "f7f18e0c-5ee9-5ccd-a5bf-e8befd85ed98"
     GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
     ModernGL = "66fc600b-dfda-50eb-8b99-91cfa97b1301"
-    SimpleDirectMediaLayer = "98e33af6-2ee5-5afd-9e75-cbc738b767c4"
 
 [[deps.CImGuiPack_jll]]
 deps = ["Artifacts", "GLFW_jll", "JLLWrappers", "Libdl", "libcxxwrap_julia_jll"]
@@ -606,10 +604,10 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 version = "1.11.0"
 
 [[deps.Wayland_jll]]
-deps = ["Artifacts", "EpollShim_jll", "Expat_jll", "JLLWrappers", "Libdl", "Libffi_jll", "XML2_jll"]
-git-tree-sha1 = "9300077d83c9eccfcac6a18b442d857d7e4f1684"
+deps = ["Artifacts", "EpollShim_jll", "Expat_jll", "JLLWrappers", "Libdl", "Libffi_jll"]
+git-tree-sha1 = "96478df35bbc2f3e1e791bc7a3d0eeee559e60e9"
 uuid = "a2964d1f-97da-50d4-b82a-358c7fce9d89"
-version = "1.23.1+2"
+version = "1.24.0+0"
 
 [[deps.XML2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Zlib_jll"]
