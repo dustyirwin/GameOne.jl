@@ -57,7 +57,7 @@ export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
     window_paused, getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL,
     image_surface, next_frame!, cleanup_old_textures!
-export Game, Screen, GameScreens, Window, Keys, KeyMods, MouseButton, MIX_DEFAULT_FORMAT
+export Game, Screen, Window, Keys, KeyMods, MouseButton, MIX_DEFAULT_FORMAT
 export Actor, TextActor, ImageFileActor, ImageMemActor 
 export Line, Rect, Triangle, Circle
 export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init, ImGui_ImplSDLRenderer2_NewFrame, ImGui_ImplSDL2_NewFrame,
