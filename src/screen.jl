@@ -5,6 +5,7 @@
     height::Int32
     width::Int32
     background::Union{ARGB,Ptr{SDL_Surface}}
+    screen_active::Bool = true
     has_focus::Bool = false
     full_screen::Bool = true
     minimized::Bool = false
