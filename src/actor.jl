@@ -35,7 +35,7 @@ end
     label::String
     surfaces::Union{Vector{Ptr{SDL_Surface}}, Nothing}
     textures::Union{Vector{Ptr{SDL_Texture}}, Nothing}
-    position::MoveableRect = MoveableRect(0, 0, 0, 0, 1)
+    position::Rect = Rect(0, 0, 0, 0)
     scale::Vector{Float32} = [1.0, 1.0]
     rotate_center::Union{Vector{Int32},Ptr{Nothing}} = C_NULL
     angle::Float64 = 0.0
@@ -45,7 +45,7 @@ end
     z::Int32 = Int32(0)
 
     # Add constructor with type conversions
-    function Actor(id::String, label::String, surfaces, textures, position::MoveableRect, 
+    function Actor(id::String, label::String, surfaces, textures, position::Rect, 
                   scale::Vector, rotate_center, angle::Number, alpha::Number, 
                   data::Dict{Symbol,Any}, current_screen=UInt32(1), z::Int32=Int32(0)
                   )
@@ -87,8 +87,8 @@ function TextActor(text::String, font_path::String; id=randstring(10), x = 0, y 
     
     TTF_CloseFont(text_font)
     TTF_CloseFont(outline_font)
-    
-    r = MoveableRect(x, y, w, h, 1)
+
+    r = Rect(x, y, w, h)
 
     a = Actor(
         id,
@@ -190,7 +190,7 @@ function ImageMemActor(img_name::String, img; x=0, y=0, kv...)
         error("Failed to create surface: $error_msg")
     end
 
-    r = MoveableRect(x, y, w, h, 1)
+    r = Rect(x, y, w, h)
     a = Actor(
         randstring(10),
         img_name,
@@ -268,8 +268,8 @@ function ImageFileActor(name::String, img_fns::Vector{String}, id=randstring(16)
     w, h = Int32(surface_data.w), Int32(surface_data.h)
     SDL_FreeSurface(surface)
     @debug "Image dimensions: $(w)x$(h)"
-    
-    r = MoveableRect(x, y, w, h, 1)
+
+    r = Rect(x, y, w, h)
     a = Actor(
         id,
         name,
@@ -323,21 +323,10 @@ function next_frame!(a::Actor)
     return a
 end
 
-function draw(screens::GameScreens, a::Actor; kv...)
+function draw(screen::Screen, a::Actor; kv...)
     @debug "Drawing actor $(a.label) (id: $(a.id)) on screen $(a.current_screen)"
-    
-    # Determine which screen to draw on based on actor's current_screen
-    # Handle both logical screen IDs (1, 2) and actual SDL window IDs
-    screen = if a.current_screen == UInt32(1) || a.current_screen == screens.primary.window_id
-        screens.primary
-    elseif a.current_screen == UInt32(2) || a.current_screen == screens.secondary.window_id
-        screens.secondary
-    else
-        # Default to primary if screen ID doesn't match
-        @warn "Unknown screen ID $(a.current_screen) for actor $(a.label), defaulting to primary"
-        screens.primary
-    end
-    @debug "Using screen $(screen.window_id) for actor $(a.label)"
+
+    @debug "Using screen $(screen.id) for actor $(a.label)"
     # Get the current texture
     local texture
     if haskey(a.data, :animation_name) && a.data[:anim]  # Only use animation system if :anim is true
@@ -432,32 +421,6 @@ function draw(screens::GameScreens, a::Actor; kv...)
     else
         @debug "Successfully rendered actor $(a.label) on renderer $(screen.renderer)"
     end
-end
-
-# custom Rect draw function (for 2px card border)
-function draw(screens::GameScreens, r::Rect; fill=true, c::Colorant=colorant"violet")
-    # Handle both logical screen IDs (1, 2) and actual SDL window IDs
-    screen = if r.current_screen == UInt32(1) || r.current_screen == screens.primary.window_id
-        screens.primary
-    elseif r.current_screen == UInt32(2) || r.current_screen == screens.secondary.window_id
-        screens.secondary
-    else
-        # Default to primary if screen ID doesn't match
-        screens.primary
-    end
-
-    # Update flip flag handling
-    flip = if r.w < 0 && r.h < 0
-        SDL_FLIP_BOTH
-    elseif r.h < 0
-        SDL_FLIP_VERTICAL
-    elseif r.w < 0
-        SDL_FLIP_HORIZONTAL
-    else
-        SDL_FLIP_NONE
-    end
-
-    draw(screen, r, c=c, fill=fill, flip=flip)
 end
 
 function Base.setproperty!(s::Actor, p::Symbol, x)

@@ -5,68 +5,15 @@
     height::Int32
     width::Int32
     background::Union{ARGB,Ptr{SDL_Surface}}
-    window_id::UInt32
     has_focus::Bool = false
     full_screen::Bool = true
     minimized::Bool = false
     shown::Bool = true
     menu_active::Bool = true
 
-    function Screen(name, w, h, background)
-        win, renderer = makeWinRenderer(name, w, h)
-        surface = SDL_CreateRGBSurface(w, h, 32, 0, 155, 155, 155, 0)
-        new(name, win, renderer, h, w, surface, SDL_GetWindowID(win))
-    end
-
-    # Constructor with offset
-    function Screen(name, w, h, background, offset_x::Int)
-        win, renderer = makeWinRenderer(name, w, h, offset_x=offset_x)
-        surface = SDL_CreateRGBSurface(w, h, 32, 0, 155, 155, 155, 0)
-        new(name, win, renderer, h, w, surface, SDL_GetWindowID(win))
-    end
-
     # Constructor for creating a new screen with window and renderer
     function Screen(name::String, window::Ptr{SDL2.SDL_Window}, renderer::Ptr{SDL2.SDL_Renderer}, width::Int32, height::Int32, shown::Bool=true)
         new(name, window, renderer, height, width, SDL_CreateRGBSurface(width, height, 32, 0, 155, 155, 155, 0), SDL_GetWindowID(window), shown)
-    end
-    
-    # Constructor for creating a new screen with name and dimensions
-    function Screen(name::String, width::Int32, height::Int32, background=nothing)
-        window = SDL2.SDL_CreateWindow(
-            name,
-            SDL2.SDL_WINDOWPOS_CENTERED, SDL2.SDL_WINDOWPOS_CENTERED,
-            width, height,
-            SDL2.SDL_WINDOW_SHOWN | SDL2.SDL_WINDOW_RESIZABLE
-        )
-        
-        renderer = SDL2.SDL_CreateRenderer(
-            window,
-            -1,
-            SDL2.SDL_RENDERER_ACCELERATED | SDL2.SDL_RENDERER_PRESENTVSYNC
-        )
-        
-        new(window, renderer, width, height, true, false)
-    end
-end
-
-mutable struct GameScreens
-    primary::Screen
-    secondary::Union{Screen, Nothing}
-    active_screen::UInt32
-    
-    # Constructor for single screen
-    function GameScreens(primary::Screen)
-        new(primary, nothing, UInt32(1))
-    end
-    
-    # Constructor for dual screens
-    function GameScreens(primary::Screen, secondary::Screen)
-        new(primary, secondary, UInt32(1))
-    end
-    
-    # Constructor for dual screens with specified active screen
-    function GameScreens(primary::Screen, secondary::Screen, active_screen::UInt32)
-        new(primary, secondary, active_screen)
     end
 end
 
@@ -84,26 +31,6 @@ mutable struct Rect <: Geom
     y::Int32
     w::Int32
     h::Int32
-end
-
-mutable struct MoveableRect
-    position::Rect
-    x::Int32
-    y::Int32
-    w::Int32
-    h::Int32
-    current_screen::UInt32
-
-    function MoveableRect(x, y, w, h, current_screen)
-        new(
-            Rect(Int32(x), Int32(y), Int32(w), Int32(h)),
-            Int32(x),
-            Int32(y),
-            Int32(w),
-            Int32(h),
-            UInt32(current_screen)
-        )
-    end
 end
 
 Rect(x::Tuple, y::Tuple) = Rect(x[1], x[2], y[1], y[2])
@@ -253,8 +180,7 @@ function clear(s::Screen)
 end
 
 function clear()
-    clear(game[].screens.primary)
-    clear(game[].screens.secondary)
+    clear(game[].screen)
 end
 
 function Base.fill(s::Screen, c::Colorant)
@@ -305,24 +231,6 @@ function draw(s::Screen, r::Rect; c::Colorant=colorant"black", fill=false)
     # Restore previous renderer state
     SDL_SetRenderDrawColor(s.renderer, old_r[], old_g[], old_b[], old_a[])
     SDL_SetRenderDrawBlendMode(s.renderer, old_blend_mode[])
-end
-
-function draw(screens::GameScreens, mr::MoveableRect; c::Colorant=colorant"black", fill=false)
-    # Handle both logical screen IDs (1, 2) and actual SDL window IDs
-    screen = if mr.current_screen == UInt32(1) || mr.current_screen == screens.primary.window_id
-        screens.primary
-    elseif mr.current_screen == UInt32(2) || mr.current_screen == screens.secondary.window_id
-        screens.secondary
-    else
-        # Default to primary if screen ID doesn't match
-        screens.primary
-    end
-    draw(screen, mr; c=c, fill=fill)
-end
-
-
-function draw(s::Screen, mr::MoveableRect; c::Colorant=colorant"black", fill=false)
-    draw(s, mr.position, c=c, fill=fill)
 end
 
 sdl_colors(c::Colorant) = sdl_colors(convert(ARGB{FixedPointNumbers.Normed{UInt8,8}}, c))
@@ -428,30 +336,6 @@ function create_primary_screen(name::String, width::Int32, height::Int32)
     Screen(name, width, height)
 end
 
-# Helper function to create secondary screen
-function create_secondary_screen(name::String, width::Int32, height::Int32, x::Int32, y::Int32)
-    window = SDL2.SDL_CreateWindow(
-        name,
-        x, y,
-        width, height,
-        SDL2.SDL_WINDOW_SHOWN | SDL2.SDL_WINDOW_RESIZABLE
-    )
-    
-    renderer = SDL2.SDL_CreateRenderer(
-        window,
-        -1,
-        SDL2.SDL_RENDERER_ACCELERATED | SDL2.SDL_RENDERER_PRESENTVSYNC
-    )
-    
-    Screen(window, renderer, width, height)
-end
-
-function create_screens(title1="Primary Window", title2="Secondary Window")
-    primary = create_screen(title1, 800, 600)
-    secondary = create_screen(title2, 800, 600, offset_x=850)
-    return GameScreens(primary, secondary, UInt32(1))  # Initialize with 1 for primary
-end
-
 function create_screen(title, width, height; offset_x=20, offset_y=20)
     window = SDL2.CreateWindow(title, Int32(SDL_WINDOWPOS_CENTERED + offset_x), 
                              Int32(SDL_WINDOWPOS_CENTERED + offset_y), 
@@ -462,29 +346,19 @@ function create_screen(title, width, height; offset_x=20, offset_y=20)
     return Screen(window, renderer, width, height)
 end
 
-function initscreens(gm::Module)
-    primary_name = getifdefined(gm, :PRIMARY_NAME, "Main")
-    secondary_name = getifdefined(gm, :SECONDARY_NAME, "Secondary")
+
+function initscreen(gm::Module)
+    name = getifdefined(gm, :NAME, "Main")
 
     # Get primary screen dimensions and background
-    primary_h = getifdefined(gm, :PRIMARY_HEIGHT, 600)
-    primary_w = getifdefined(gm, :PRIMARY_WIDTH, 800)
-    
-    # Get secondary screen dimensions and background
-    secondary_h = getifdefined(gm, :SECONDARY_HEIGHT, 600)
-    secondary_w = getifdefined(gm, :SECONDARY_WIDTH, 400)
+    h = getifdefined(gm, :SCREEN_HEIGHT, 600)
+    w = getifdefined(gm, :SCREEN_WIDTH, 800)
+
     
     # Create primary screen
-    primary_win, primary_renderer = makeWinRenderer(primary_name, primary_w, primary_h)
-    primary = Screen(primary_name, primary_win, primary_renderer, Int32(primary_w), Int32(primary_h))
-    clear(primary)
-    
-    # Create secondary screen with offset
-    secondary_win, secondary_renderer = makeWinRenderer(secondary_name, secondary_w, secondary_h)
-    secondary = Screen(secondary_name, secondary_win, secondary_renderer, Int32(secondary_w), Int32(secondary_h))
-    clear(secondary)
-    
-    screens = GameScreens(primary, secondary, UInt32(1))  # Initialize with 1 for primary
-    
-    return screens
+    win, renderer = makeWinRenderer(name, w, h)
+    screen = Screen(name, win, renderer, Int32(w), Int32(h))
+    clear(screen)
+
+    return screen
 end
