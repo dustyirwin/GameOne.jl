@@ -62,7 +62,7 @@ export Actor, TextActor, ImageFileActor, ImageMemActor
 export Line, Rect, Triangle, Circle
 export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init, ImGui_ImplSDLRenderer2_NewFrame, ImGui_ImplSDL2_NewFrame,
     ImGui_ImplSDLRenderer2_RenderDrawData, ImGuiDockNodeFlags_PassthruCentralNode, TextDisabled, PushItemFlag, PopItemFlag,
-    ImGui_ImplSDLRenderer2_Shutdown, ImGui_ImplSDL2_Shutdown   
+    ImGui_ImplSDLRenderer2_Shutdown   
 
 
 # ImGuiSDLBackend
@@ -232,12 +232,8 @@ function mainloop(g::Game)
             draw_data = CImGui.GetDrawData()
             ImGui_ImplSDLRenderer2_RenderDrawData(draw_data, renderer)
 
-            ImGui_ImplSDLRenderer2_NewFrame()
-            ImGui_ImplSDL2_NewFrame()
-            CImGui.NewFrame()
-            
-            # Run custom ImGui function for secondary screen
-            Base.invokelatest(g.imgui_function, g)
+            # Note: Removed the second ImGui frame since we're only using one screen
+            # The imgui function now handles primary/secondary logic internally
             
             # Present both renderers
             SDL_RenderPresent(renderer)
@@ -261,7 +257,6 @@ function mainloop(g::Game)
         # Cleanup both ImGui contexts
         CImGui.SetCurrentContext(g.imgui_settings["ctx"])
         ImGui_ImplSDLRenderer2_Shutdown()
-        ImGui_ImplSDL2_Shutdown()
         CImGui.DestroyContext(g.imgui_settings["ctx"])
         
         SDL2.SDL_DestroyRenderer(renderer)
