@@ -2,7 +2,10 @@ module GameOne
 
 using Reexport: @reexport
 
-# Base imports
+# Add Revise for hot-reloading development
+@reexport using Revise
+
+# Base imports (keep these)
 @reexport using Logging: @debug, @info, @warn, @error, @logmsg
 @reexport using Colors: FixedPointNumbers, @colorant_str, ARGB, Colorant, red, green, blue, alpha
 @reexport using Base.Threads: @threads, @spawn, Atomic, SpinLock
@@ -10,80 +13,134 @@ using Reexport: @reexport
 @reexport using Random: rand, randstring, shuffle, shuffle!
 @reexport using DataStructures: OrderedDict, counter, @enum
 @reexport using Sockets
+@reexport using Printf: @sprintf
+
+# Modern OpenGL/GLFW stack
+@reexport using GLFW
+@reexport using ModernGL
+@reexport using LinearAlgebra: I, cross, dot, norm, normalize
+@reexport using StaticArrays: SVector, SMatrix, @SVector, @SMatrix
+@reexport using GeometryBasics: Point2f, Vec2f, Vec3f, Vec4f, Mat4f, Rect2f
+
+# ImGui with GLFW+OpenGL3 backend
 @reexport using CImGui
 @reexport using CImGui.CSyntax
 @reexport using CImGui.CSyntax.CStatic
-@reexport using CImGui: ImVec2, ImVec4, IM_COL32, ImS32, ImU32, ImS64, ImU64, lib
-@reexport using CImGui.lib
+@reexport using CImGui: ImVec2, ImVec4, IM_COL32, ImS32, ImU32, ImS64, ImU64
 
-@reexport using Printf: @sprintf
+# Audio (lightweight)
+@reexport using PortAudio
+#@reexport using FileIO
+@reexport using LibSndFile
 
-# SDL2 imports
-@reexport using SimpleDirectMediaLayer.LibSDL2: SDL_Event, SDL_Texture, SDL_DestroyTexture, SDL_ShowCursor, 
-    SDL_SetWindowFullscreen, SDL_SetHint, SDL_HINT_RENDER_SCALE_QUALITY, SDL_RenderPresent, 
-    SDL_HasIntersection, SDL_Rect, SDL_RenderFillRect, SDL_CreateTextureFromSurface, SDL_TEXTUREACCESS_TARGET,
-    SDL_BlendMode, SDL_Surface, SDL_WINDOW_FULLSCREEN, IMG_Load, SDL_SetRenderTarget,
-    SDL_PIXELFORMAT_ARGB32, SDL_UpperBlitScaled, SDL_FreeSurface, SDL_RendererFlip,SDL_FLIP_NONE, SDL_FLIP_VERTICAL, 
-    SDL_FLIP_HORIZONTAL, SDL_RenderCopyEx, SDL_PollEvent, SDL_TEXTINPUT, SDL_KEYDOWN, SDL_KEYUP, SDL_MOUSEBUTTONDOWN, 
-    SDL_MOUSEBUTTONUP, SDL_GetError, SDL_INIT_VIDEO, SDL_INIT_AUDIO, SDL_WINDOWEVENT, SDL_QUIT, SDL_MOUSEMOTION, 
-    SDL_MOUSEWHEEL, SDL_GetClipboardText, SDL_SetClipboardText, SDL_GetError, SDL_StopTextInput, SDL_StartTextInput, SDL_GL_MULTISAMPLEBUFFERS, 
-    SDL_GL_MULTISAMPLESAMPLES,SDL_DestroyRenderer, SDL_DestroyWindow, SDL_GetWindowID, SDL_RenderDrawLine, 
-    SDL_RenderDrawPoint, SDL_WINDOWPOS_CENTERED, SDL_WINDOW_ALLOW_HIGHDPI, SDL_RENDERER_ACCELERATED, SDL_WINDOW_ALLOW_HIGHDPI,
-    SDL_RENDERER_PRESENTVSYNC, SDL_RENDERER_TARGETTEXTURE, SDL_RENDERER_SOFTWARE, 
-    SDL_BLENDMODE_BLEND, SDL_SetTextureAlphaMod, SDL_GL_SetAttribute, SDL_Init, SDL_Color,
-    SDL_WINDOW_OPENGL, SDL_WINDOW_SHOWN, SDL_CreateWindow, SDL_SetWindowMinimumSize, SDL_SetWindowResizable, SDL_WINDOW_RESIZABLE,
-    SDL_WINDOW_MOUSE_FOCUS, SDL_WINDOW_FOREIGN, SDL_WINDOW_ALWAYS_ON_TOP, SDL_WINDOW_SKIP_TASKBAR, SDL_WINDOW_UTILITY, SDL_WINDOW_TOOLTIP,
-    SDL_WINDOW_INPUT_FOCUS,SDL_WINDOW_MOUSE_FOCUS,SDL_WINDOW_FOREIGN,SDL_WINDOW_ALWAYS_ON_TOP,SDL_WINDOW_SKIP_TASKBAR,SDL_WINDOW_UTILITY,
-    SDL_WINDOW_TOOLTIP,SDL_WINDOW_POPUP_MENU, SDL_WINDOW_METAL,SDL_WINDOW_VULKAN,SDL_WINDOW_HIDDEN,SDL_WINDOW_BORDERLESS,
-    SDL_WINDOW_FULLSCREEN_DESKTOP,SDL_WINDOW_FULLSCREEN,SDL_WINDOW_OPENGL,
-    SDL_GetRenderDrawColor, SDL_GetRenderDrawBlendMode, SDL_SetRenderDrawBlendMode,
-    SDL_SetTextureBlendMode, SDL_CreateRGBSurface, SDL_CreateRGBSurfaceWithFormat, SDL_CreateRGBSurfaceWithFormatFrom,
-    SDL_CreateRenderer, SDL_CreateTexture, SDL_SetRenderDrawBlendMode, SDL_SetRenderDrawColor, SDL_RenderClear, SDL_DelEventWatch,
-    MIX_INIT_FLAC, MIX_INIT_MP3, MIX_INIT_OGG, Mix_Init, Mix_OpenAudio, Mix_HaltMusic, Mix_HaltChannel, Mix_CloseAudio, 
-    Mix_Quit, Mix_LoadWAV_RW, AUDIO_S16SYS, Mix_PlayChannelTimed, Mix_PlayMusic, Mix_PlayingMusic, Mix_FreeChunk, 
-    Mix_FreeMusic, Mix_VolumeMusic, Mix_Volume, Mix_PausedMusic, Mix_ResumeMusic, Mix_LoadMUS, Mix_PauseMusic,
-    TTF_Quit, TTF_OpenFont, TTF_RenderText_Blended_Wrapped, TTF_SetFontOutline, TTF_CloseFont, TTF_Init,
-    SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, SDL_HINT_RENDER_VSYNC, SDL_HINT_RENDER_DRIVER, SDL_HINT_RENDER_DIRECT3D_THREADSAFE,
-    SDL_GetRendererInfo
+# WebP support
+@reexport using WebP
 
-import SimpleDirectMediaLayer
-const SDL2 = SimpleDirectMediaLayer.LibSDL2
-global const BackendPlatformUserData = Ref{Any}(C_NULL)
-
-@reexport using SimpleDirectMediaLayer
-# GameOne exports
-export SDL2, BackendPlatformUserData, initSDL, SDL_Quit
-export game, draw, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
+# Modern exports
+export game, draw, render, flush!, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
-    window_paused, getEventType, getTextInputEventChar, start_text_input, update_text_actor!, sdl_colors, quitSDL,
-    image_surface, next_frame!, cleanup_old_textures!
-export Game, Screen, Window, Keys, KeyMods, MouseButton, MIX_DEFAULT_FORMAT
-export Actor, TextActor, ImageFileActor, ImageMemActor 
+    window_paused, start_text_input, update_text_actor!,
+    load_texture, create_shader, compile_shader, use_shader, bind_texture,
+    begin_batch, end_batch, draw_quad, draw_sprite, draw_text, create_screen, load_animated_textures
+export Game, Screen, GLContext, Renderer, Shader, Texture, BatchRenderer
+export Actor, TextActor, ImageActor 
 export Line, Rect, Triangle, Circle
-export ImGui_ImplSDL2_InitForSDLRenderer, ImGui_ImplSDLRenderer2_Init, ImGui_ImplSDLRenderer2_NewFrame, ImGui_ImplSDL2_NewFrame,
-    ImGui_ImplSDLRenderer2_RenderDrawData, ImGuiDockNodeFlags_PassthruCentralNode, TextDisabled, PushItemFlag, PopItemFlag,
-    ImGui_ImplSDLRenderer2_Shutdown   
+export KeyState, MouseState
 
+# Core data structures
+mutable struct GLContext
+    window::GLFW.Window
+    width::Int32
+    height::Int32
+    title::String
+    vsync::Bool
+    samples::Int32
+    monitor::GLFW.Monitor
+    #windowhint::GLFW.WindowHint
+    #framebuffer_size_callback::Function
+    #error_callback::Function
+    
+    GLContext() = new()
+end
 
-# ImGuiSDLBackend
-include("imgui_impl_sdl2.jl")
-include("imgui_impl_sdlrenderer2.jl")
+mutable struct Shader
+    program::GLuint
+    vertex_shader::GLuint
+    fragment_shader::GLuint
+    uniforms::Dict{String, GLint}
+    path::String  # For hot-reloading
+    last_modified::Float64
+    
+    Shader() = new(0, 0, 0, Dict{String, GLint}(), "", 0.0)
+end
 
-include("keyboard.jl")
-include("timer.jl")
-include("window.jl")
-include("screen.jl")
+mutable struct Texture
+    id::GLuint
+    width::Int32
+    height::Int32
+    channels::Int32
+    format::GLenum
+    path::String
+    compressed::Bool
+    
+    Texture() = new(0, 0, 0, 0, GL_RGBA, "", false)
+end
 
+include("shader.jl")               # Shader compilation and management
+include("renderer.jl")             # Modern OpenGL batch renderer
 
-Base.convert(::Type{Vector{Float32}}, v::Vector{Float64}) = Float32.(v)
-Base.convert(::Type{Vector{Int32}}, v::Vector{Int64}) = Int32.(v)
+mutable struct Renderer
+    context::GLContext
+    batch_renderer::BatchRenderer
+    sprite_shader::Shader
+    text_shader::Shader
+    line_shader::Shader
+    white_texture::Texture
+    clear_color::Vec4f
+    wireframe::Bool
+    
+    Renderer() = new()
+end
 
+mutable struct Screen
+    context::GLContext
+    renderer::Renderer
+    background_color::Vec4f
+    
+    Screen() = new()
+end
+
+# Input handling
+mutable struct KeyState
+    keys::Dict{GLFW.Key, Bool}
+    key_pressed::Dict{GLFW.Key, Bool}
+    key_released::Dict{GLFW.Key, Bool}
+    
+    KeyState() = new(Dict{GLFW.Key, Bool}(), Dict{GLFW.Key, Bool}(), Dict{GLFW.Key, Bool}())
+end
+
+mutable struct MouseState
+    position::Vec2f
+    delta::Vec2f
+    buttons::Dict{GLFW.MouseButton, Bool}
+    button_pressed::Dict{GLFW.MouseButton, Bool}
+    button_released::Dict{GLFW.MouseButton, Bool}
+    scroll::Vec2f
+    
+    MouseState() = new(Vec2f(0), Vec2f(0), Dict{GLFW.MouseButton, Bool}(), 
+                      Dict{GLFW.MouseButton, Bool}(), Dict{GLFW.MouseButton, Bool}(), Vec2f(0))
+end
+
+# Modern Game structure
 mutable struct Game
     screen::Screen
-    active_screen::UInt32
     location::String
     game_module::Module
-    keyboard::Keyboard
+    keyboard::KeyState
+    mouse::MouseState
+    delta_time::Float32
+    frame_count::Int64
+    fps::Float32
     render_function::Function
     update_function::Function
     onkey_function::Function
@@ -94,367 +151,43 @@ mutable struct Game
     imgui_settings::Dict{String,Any}
     state::Vector{Dict{String,Any}}
     socket::Vector{TCPSocket}
+    
     Game() = new()
 end
 
+# Core includes
+include("math.jl")                  # Matrix math utilities
+include("keyboard.jl")              # GLFW keyboard handling
+include("timer.jl")                 # Keep as-is
+include("glcontext.jl")            # GLFW window management
+include("texture.jl")              # Texture loading and management
+include("screen.jl")               # OpenGL screen management
+include("event.jl")                # GLFW event handling
+#include("audio.jl")                # PortAudio backend
+include("animation.jl")
+include("actor.jl")                # Modern actor system
+include("resources.jl")            # Resource management
 
-include("event.jl")
-include("resources.jl")
-include("actor.jl")
+export ShaderWatcher
 
-
-# Magic variables to check for in the game module
-const PRIMARY_HEIGHT = :PRIMARY_HEIGHT
-const PRIMARY_WIDTH = :PRIMARY_WIDTH
-const SECONDARY_HEIGHT = :SECONDARY_HEIGHT
-const SECONDARY_WIDTH = :SECONDARY_WIDTH
-const PRIMARY_SCREEN_NAME = :PRIMARY_SCREEN_NAME
-const SECONDARY_SCREEN_NAME = :SECONDARY_SCREEN_NAME
-const PRIMARY_BACKGROUND = :PRIMARY_BACKGROUND
-const SECONDARY_BACKGROUND = :SECONDARY_BACKGROUND
-
-# Add at module level
-const STRING_POOL = Dict{String, String}()
-
-function intern_string(s::String)
-    get!(STRING_POOL, s) do
-        s
-    end
-end
-
-
+# Game constants
 const timer = WallTimer()
 const game = Ref{Game}()
 const playing = Ref{Bool}(false)
 const paused = Ref{Bool}(false)
+const window_paused = Ref{Int32}(0)
 
+# Hot-reloading shader cache
+const SHADER_CACHE = Dict{String, Shader}()
+const SHADER_WATCH_LIST = Set{String}()
 
-getifdefined(m, s, v) = isdefined(m, s) ? getfield(m, s) : v
-
-game_include(jlf::String) = Base.include(game[].game_module, jlf)
-
-mainloop(g::Ref{Game}) = mainloop(g[])
-
-pollEvent = let event = Ref{SDL_Event}()
-    () -> SDL_PollEvent(event)
-end
-
-
-ver = pointer(SDL2.SDL_version[SDL2.SDL_version(0,0,0)])
-SDL2.SDL_GetVersion(ver)
-global sdlVersion = string(unsafe_load(ver).major, ".", unsafe_load(ver).minor, ".", unsafe_load(ver).patch)
-println("SDL version: ", sdlVersion)
-sdlVersion = parse(Int32, replace(sdlVersion, "." => ""))
-
-function mainloop(g::Game)
-    start!(timer)
-    
-    # Get renderers for both screens
-    renderer = g.screen.renderer
-    
-    # Create separate ImGui contexts for each screen
-    ctx = g.imgui_settings["ctx"] = CImGui.CreateContext()
-    
-    # Initialize imgui context
-    CImGui.SetCurrentContext(ctx)
-    io = g.imgui_settings["io"] = CImGui.GetIO()
-    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable
-    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_NavEnableKeyboard
-    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_NavEnableGamepad
-    ImGui_ImplSDL2_InitForSDLRenderer(g.screen.window, renderer)
-    ImGui_ImplSDLRenderer2_Init(renderer)
-    
-    # Store context and renderer info
-    g.imgui_settings["renderer"] = renderer
-    g.imgui_settings["ctx"] = ctx
-    g.imgui_settings["io"] = io
-
-
-    # Demo window state
-    show_demo_window = false
-    
-    quit = false
-    
-    try
-        while !quit
-            event_ref = Ref{SDL_Event}()
-            
-            while Bool(SDL_PollEvent(event_ref))
-                evt = event_ref[]
-                
-                CImGui.SetCurrentContext(g.imgui_settings["ctx"])
-                ImGui_ImplSDL2_ProcessEvent(evt, sdlVersion)
-            
-                evt_ty = evt.type
-                
-                # Handle window events specifically
-                if evt_ty == SDL2.SDL_WINDOWEVENT
-                    window_event = evt.window.event
-                    window_id = evt.window.windowID
-                    
-                    if window_event == SDL2.SDL_WINDOWEVENT_CLOSE
-                        quit = true
-                            break
-                    end
-                elseif evt_ty == SDL2.SDL_QUIT
-                    quit = true
-                    break
-                else
-                    handleEvents!(g, evt, evt_ty)
-                end
-            end
-
-            # Clear both renderers
-            SDL2.SDL_RenderClear(renderer)
-            
-            if window_paused[] == 0
-                Base.invokelatest(g.render_function, g)
-            end           
-
-            # Show demo window
-            if show_demo_window
-                # Show demo on screen
-                CImGui.SetCurrentContext(g.imgui_settings["ctx"])
-                CImGui.ShowDemoWindow(Ref(show_demo_window))
-            end
-            
-            # RENDER PRIMARY SCREEN ImGui
-            CImGui.SetCurrentContext(g.imgui_settings["ctx"])
-            ImGui_ImplSDLRenderer2_NewFrame()
-            ImGui_ImplSDL2_NewFrame()
-            CImGui.NewFrame()
-                        
-            # Run custom ImGui function for screen
-            Base.invokelatest(g.imgui_function, g)
-            
-            # Render screen ImGui
-            CImGui.Render()
-            draw_data = CImGui.GetDrawData()
-            ImGui_ImplSDLRenderer2_RenderDrawData(draw_data, renderer)
-
-            # Note: Removed the second ImGui frame since we're only using one screen
-            # The imgui function now handles primary/secondary logic internally
-            
-            # Present both renderers
-            SDL_RenderPresent(renderer)
-
-            dt = elapsed(timer)
-            dt = min(dt / 1e9, 1.0 / 20.0)  # Cap at 20 FPS minimum
-            start!(timer)
-            Base.invokelatest(g.update_function, g, dt)
-            tick!(scheduler[])
-
-            if (playing[] == false)
-                throw(QuitException())
-            end
-
-            sleep(0.001)
-        end
-    catch err
-        @warn "Error in renderloop!" exception=err
-        Base.show_backtrace(stderr, catch_backtrace())
-    finally
-        # Cleanup both ImGui contexts
-        CImGui.SetCurrentContext(g.imgui_settings["ctx"])
-        ImGui_ImplSDLRenderer2_Shutdown()
-        CImGui.DestroyContext(g.imgui_settings["ctx"])
-        
-        SDL2.SDL_DestroyRenderer(renderer)
-        SDL2.SDL_DestroyWindow(g.screen.window)
-        SDL2.SDL_Quit()
-    end
-end
-
-getKeySym(e) = bitcat(UInt32, e[24:-1:21])
-getKeyRepeat(e) = bitcat(UInt8, e[14:-1:14])
-getKeyMod(e) = bitcat(UInt16, e[26:-1:25])
-
-getMouseButtonClick(e) = bitcat(UInt8, e[17:-1:17])
-getMouseClickX(e) = bitcat(Int32, e[23:-1:20])
-getMouseClickY(e) = bitcat(Int32, e[27:-1:24])
-
-getMouseMoveX(e) = bitcat(Int32, e[24:-1:21])
-getMouseMoveY(e) = bitcat(Int32, e[28:-1:25])
-
-
-"""
-    `rungame(game_file::String)`
-    `rungame()`
-
-    The entry point to GameOne. This is the user-facing function that is used to start a game. 
-    The single argument method should be used from the REPL or main script. It takes the game source
-    file as it's only argument. 
-
-    The zero argument method should be used from the game source file itself when is being executed directly
-"""
-function rungame(jlf::String, external::Bool=true; game_mods::Dict{String,Module}=Dict("Main"=>Main), socket::Union{TCPSocket,Nothing}=nothing)
-    # The optional argument `external` is used to determine whether the zero or single argument version 
-    # has been called. End users should never have to use this argument directly. 
-    # external=true means rungame has been called from the REPl or run script, with the game file as input
-    # external=false means rungame has been called at the bottom of the game file itself
-    global playing, paused
-    g = initgame(jlf::String, external; game_mods=game_mods, socket=socket)
-    try
-        playing[] = paused[] = true
-        mainloop(g)
-    catch e
-        if !isa(e, QuitException) && !isa(e, InterruptException)
-            @error e exception = (e, catch_backtrace())
-        end
-    finally
-        GameOne.quitSDL(g)
-    end
-end
-
-function rungame()
-    rungame(abspath(PROGRAM_FILE), false)
-end
-
-function initgame(jlf::String, external::Bool; game_mods::Dict{String,Module}=Dict(), socket::Union{TCPSocket,Nothing}=nothing)
-    if !isfile(jlf) && external
-        ArgumentError("File not found: $jlf")
-    end
-
-    # Setting render hints with proper SDL2 prefix
-    if Sys.isapple()
-        SDL_SetHint(SDL2.SDL_HINT_RENDER_DRIVER, "metal")
-    elseif Sys.iswindows()
-        SDL_SetHint(SDL2.SDL_HINT_RENDER_DRIVER, "d3d")
-    else
-        SDL_SetHint(SDL2.SDL_HINT_RENDER_DRIVER, "opengl")
-    end
-
-    SDL_SetHint(SDL2.SDL_HINT_RENDER_SCALE_QUALITY, "best")
-    SDL_SetHint(SDL2.SDL_HINT_RENDER_VSYNC, "1")
-
-    name = replace(basename(jlf), ".jl" => "")
-    
-    # init SDL
-    initSDL()
-
-    game[] = Game()
-    scheduler[] = Scheduler()
-    g = game[]
-    
-    g.keyboard = Keyboard()
-
-    if external
-        module_name = Symbol(name * "_" * randstring(5))
-        game_module = Module(module_name)
-        @debug "Initialised Anonymous Game Module" module_name
-        g.game_module = game_module
-        g.location = dirname(jlf)
-    else
-        g.game_module = game_mods[name]
-        g.location = pwd()
-    end
-
-    if external
-        Base.include_string(g.game_module, "using GameOne")
-        Base.include_string(g.game_module, "import GameOne.draw")
-        Base.include_string(g.game_module, "using Colors")
-        Base.include(g.game_module, jlf)
-    end
-
-    g.imgui_function = getfn(g.game_module, :imgui, 2)
-    g.update_function = getfn(g.game_module, :update, 2)
-    g.render_function = getfn(g.game_module, :draw, 2)
-    g.onkey_function = getfn(g.game_module, :on_key_down, 3)
-    g.onmouseup_function = getfn(g.game_module, :on_mouse_up, 4)
-    g.onmousedown_function = getfn(g.game_module, :on_mouse_down, 4)
-    g.onmousemove_function = getfn(g.game_module, :on_mouse_move, 3)
-    g.state = Vector{Dict{String,Dict}}([Dict("imgui"=>Dict("username"=>""))])
-    g.screen = initscreen(g.game_module)
-    g.imgui_settings = Dict(
-        "menu_active"=>true,
-        "show_login"=>true,
-        "show_menu"=>true,
-        "console_history"=>Vector{String}(),
-        "io"=>CImGui.GetIO()
-    )
-    clear(g.screen)
-    
-    return g
-end
-
-function getfn(m::Module, s::Symbol, maxargs = 3)
-    @debug "grabbing function $s in module $m"
-    if isdefined(m, s)
-        fn = getfield(m, s)
-        ms = copy(methods(fn).ms)
-        filter!(x -> x.module == m, ms)
-        
-        if length(ms) > 1
-            sort!(ms, by = x -> x.nargs, rev = true)
-        end
-
-        m = ms[1]
-
-        if (m.nargs - 1) > maxargs
-            error("Found a $s function with $(m.nargs-1) arguments. A maximum of $maxargs arguments are allowed.")
-        end
-        @debug "Event method" fn m.nargs
-        #TODO Validate types for arguments
-        if m.nargs - 1 == maxargs #required to handle the zero-arg case
-            return fn
-        end
-        return (x...) -> fn(x[1:(m.nargs-1)]...)
-    else
-        return (x...) -> nothing
-    end
-end
-
-
-# Having a QuitException is useful for testing, since an exception will simply
-# pause the interpreter. For release builds, the catch() block will call quitSDL().
 struct QuitException <: Exception end
 
-function getSDLError()
-    x = SDL_GetError()
-    return unsafe_string(x)
-end
-
-function initSDL()
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 4)
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4)
-    r = SDL_Init(UInt32(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
-    if r != 0
-        error("Unable to initialise SDL: $(getSDLError())")
-    end
-    TTF_Init()
-
-    mix_init_flags = MIX_INIT_FLAC | MIX_INIT_MP3 | MIX_INIT_OGG
-    inited = Mix_Init(Int32(mix_init_flags))
-    if inited & mix_init_flags != mix_init_flags
-        @warn "Failed to initialise audio mixer properly. Sounds may not play correctly\n$(getSDLError())"
-    end
-
-    device = Mix_OpenAudio(Int32(22050), UInt16(AUDIO_S16SYS), Int32(2), Int32(1024))
-    if device != 0
-        @warn "No audio device available, sounds and music will not play.\n$(getSDLError())"
-        Mix_CloseAudio()
-    end
-end
-
-function quitSDL(g)
-    @debug "Quitting the game"
-    clear!(scheduler[])    
-    SDL_DelEventWatch(window_event_watcher_cfunc[], g.screen.window)
-    SDL2.SDL_DestroyRenderer(g.screen.renderer)
-    SDL2.SDL_DestroyWindow(g.screen.window)
-    SDL2.SDL_Quit()
-    #Run all finalisers
-    GC.gc();GC.gc();
-    quitSDL()
-end
-
-function quitSDL()
-    Mix_HaltMusic()
-    Mix_HaltChannel(Int32(-1))
-    Mix_CloseAudio()
-    TTF_Quit()
-    Mix_Quit()
-    SDL2.SDL_Quit()
-end
+# TODO: Remove all SDL2 functions and replace with GLFW/OpenGL equivalents
+# We'll implement these in the next phase:
+# - rungame()
+# - mainloop()
+# - initgame()
+# All SDL2 references will be removed
 
 end # module

@@ -1,22 +1,11 @@
-# Use a pre-allocated event buffer instead of creating new ones
-const EVENT_BUFFER = Ref{SDL2.SDL_Event}()
-
-function pollEvents!()
-    while Bool(SDL2.SDL_PollEvent(EVENT_BUFFER))
-        evt = EVENT_BUFFER[]
-    end
-
-    return evt
-end
+using GLFW
 
 function getEventType(e::Array{UInt8})
     bitcat(UInt32, e[4:-1:1])
 end
-
-function getEventType(e::SDL2.SDL_Event)
-    bitcat(UInt32, e[4:-1:1])
+function getEventWindowID(e::Array{UInt8})
+    bitcat(UInt32, e[8:-1:5])
 end
-
 # TextInputEvent only?
 function getTextInputEventChar(e::Array{UInt8})
     Char(e[13])
@@ -65,32 +54,41 @@ function handleEvents!(g::Game, e, t)
     end
 end
 
-function handleKeyPress(g::Game, e, t)
-    keySym = e.keysym.sym
-    keyMod = e.keysym.mod
-    @debug "Keyboard" keySym, keyMod
-    if (t == SDL_KEYDOWN)
-        push!(g.keyboard, keySym)
-        Base.invokelatest(g.onkey_function, g, keySym, keyMod)
-        
-    elseif (t == SDL_KEYUP)
-        delete!(g.keyboard, keySym)
-    end
 
-    #keyRepeat = (getKeyRepeat(e) != 0)
-end
-
-function handleMouseClick(g::Game, e, t)
-    @debug "Mouse Button" e.x e.y e.windowID
-    
-    if (t == SDL_MOUSEBUTTONUP)
-        Base.invokelatest(g.onmouseup_function, g, (e.x, e.y), MouseButtons.MouseButton(e.button), e.windowID)
-    elseif (t == SDL_MOUSEBUTTONDOWN)
-        Base.invokelatest(g.onmousedown_function, g, (e.x, e.y), MouseButtons.MouseButton(e.button), e.windowID)
-    end
-end
 
 function handleMousePan(g::Game, e, t)
     @debug "Mouse Move" e.x e.y e.windowID
     Base.invokelatest(g.onmousemove_function, g, (e.x, e.y), e.windowID)
+end
+
+function setup_glfw_callbacks(ctx::GLContext, game::Game)
+    # Keyboard
+    GLFW.SetKeyCallback(ctx.window) do window, key, scancode, action, mods
+        if action == GLFW.PRESS
+            game.keyboard.keys[key] = true
+            Base.invokelatest(game.onkey_function, game, key, mods)
+        elseif action == GLFW.RELEASE
+            game.keyboard.keys[key] = false
+        end
+    end
+
+    # Mouse button
+    GLFW.SetMouseButtonCallback(ctx.window) do window, button, action, mods
+        x, y = GLFW.GetCursorPos(window)
+        if action == GLFW.PRESS
+            game.mouse.buttons[button] = true
+            Base.invokelatest(game.onmousedown_function, game, (x, y), button, mods)
+        elseif action == GLFW.RELEASE
+            game.mouse.buttons[button] = false
+            Base.invokelatest(game.onmouseup_function, game, (x, y), button, mods)
+        end
+    end
+
+    # Mouse move
+    GLFW.SetCursorPosCallback(ctx.window) do window, xpos, ypos
+        game.mouse.position = Vec2f(xpos, ypos)
+        Base.invokelatest(game.onmousemove_function, game, (xpos, ypos), window)
+    end
+
+    # Window close, resize, etc. can be added similarly
 end
