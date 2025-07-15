@@ -115,7 +115,9 @@ function create_gl_context(width::Int32, height::Int32, title::String;
     context.vsync = vsync
     context.samples = samples
     context.monitor = monitor
-    
+
+    GLFW.MakeContextCurrent(context.window)
+
     return context
 end
 

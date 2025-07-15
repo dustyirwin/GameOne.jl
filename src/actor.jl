@@ -37,6 +37,7 @@ end
 mutable struct Actor
     id::String
     label::String
+    imgpath::Union{String, Vector{String}, Nothing}  # single img, animation, or text (nothing)
     position::Rect
     size::Vec2f
     angle::Float64
@@ -53,6 +54,7 @@ function ImageActor(path::String; id=randstring(10), x=0, y=0, w=0, h=0, color=c
     Actor(
         id,
         basename(path),
+        path,
         Rect(x, y, w, h),
         Vec2f(w, h),
         0.0,
@@ -71,6 +73,7 @@ function AnimatedActor(paths::Vector{String}, frame_times::Vector{Float64}; id=r
     Actor(
         id,
         "anim",
+        paths,
         Rect(x, y, 0, 0),
         Vec2f(0, 0),
         0.0,
@@ -110,6 +113,7 @@ function TextActor(text::String, font_path::String; id=randstring(10), x=0, y=0,
     Actor(
         id,
         text,
+        nothing,  # No image path for text
         Rect(x, y, 0, 0),
         Vec2f(0, 0),
         0.0,
@@ -119,4 +123,11 @@ function TextActor(text::String, font_path::String; id=randstring(10), x=0, y=0,
         color_to_vec4f(color),
         Dict(:type=>"text", :font_path=>font_path, :pt_size=>pt_size)
     )
+end
+
+function move!(actor, dx, dy)
+    org = actor.position.origin
+    new_x = first(org) + dx
+    new_y = last(org) + dy
+    actor.position = HyperRectangle(new_x, new_y, first(org), last(org))
 end

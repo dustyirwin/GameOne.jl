@@ -36,12 +36,15 @@ using Reexport: @reexport
 # WebP support
 @reexport using WebP
 
+# ImageCore 
+@reexport using ImageCore: channelview, permutedims, reshape, float
+
 # Modern exports
 export game, draw, render, flush!, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, play_sound, line, clear, rungame, game_include,
     window_paused, start_text_input, update_text_actor!,
-    load_texture, create_shader, compile_shader, use_shader, bind_texture,
-    begin_batch, end_batch, draw_quad, draw_sprite, draw_text, create_screen, load_animated_textures
+    load_texture, create_shader, compile_shader, use_shader, bind_texture, my_imgui_preinit,
+    begin_batch, end_batch, draw_quad, draw_sprite, draw_text, create_screen, load_animated_textures, move!
 export Game, Screen, GLContext, Renderer, Shader, Texture, BatchRenderer
 export Actor, TextActor, ImageActor 
 export Line, Rect, Triangle, Circle
@@ -143,16 +146,15 @@ mutable struct Game
     fps::Float32
     render_function::Function
     update_function::Function
-    onkey_function::Function
-    onmousedown_function::Function
-    onmouseup_function::Function
-    onmousemove_function::Function
-    imgui_function::Function
-    imgui_settings::Dict{String,Any}
+    onkey_function::Union{Function, Nothing}
+    onmousedown_function::Union{Function, Nothing}
+    onmouseup_function::Union{Function, Nothing}
+    onmousemove_function::Union{Function, Nothing}
+    imgui_function::Union{Function, Nothing}
+    imgui_settings::Union{Dict{String,Any}, Nothing}
+    imgui_preinit_function::Union{Function, Nothing}
     state::Vector{Dict{String,Any}}
     socket::Vector{TCPSocket}
-    
-    Game() = new()
 end
 
 # Core includes
@@ -166,7 +168,8 @@ include("event.jl")                # GLFW event handling
 #include("audio.jl")                # PortAudio backend
 include("animation.jl")
 include("actor.jl")                # Modern actor system
-include("resources.jl")            # Resource management
+include("resources.jl")             # Resource management
+include("game.jl")                  # Game main loop 
 
 export ShaderWatcher
 
@@ -182,12 +185,5 @@ const SHADER_CACHE = Dict{String, Shader}()
 const SHADER_WATCH_LIST = Set{String}()
 
 struct QuitException <: Exception end
-
-# TODO: Remove all SDL2 functions and replace with GLFW/OpenGL equivalents
-# We'll implement these in the next phase:
-# - rungame()
-# - mainloop()
-# - initgame()
-# All SDL2 references will be removed
 
 end # module

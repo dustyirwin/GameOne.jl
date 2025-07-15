@@ -5,7 +5,7 @@ using .GameOne: GLContext, Renderer, Screen, BatchRenderer, create_gl_context, B
 # Geometry types (Rect, Line, Triangle, Circle) can be kept as in your old file for now.
 
 # Create a new Screen (window + renderer)
-function create_screen(name::String, width::Int32, height::Int32; vsync=true, samples=2, background=colorant"black")
+function create_screen(name::String, width::Int32, height::Int32; vsync=true, samples=Int32(4), background=colorant"black")
     ctx = create_gl_context(width, height, name; vsync=vsync, samples=samples)
     # You must create your shader watcher and batch renderer here
     sprite_shader = ShaderWatcher("shaders/sprite.vert", "shaders/sprite.frag")
