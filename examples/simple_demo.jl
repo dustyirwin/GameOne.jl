@@ -4,7 +4,12 @@ using ImageCore: load, permutedims, Array
 using ModernGL, GLFW
 
 CImGui.set_backend(:GlfwOpenGL3)
+
 ctx = CImGui.CreateContext()
+# enable docking and multi-viewport
+io = CImGui.GetIO()
+io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable
+io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_ViewportsEnable
 
 image_id = Ref{Any}(nothing)
 image_path = joinpath(@__DIR__, "images", "alien.png")
