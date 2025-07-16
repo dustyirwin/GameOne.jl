@@ -56,15 +56,16 @@ export KeyState, MouseState, ShaderWatcher
 include("math.jl")                  # Matrix math utilities
 include("keyboard.jl")              # GLFW keyboard handling
 include("timer.jl")                 # Keep as-is
-include("glcontext.jl")            # GLFW window management
-include("texture.jl")              # Texture loading and management
-include("animation.jl")          # Sprite animation system
-include("shader.jl")               # Shader compilation and management
-include("renderer.jl")             # Modern OpenGL batch renderer
-include("screen.jl")               # OpenGL screen management
+include("glcontext.jl")             # GLFW window management
+include("texture.jl")               # Texture loading and management
+include("animation.jl")             # Sprite animation system
+include("shader.jl")                # Shader compilation and management
+include("renderer.jl")              # Modern OpenGL batch renderer
+include("screen.jl")                # OpenGL screen management
 include("game.jl")                  # Game main loop 
-include("event.jl")                # GLFW event handling
-include("actor.jl")                # Modern actor system
+include("event.jl")                 # GLFW event handling
+include("actor.jl")                 # Modern actor system
 include("resources.jl")             # Resource management
+include("audio.jl")                 # Audio playback system
 
 end # module

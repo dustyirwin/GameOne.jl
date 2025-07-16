@@ -69,9 +69,8 @@ function rungame(game::Game)
         game.imgui_preinit_function()
     end
 
-    # Main render loop using CImGui.render
     last_time = time()
-    CImGui.render(game,ctx) do
+    loop_callback = function()
         # --- Timing ---
         now = time()
         dt = now - last_time
@@ -102,6 +101,9 @@ function rungame(game::Game)
         # --- Present frame (swap buffers) ---
         present(screen)
     end
+
+    # Main render loop using CImGui.renderloop (Windows/GlfwOpenGL3 expects this signature)
+    CImGui.renderloop(loop_callback, CImGui.GetCurrentContext(), Val(:GlfwOpenGL3))
 
     # Cleanup
     destroy_gl_context!(ctx)

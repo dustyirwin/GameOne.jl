@@ -1,7 +1,6 @@
 using ModernGL
 using FileIO
 using ImageIO
-using ColorTypes
 using Logging
 using ImageCore
 using WebP
