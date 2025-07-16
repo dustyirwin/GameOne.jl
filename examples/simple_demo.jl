@@ -24,7 +24,6 @@ function play_sound(file_path::String)
 end
 
 # load an image
-image_id = Ref{Any}(nothing)
 image_path = joinpath(@__DIR__, "images", "alien.png")
 
 img = load(image_path)
@@ -33,6 +32,8 @@ img_rgba = Array(img)  # Already RGBA, just ensure Array
 img_h, img_w = size(img_rgba)  # Julia: (height, width)
 img_gl = permutedims(img_rgba, (2, 1))  # (width, height)
 img_data_gl_flat = vec(reinterpret(UInt8, img_gl))
+
+image_id = Ref{Any}(nothing)
 
 CImGui.render(ctx) do
     if image_id[] === nothing
