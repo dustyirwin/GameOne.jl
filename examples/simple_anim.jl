@@ -22,14 +22,63 @@ img_data_gl_flat = vec(reinterpret(UInt8, img_gl))
 
 image_id = Ref{Any}(nothing)
 
+function load_animation_frames(folder)
+    files = sort(readdir(folder; join=true))
+    frames = [begin
+        img = load(f)
+        arr = try
+            Array(RGBA.(img))
+        catch
+            # Fallback: flatten and reshape using axes
+            ax = axes(img)
+            reshape(collect(img), map(length, ax)...)
+        end
+        if eltype(arr) <: Colors.RGBA
+            arr
+        elseif eltype(arr) <: Colors.RGB
+            RGBA.(arr)
+        elseif ndims(arr) == 2
+            RGBA.(arr, arr, arr, 1)
+        elseif ndims(arr) == 3 && size(arr,3) == 3
+            RGBA.(arr[:,:,1], arr[:,:,2], arr[:,:,3], 1)
+        elseif ndims(arr) == 3 && size(arr,3) == 4
+            RGBA.(arr[:,:,1], arr[:,:,2], arr[:,:,3], arr[:,:,4])
+        else
+            error("Unsupported image format")
+        end
+    end for f in files]
+    @assert all(size(f) == size(frames[1]) for f in frames)
+    return frames
+end
+
+anim_folder = joinpath(@__DIR__, "images", "FireElem1")
+frames = load_animation_frames(anim_folder)
+frame_count = length(frames)
+h, w = size(frames[1])
+current_frame = Ref(1)
+last_time = Ref(time())
+frame_delay = 1/12  # 12 FPS
+anim_image_id = Ref{Any}(nothing)
 
 CImGui.render(ctx) do
-    if image_id[] === nothing
-        image_id[] = CImGui.create_image_texture(w, h)
+    # Animation timing
+    now = time()
+    if now - last_time[] > frame_delay
+        current_frame[] = current_frame[] % frame_count + 1
+        last_time[] = now
     end
-    CImGui.update_image_texture(image_id[], img_data_gl_flat, w, h)
-    if CImGui.Begin("Image Window")
-        CImGui.Image(image_id[], CImGui.ImVec2(w, h))
+
+    frame = frames[current_frame[]]
+    frame_gl = permutedims(frame, (2,1))
+    frame_flat = vec(reinterpret(UInt8, frame_gl))
+
+    if anim_image_id[] === nothing
+        anim_image_id[] = CImGui.create_image_texture(w, h)
+    end
+    CImGui.update_image_texture(anim_image_id[], frame_flat, w, h)
+
+    if CImGui.Begin("Animation")
+        CImGui.Image(anim_image_id[], CImGui.ImVec2(w, h))
         CImGui.End()
     end
 end
