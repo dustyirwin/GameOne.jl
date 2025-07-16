@@ -1,5 +1,43 @@
 using .GameOne
 
+
+# Modern Game structure
+mutable struct Game
+    screen::Screen
+    location::String
+    game_module::Module
+    keyboard::KeyState
+    mouse::MouseState
+    delta_time::Float32
+    frame_count::Int64
+    fps::Float32
+    render_function::Function
+    update_function::Function
+    onkey_function::Union{Function, Nothing}
+    onmousedown_function::Union{Function, Nothing}
+    onmouseup_function::Union{Function, Nothing}
+    onmousemove_function::Union{Function, Nothing}
+    imgui_function::Union{Function, Nothing}
+    imgui_settings::Union{Dict{String,Any}, Nothing}
+    imgui_preinit_function::Union{Function, Nothing}
+    state::Vector{Dict{String,Any}}
+    socket::Vector{TCPSocket}
+end
+
+# Game constants
+const timer = WallTimer()
+const game = Ref{Game}()
+const playing = Ref{Bool}(false)
+const paused = Ref{Bool}(false)
+const window_paused = Ref{Int32}(0)
+
+# Hot-reloading shader cache
+const SHADER_CACHE = Dict{String, Shader}()
+const SHADER_WATCH_LIST = Set{String}()
+
+struct QuitException <: Exception end
+
+
 function my_imgui_preinit()
     # Ensure ImGui context exists
     if CImGui.GetCurrentContext() == C_NULL

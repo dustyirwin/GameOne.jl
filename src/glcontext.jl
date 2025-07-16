@@ -3,6 +3,23 @@
 using GLFW
 using ModernGL
 
+# Core data structures
+mutable struct GLContext
+    window::GLFW.Window
+    width::Int32
+    height::Int32
+    title::String
+    vsync::Bool
+    samples::Int32
+    monitor::GLFW.Monitor
+    #windowhint::GLFW.WindowHint
+    #framebuffer_size_callback::Function
+    #error_callback::Function
+    
+    GLContext() = new()
+end
+
+
 # Global GLFW state
 const GLFW_INITIALIZED = Ref{Bool}(false)
 const GLFW_ERROR_CALLBACK = Ref{Ptr{Nothing}}(C_NULL)

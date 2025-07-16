@@ -2,7 +2,13 @@ using GeometryBasics
 using Colors
 using .GameOne: GLContext, Renderer, Screen, BatchRenderer, create_gl_context, BatchRenderer, clear_screen!
 
-# Geometry types (Rect, Line, Triangle, Circle) can be kept as in your old file for now.
+mutable struct Screen
+    context::GLContext
+    renderer::Renderer
+    background_color::Vec4f
+    
+    Screen() = new()
+end
 
 # Create a new Screen (window + renderer)
 function create_screen(name::String, width::Int32, height::Int32; vsync=true, samples=Int32(4), background=colorant"black")

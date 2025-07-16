@@ -28,6 +28,19 @@ mutable struct BatchRenderer
     view_matrix::Mat4f
 end
 
+mutable struct Renderer
+    context::GLContext
+    batch_renderer::BatchRenderer
+    sprite_shader::Shader
+    text_shader::Shader
+    line_shader::Shader
+    white_texture::Texture
+    clear_color::Vec4f
+    wireframe::Bool
+    
+    Renderer() = new()
+end
+
 # Initialize a batch renderer
 function BatchRenderer(shader::ShaderWatcher; max_quads=1000)
     max_vertices = max_quads * 4

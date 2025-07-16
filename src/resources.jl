@@ -1,25 +1,51 @@
+using PortAudio: stop, close
+using LibSndFile
+using SampledSignals
+
 """
-play_sound(filename::String, loops::Integer)
+    play_music(filename::String, loops::Integer=0, volume::Real=1.0)
+play_sound(filename::String, loops::Integer, volume::Real)
 
-Plays a sound effect from the `sounds` subdirctory. It will play the specified number of times. If not specified, it will default to once.
+Plays a sound effect from the `sounds` subdirectory. It will play the specified number of times. If not specified, it will default to once.
 """
-function play_sound(sound_path::String, loops=0, volume=Int32(128))
-    sample=Mix_LoadWAV_RW(SDL2.SDL_RWFromFile(sound_path, "rb"), 1);
-    if sample == C_NULL
-        @warn "Could not load sound file: $sound_path\n$(getSDLError())"
-    end
 
-    r = Mix_PlayChannelTimed(Int32(-1), sample, Int32(loops), Int32(-1))
-    if r == -1
-        @warn "Unable to play sound $sound_path\n$(getSDLError())"
-    end
+MUSIC_STREAM = Ref{Any}(nothing)
 
-    Mix_Volume(r, volume)
+
+function play_sound(sound_path::String; loops=0, volume=1.0)
+    buf = load(sound_path)  # LibSndFile returns a SampleBuf
+    # Adjust volume
+    buf = buf * volume
+    Threads.@spawn begin
+        for _ in 0:loops
+            stream = PortAudioStream(0, nchannels(buf); samplerate=samplerate(buf))
+            write(stream, buf)
+            close(stream)
+        end
+    end
 end
 
-function play_music(music_path::String, loops=-1)
-    music = Mix_LoadMUS(music_path)
-    Mix_PlayMusic( music, Int32(loops) )
+
+function play_music(music_path::String; loops=0, volume=1.0)
+    buf = load(music_path)
+    buf = buf * volume
+
+    Threads.@spawn begin
+        for _ in 0:loops
+            stream = PortAudioStream(0, nchannels(buf); samplerate=samplerate(buf))
+            MUSIC_STREAM[] = stream  # Save the stream object
+            write(stream, buf)
+            close(stream)
+            MUSIC_STREAM[] = nothing  # Clear after closing
+        end
+    end
+end
+
+function stop_music()
+    if MUSIC_STREAM[] !== nothing && MUSIC_STREAM[] isa PortAudioStream
+        close(MUSIC_STREAM[])
+        MUSIC_STREAM[] = nothing
+    end
 end
 
 const resource_ext = Dict(
@@ -73,50 +99,6 @@ function file_path(name::String, subdir::Symbol)
         end
 
     throw(ArgumentError("No file: $name in $path")); end
-end
-
-"""
-Simplistic string edit distance method
-"""
-
-function edit_distance(x, y)
-    #Convert strings to char arrays so that we can index into it
-    xx = [i for i in x]
-    yy = [i for i in y]
-
-    m=length(xx)
-    n=length(yy)
-
-    r = zeros(Int, m+1, n+1)
-
-    # Iterate through substrings
-    for i in 1:(m + 1)
-
-        for j in 1:(n + 1)
-
-            if i == 1
-                r[i, j] = j
-            elseif j == 1
-                r[i, j] = i
-            elseif xx[i-1] == yy[j-1]
-                r[i, j] = r[i-1, j-1]
-            else
-                r[i, j] = 1 + min(r[i, j-1], r[i-1, j],  r[i-1, j-1])
-            end
-        end
-    end
-
-    r[m+1, n+1]
-end
-
-function validate_name(name::String)
-    if occursin(' ', name)
-        @warn("Do not use spaces in resource names. It may cause problems when moving accross platforms: $name")
-    end
-
-    if lowercase(name) != name
-        @warn("Use lowercases names for resource files. It is safer when moving between windows and unix: $name")
-    end
 end
 
 # Add a cleanup function

@@ -1,7 +1,15 @@
+using GameOne
 using CImGui
 using FileIO, Colors
 using ModernGL, GLFW
 using ImageCore: permutedims, Array
+using PortAudio, LibSndFile
+using SampledSignals
+using StatsBase
+
+PA = PortAudio.LibPortAudio
+
+sound_id = Ref{Any}(nothing)
 
 CImGui.set_backend(:GlfwOpenGL3)
 ctx = CImGui.CreateContext()
@@ -59,26 +67,66 @@ current_frame = Ref(1)
 last_time = Ref(time())
 frame_delay = 1/12  # 12 FPS
 anim_image_id = Ref{Any}(nothing)
+music_playing = Ref(false)
+fpss = Ref([1.0])
+
+frame_dt = Ref(1/12)  # Initial value
+
+frame_data = [vec(reinterpret(UInt8, permutedims(f, (2,1)))) for f in frames]
+
+last_uploaded_frame = Ref(-1)
+
+last_render_time = Ref(time())
+ui_frame_dt = Ref(1/60)
 
 CImGui.render(ctx) do
-    # Animation timing
     now = time()
+    ui_frame_dt[] = now - last_render_time[]
+    last_render_time[] = now
+
     if now - last_time[] > frame_delay
+        frame_dt[] = now - last_time[]
         current_frame[] = current_frame[] % frame_count + 1
         last_time[] = now
     end
 
-    frame = frames[current_frame[]]
-    frame_gl = permutedims(frame, (2,1))
-    frame_flat = vec(reinterpret(UInt8, frame_gl))
-
     if anim_image_id[] === nothing
         anim_image_id[] = CImGui.create_image_texture(w, h)
     end
-    CImGui.update_image_texture(anim_image_id[], frame_flat, w, h)
+
+    # Only update texture if frame changed
+    if current_frame[] != last_uploaded_frame[]
+        CImGui.update_image_texture(anim_image_id[], frame_data[current_frame[]], w, h)
+        last_uploaded_frame[] = current_frame[]
+    end
+
+    # Animation FPS (based on frame_delay)
+    anim_fps = 1 / frame_dt[]
+    if CImGui.Begin("FPS Display")
+        CImGui.Text("Animation FPS: $(round(anim_fps, digits=2))")
+        CImGui.Text("UI FPS: $(round(1/ui_frame_dt[], digits=2))")
+        CImGui.End()
+    end
 
     if CImGui.Begin("Animation")
         CImGui.Image(anim_image_id[], CImGui.ImVec2(w, h))
+        CImGui.End()
+    end
+    if CImGui.Begin("Sound Control")
+        if CImGui.Button("Play Sound")
+            play_sound(joinpath(@__DIR__, "sounds", "eep.wav"))
+        end
+        if CImGui.Button("Play Music") && !music_playing[]
+            if sound_id[] isa PortAudioStream
+                PortAudio.close(sound_id[])
+            end
+            sound_id[] = play_music(joinpath(@__DIR__, "music", "radetzky.ogg"), loops=0, volume=1.0)
+            music_playing[] = true
+        end
+        if CImGui.Button("Stop Music") && music_playing[]
+            GameOne.stop_music()
+            music_playing[] = false
+        end
         CImGui.End()
     end
 end

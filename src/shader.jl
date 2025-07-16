@@ -2,6 +2,19 @@ using ModernGL
 using Logging
 using Dates
 
+
+mutable struct Shader
+    program::GLuint
+    vertex_shader::GLuint
+    fragment_shader::GLuint
+    uniforms::Dict{String, GLint}
+    path::String  # For hot-reloading
+    last_modified::Float64
+    
+    Shader() = new(0, 0, 0, Dict{String, GLint}(), "", 0.0)
+end
+
+
 # Utility: Read a file as a string
 function read_shader_file(path::String)
     println("Reading shader file: ", abspath(path))

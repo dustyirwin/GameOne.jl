@@ -6,6 +6,19 @@ using Logging
 using ImageCore
 using WebP
 
+mutable struct Texture
+    id::GLuint
+    width::Int32
+    height::Int32
+    channels::Int32
+    format::GLenum
+    path::String
+    compressed::Bool
+    
+    Texture() = new(0, 0, 0, 0, GL_RGBA, "", false)
+end
+
+
 # Ensure img is always HxWx4 Array{UInt8,3}
 function prepare_image(img)
     # Convert to RGBA if needed
