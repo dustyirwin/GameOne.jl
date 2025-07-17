@@ -61,7 +61,7 @@ function handleMousePan(g::Game, e, t)
     Base.invokelatest(g.onmousemove_function, g, (e.x, e.y), e.windowID)
 end
 
-function setup_glfw_callbacks(ctx::GLContext, game::Game)
+function setup_glfw_callbacks(ctx::ImGuiContext, game::Game)
     # Keyboard
     GLFW.SetKeyCallback(ctx.window) do window, key, scancode, action, mods
         if action == GLFW.PRESS

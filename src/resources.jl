@@ -1,4 +1,4 @@
-using PortAudio: stop, close
+using PortAudio: close
 using LibSndFile
 using SampledSignals
 

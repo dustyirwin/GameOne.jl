@@ -2,8 +2,10 @@
 
 using GLFW
 using ModernGL
+using CImGui
+using CImGui.lib
 
-# Core data structures
+#= Core data structures
 mutable struct GLContext
     window::GLFW.Window
     width::Int32
@@ -18,7 +20,7 @@ mutable struct GLContext
     
     GLContext() = new()
 end
-
+=#
 
 # Global GLFW state
 const GLFW_INITIALIZED = Ref{Bool}(false)
@@ -65,7 +67,9 @@ function create_gl_context(width::Int32, height::Int32, title::String;
                           vsync::Bool = true, 
                           samples::Int32 = Int32(4),
                           monitor::Union{GLFW.Monitor, Nothing} = nothing,
-                          opengl_version::Tuple{Int,Int} = (3, 3))::GLContext
+                          opengl_version::Tuple{Int,Int} = (3, 3),
+                          fullscreen::Bool = false
+        )::Tuple{Ptr{ImGuiContext}, GLFW.Window}
     
     if !init_glfw()
         error("Failed to initialize GLFW")
@@ -114,32 +118,33 @@ function create_gl_context(width::Int32, height::Int32, title::String;
     
     # Get actual framebuffer size (may differ from window size on high-DPI displays)
     fb_width, fb_height = GLFW.GetFramebufferSize(window)
-    glViewport(0, 0, fb_width, fb_height)
     
+    glViewport(0, 0, fb_width, fb_height)
+
     # Enable OpenGL debug output in debug builds
     @static if haskey(ENV, "GAMEONE_DEBUG") || haskey(ENV, "DEBUG")
         enable_gl_debug()
     end
     
     @info "OpenGL Context Created" window_size=(width, height) framebuffer_size=(fb_width, fb_height) opengl_version=opengl_version
-    
-    # Create GLContext struct
-    context = GLContext()
-    context.window = window
-    context.width = Int32(fb_width)
-    context.height = Int32(fb_height)
-    context.title = title
-    context.vsync = vsync
-    context.samples = samples
-    context.monitor = monitor
 
-    GLFW.MakeContextCurrent(context.window)
+    # Create ImGuiContext
+    context = CImGui.CreateContext()
+    #context[].window = window
+    #context[].width = Int32(fb_width)
+    #context[].height = Int32(fb_height)
+    #context[].title = title
+    #context[].vsync = vsync
+    #context[].samples = samples
+    #context[].monitor = monitor
 
-    return context
+    GLFW.MakeContextCurrent(window)
+
+    return context, window
 end
 
 # Resize OpenGL context
-function resize_gl_context!(context::GLContext, width::Int32, height::Int32)
+function resize_gl_context!(context::ImGuiContext, width::Int32, height::Int32)
     context.width = width
     context.height = height
     glViewport(0, 0, width, height)
@@ -147,18 +152,18 @@ function resize_gl_context!(context::GLContext, width::Int32, height::Int32)
 end
 
 # Check if context should close
-function should_close(context::GLContext)::Bool
+function should_close(context::ImGuiContext)::Bool
     return GLFW.WindowShouldClose(context.window)
 end
 
 # Set window should close
-function set_should_close!(context::GLContext, should_close::Bool = true)
+function set_should_close!(context::ImGuiContext, should_close::Bool = true)
     GLFW.SetWindowShouldClose(context.window, should_close)
 end
 
 # Swap buffers
-function swap_buffers(context::GLContext)
-    GLFW.SwapBuffers(context.window)
+function swap_buffers(window::GLFW.Window)
+    GLFW.SwapBuffers(window)
 end
 
 # Poll events
@@ -172,25 +177,25 @@ function wait_events()
 end
 
 # Get window size
-function get_window_size(context::GLContext)::Tuple{Int32, Int32}
+function get_window_size(context::ImGuiContext)::Tuple{Int32, Int32}
     width, height = GLFW.GetWindowSize(context.window)
     return (Int32(width), Int32(height))
 end
 
 # Get framebuffer size (actual OpenGL viewport size)
-function get_framebuffer_size(context::GLContext)::Tuple{Int32, Int32}
+function get_framebuffer_size(context::ImGuiContext)::Tuple{Int32, Int32}
     width, height = GLFW.GetFramebufferSize(context.window)
     return (Int32(width), Int32(height))
 end
 
 # Set window title
-function set_window_title!(context::GLContext, title::String)
-    context.title = title
+function set_window_title!(context::ImGuiContext, title::String)
+    context[].title = title
     GLFW.SetWindowTitle(context.window, title)
 end
 
 # Destroy OpenGL context
-function destroy_gl_context!(context::GLContext)
+function destroy_gl_context!(context::ImGuiContext)
     if context.window != C_NULL
         GLFW.DestroyWindow(context.window)
         context.window = C_NULL
@@ -295,7 +300,7 @@ function has_gl_extension(extension::String)::Bool
 end
 
 # Set up framebuffer callback for window resize
-function setup_framebuffer_callback!(context::GLContext, callback::Function)
+function setup_framebuffer_callback!(context::ImGuiContext, callback::Function)
     # Store callback in window user pointer for retrieval
     GLFW.SetWindowUserPointer(context.window, pointer_from_objref(callback))
     

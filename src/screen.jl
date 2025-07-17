@@ -1,9 +1,14 @@
 using GeometryBasics
 using Colors
-using .GameOne: GLContext, Renderer, Screen, BatchRenderer, create_gl_context, BatchRenderer, clear_screen!
+using .GameOne: ImGuiContext, Renderer, BatchRenderer, create_gl_context, BatchRenderer, clear_screen!
+using CImGui.lib
+using CImGui
 
 mutable struct Screen
-    context::GLContext
+    window::GLFW.Window
+    width::Int32
+    height::Int32
+    context::Ptr{CImGui.ImGuiContext}
     renderer::Renderer
     background_color::Vec4f
     
@@ -11,10 +16,10 @@ mutable struct Screen
 end
 
 # Create a new Screen (window + renderer)
-function create_screen(name::String, width::Int32, height::Int32; vsync=true, samples=Int32(4), background=colorant"black")
-    ctx = create_gl_context(width, height, name; vsync=vsync, samples=samples)
+function create_screen(name::String, width::Int32, height::Int32; vsync=true, samples=Int32(4), background=colorant"black", fullscreen::Bool=false)
+    ctx, win = create_gl_context(width, height, name; vsync=vsync, samples=samples, fullscreen=fullscreen)
     # You must create your shader watcher and batch renderer here
-    sprite_shader = ShaderWatcher("shaders/sprite.vert", "shaders/sprite.frag")
+    sprite_shader = ShaderWatcher(joinpath(dirname(@__FILE__),"..","shaders/sprite.vert"), joinpath(dirname(@__FILE__),"..","shaders/sprite.frag"))
     batch = BatchRenderer(sprite_shader)
     # For now, we'll leave these as placeholders:
     renderer = Renderer()
@@ -22,7 +27,10 @@ function create_screen(name::String, width::Int32, height::Int32; vsync=true, sa
     renderer.batch_renderer = batch
     renderer.clear_color = color_to_vec4f(background)
     scr = Screen()
+    scr.window = win
     scr.context = ctx
+    scr.width = width
+    scr.height = height
     scr.renderer = renderer
     scr.background_color = color_to_vec4f(background)
     return scr
@@ -42,7 +50,7 @@ end
 
 # Present the frame (swap buffers)
 function present(s::Screen)
-    present!(s.context)
+    present!(s.window)
 end
 
 # Example: draw a colored quad (replace with batch renderer usage)

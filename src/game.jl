@@ -1,17 +1,17 @@
 using .GameOne
 
-
 # Modern Game structure
 mutable struct Game
     name::String
     location::String
     game_module::Module
+    screen::Union{Screen, Nothing}
     keyboard::KeyState
     mouse::MouseState
     delta_time::Float32
     frame_count::Int64
     fps::Float32
-    render::Function
+    render::Union{Function, Nothing}
     update::Function
     onkey::Union{Function, Nothing}
     onmousedown::Union{Function, Nothing}
@@ -38,10 +38,11 @@ const SHADER_WATCH_LIST = Set{String}()
 struct QuitException <: Exception end
 
 
-function imgui_preinit()
+function imgui_preinit(ctx::Ptr{CImGui.ImGuiContext})
     # Ensure ImGui context exists
-    if CImGui.GetCurrentContext() == C_NULL
-        CImGui.CreateContext()
+    if ctx == C_NULL
+        @error "ImGui context is null in imgui_preinit"
+        return
     end
     io = CImGui.GetIO()
     io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable
@@ -56,20 +57,31 @@ function imgui_preinit()
 end
 
 function rungame(game::Game)
-    screen = game.screen
-    ctx = screen.context
-    renderer = screen.renderer
-    batch = renderer.batch_renderer
+    #screen = game.screen
+    ctx = CImGui.CreateContext()
+
+    io = CImGui.GetIO()
+    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable
+    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_ViewportsEnable
+
+
+    if ctx == C_NULL
+        @error "ImGui context is null in rungame"
+        return
+    end
+    #renderer = screen.renderer
+    #batch = renderer.batch_renderer
 
     # Set ImGui backend (high-level, handles all init)
     CImGui.set_backend(:GlfwOpenGL3)
 
     # Optional: ImGui pre-init hook (set config flags, style, etc.)
-    if !isnothing(game.imgui_preinit_function)
-        game.imgui_preinit_function()
+    if !isnothing(game.imgui_preinit)
+        game.imgui_preinit(ctx)
     end
 
     last_time = time()
+    #=
     loop_callback = function()
         # --- Timing ---
         now = time()
@@ -87,25 +99,27 @@ function rungame(game::Game)
         begin_batch!(batch)
 
         # --- Game update ---
-        game.update_function(game, dt)
-
-        # --- Game render (draw your cards, etc.) ---
-        game.render_function(game)
+        game.update(game, dt)
 
         # --- End batch and flush to GPU ---
         end_batch!(batch)
 
         # --- ImGui: Draw menus/windows ---
-        game.imgui_function(game)
+        game.imgui(game)
 
         # --- Present frame (swap buffers) ---
         present(screen)
     end
+    
+    # Main render loop using GameOne.renderloop (Windows/GlfwOpenGL3 expects this signature)
+    GameOne.renderloop(loop_callback, ctx, Val(:GlfwOpenGL3))
+    =#
 
-    # Main render loop using CImGui.renderloop (Windows/GlfwOpenGL3 expects this signature)
-    CImGui.renderloop(loop_callback, CImGui.GetCurrentContext(), Val(:GlfwOpenGL3))
+    game.render(ctx) do
+        game.imgui(game)
+    end
 
     # Cleanup
-    destroy_gl_context!(ctx)
+    CImGui.DestroyContext(ctx)
     shutdown_glfw()
 end

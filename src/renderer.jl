@@ -2,6 +2,8 @@ using ModernGL
 using GeometryBasics
 using StaticArrays
 using Logging
+using CImGui.lib
+using CImGui
 
 # Vertex structure must match your shader layout!
 struct Vertex
@@ -29,7 +31,7 @@ mutable struct BatchRenderer
 end
 
 mutable struct Renderer
-    context::GLContext
+    context::Ptr{CImGui.ImGuiContext}
     batch_renderer::BatchRenderer
     sprite_shader::Shader
     text_shader::Shader
@@ -159,6 +161,6 @@ function draw_textured_quad!(br::BatchRenderer, pos::Vec2f, size::Vec2f, tex::GL
 end
 
 # Present the frame (swap buffers)
-function present!(context::GLContext)
-    swap_buffers(context)
+function present!(window::GLFW.Window)
+    swap_buffers(window)
 end

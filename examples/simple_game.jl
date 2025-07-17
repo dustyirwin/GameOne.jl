@@ -40,33 +40,6 @@ function update(g::GameOne.Game, delta_time::Float32)
 end
 
 function imgui(g::GameOne.Game)
-    # custom imgui windows
-end
-
-# --- Create Game Object ---
-g = GameOne.Game(
-    "Simple Game",
-    @__DIR__,
-    Main,
-    GameOne.KeyState(),
-    GameOne.MouseState(),
-    0.0f0,                # delta_time
-    0,                    # frame_count
-    0.0f0,                # fps
-    CImGui.render,
-    update,
-    nothing,              # onkey_function
-    nothing,              # onmousedown_function
-    nothing,              # onmouseup_function
-    nothing,              # onmousemove_function
-    imgui,
-    nothing,              # imgui_settings
-    GameOne.imgui_preinit,
-    [Dict{String,Any}()],
-    []                    # socket
-)
-
-g.render(ctx) do
     now = time()
     ui_frame_dt[] = now - last_render_time[]
     last_render_time[] = now
@@ -118,6 +91,34 @@ g.render(ctx) do
         end
         CImGui.End()
     end
+end
+
+# --- Create Game Object ---
+g = GameOne.Game(
+    "Simple Game",
+    @__DIR__,
+    Main,
+    nothing,
+    GameOne.KeyState(),
+    GameOne.MouseState(),
+    0.0f0,                # delta_time
+    0,                    # frame_count
+    0.0f0,                # fps
+    CImGui.render,
+    update,
+    nothing,              # onkey_function
+    nothing,              # onmousedown_function
+    nothing,              # onmouseup_function
+    nothing,              # onmousemove_function
+    imgui,
+    nothing,              # imgui_settings
+    GameOne.imgui_preinit,
+    [Dict{String,Any}()],
+    []                    # socket
+)
+
+g.render(ctx) do
+    g.imgui(g)
 end
 
 end
