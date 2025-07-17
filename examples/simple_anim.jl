@@ -18,10 +18,8 @@ io = CImGui.GetIO()
 io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable
 io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_ViewportsEnable
 
-
 image_path = joinpath(@__DIR__, "images", "FireElem1","Visible0.png")
 img = load(image_path)
-
 
 img_rgba = Array(RGBA.(img))  # Ensure it's an Array
 h, w = size(img_rgba)  # Julia: (height, width)

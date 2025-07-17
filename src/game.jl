@@ -3,7 +3,7 @@ using .GameOne
 
 # Modern Game structure
 mutable struct Game
-    screen::Screen
+    name::String
     location::String
     game_module::Module
     keyboard::KeyState
@@ -11,15 +11,15 @@ mutable struct Game
     delta_time::Float32
     frame_count::Int64
     fps::Float32
-    render_function::Function
-    update_function::Function
-    onkey_function::Union{Function, Nothing}
-    onmousedown_function::Union{Function, Nothing}
-    onmouseup_function::Union{Function, Nothing}
-    onmousemove_function::Union{Function, Nothing}
-    imgui_function::Union{Function, Nothing}
+    render::Function
+    update::Function
+    onkey::Union{Function, Nothing}
+    onmousedown::Union{Function, Nothing}
+    onmouseup::Union{Function, Nothing}
+    onmousemove::Union{Function, Nothing}
+    imgui::Union{Function, Nothing}
     imgui_settings::Union{Dict{String,Any}, Nothing}
-    imgui_preinit_function::Union{Function, Nothing}
+    imgui_preinit::Union{Function, Nothing}
     state::Vector{Dict{String,Any}}
     socket::Vector{TCPSocket}
 end
@@ -38,7 +38,7 @@ const SHADER_WATCH_LIST = Set{String}()
 struct QuitException <: Exception end
 
 
-function my_imgui_preinit()
+function imgui_preinit()
     # Ensure ImGui context exists
     if CImGui.GetCurrentContext() == C_NULL
         CImGui.CreateContext()

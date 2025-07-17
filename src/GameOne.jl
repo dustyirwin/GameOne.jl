@@ -7,7 +7,7 @@ using Reexport: @reexport
 
 # Base imports (keep these)
 @reexport using Logging: @debug, @info, @warn, @error, @logmsg
-@reexport using Colors: FixedPointNumbers, @colorant_str, ARGB, Colorant, red, green, blue, alpha
+@reexport using Colors: FixedPointNumbers, @colorant_str, ARGB, RGBA, Colorant, red, green, blue, alpha
 @reexport using Base.Threads: @threads, @spawn, Atomic, SpinLock
 @reexport using Dates: now, Millisecond
 @reexport using Random: rand, randstring, shuffle, shuffle!
@@ -45,9 +45,9 @@ using Reexport: @reexport
 export game, draw, render, flush!, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, stop_music, play_sound, line, clear, rungame, game_include,
     window_paused, start_text_input, update_text_actor!, create_gl_context,
-    load_texture, create_shader, compile_shader, use_shader, bind_texture, my_imgui_preinit,
+    load_texture, create_shader, compile_shader, use_shader, bind_texture, imgui_preinit,
     begin_batch, end_batch, draw_quad, draw_sprite, draw_text, create_screen, load_animated_textures, move!
-export Game, Screen, GLContext, Renderer, Shader, Texture, BatchRenderer
+export Game, Screen, GLContext, Renderer, Shader, Texture, BatchRenderer, RGBA
 export Actor, TextActor, ImageActor 
 export Line, Rect, Triangle, Circle
 export KeyState, MouseState, ShaderWatcher
