@@ -37,7 +37,6 @@ const SHADER_WATCH_LIST = Set{String}()
 
 struct QuitException <: Exception end
 
-
 function imgui_preinit(ctx::Ptr{CImGui.ImGuiContext})
     # Ensure ImGui context exists
     if ctx == C_NULL
@@ -58,12 +57,11 @@ end
 
 function rungame(game::Game)
     #screen = game.screen
-    ctx = CImGui.CreateContext()
+    ctx = game.CreateContext()
 
     io = CImGui.GetIO()
     io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable
     io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_ViewportsEnable
-
 
     if ctx == C_NULL
         @error "ImGui context is null in rungame"
@@ -80,7 +78,7 @@ function rungame(game::Game)
         game.imgui_preinit(ctx)
     end
 
-    last_time = time()
+    #last_time = time()
     #=
     loop_callback = function()
         # --- Timing ---

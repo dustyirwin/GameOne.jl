@@ -48,7 +48,9 @@ mutable struct Actor
     data::Dict{Symbol,Any}
 end
 
-function ImageActor(path::String; id=randstring(10), x=0, y=0, w=0, h=0, color=colorant"white")
+function ImageActor(path::String; id=randstring(10), x=0, y=0, w=0, h=0, 
+    color=colorant"white", alpha=1.0)::Actor
+
     texid = load_texture(path)
     # You may want to query the texture size here
     Actor(
@@ -66,7 +68,9 @@ function ImageActor(path::String; id=randstring(10), x=0, y=0, w=0, h=0, color=c
     )
 end
 
-function AnimatedActor(paths::Vector{String}, frame_times::Vector{Float64}; id=randstring(10), x=0, y=0, color=colorant"white")
+function AnimatedActor(paths::Vector{String}, frame_times::Vector{Float64}; id=randstring(10), x=0, y=0, w=0, h=0,
+    color=colorant"white", alpha=1.0)::Actor
+    
     frames = [load_texture(p) for p in paths]
     anim = SpriteAnimation(frames, frame_times)
     # You may want to query the texture size here
@@ -75,7 +79,7 @@ function AnimatedActor(paths::Vector{String}, frame_times::Vector{Float64}; id=r
         "anim",
         paths,
         Rect(x, y, 0, 0),
-        Vec2f(0, 0),
+        Vec2f(w, h),
         0.0,
         1.0,
         nothing,
@@ -107,23 +111,13 @@ function update!(a::Actor, dt::Float64)
     end
 end
 
-# TextActor: stub for now (replace with OpenGL text rendering later)
+#= TextActor: stub for now (replace with OpenGL text rendering later)
 function TextActor(text::String, font_path::String; id=randstring(10), x=0, y=0, pt_size=24, color=colorant"white")
-    # TODO: Implement OpenGL text rendering
-    Actor(
-        id,
-        text,
-        nothing,  # No image path for text
-        Rect(x, y, 0, 0),
-        Vec2f(0, 0),
-        0.0,
-        1.0,
-        nothing,
-        nothing,
-        color_to_vec4f(color),
-        Dict(:type=>"text", :font_path=>font_path, :pt_size=>pt_size)
-    )
+    # Implement OpenGL text rendering
+    
+
 end
+=#
 
 function move!(actor, dx, dy)
     org = actor.position.origin

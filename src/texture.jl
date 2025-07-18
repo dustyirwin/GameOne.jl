@@ -76,7 +76,7 @@ end
 function load_texture(path::String; mipmaps=true, compress=false)
     img = load(path)
     texid = upload_texture(img; mipmaps=mipmaps, compress=compress)
-    @info "Loaded texture" path texid mipmaps compress
+    @debug "Loaded texture" path texid mipmaps compress
     return texid
 end
 
