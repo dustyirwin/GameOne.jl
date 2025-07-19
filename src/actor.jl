@@ -1,6 +1,22 @@
 using Colors
 using .GameOne: load_texture, load_animated_textures, SpriteAnimation
 
+
+# Basic 2D actor for images or sprites
+@kwdef mutable struct Actor
+    id::String = randstring(10)
+    label::String = ""
+    imgpath::Union{String, Vector{String}, Nothing}  # single img, animation, or text (nothing)
+    position::Rect = Rect(0, 0, 100, 100)
+    z::Int32 = 0
+    angle::Float64 = 0.0
+    alpha::Float32 = 1.0
+    texture::Union{Nothing, GLuint} = nothing
+    animation::Union{Nothing, SpriteAnimation} = nothing
+    color::Vec4f = Vec4f(1.0, 1.0, 1.0, 1.0)
+    data::Dict{Symbol,Any} = Dict()
+end
+
 # Use a memory pool for frequently created/destroyed actors
 mutable struct ActorPool{T}
     active::Vector{T}
@@ -33,32 +49,28 @@ function release_actor!(pool::ActorPool, actor)
     end
 end
 
-# Basic 2D actor for images or sprites
-mutable struct Actor
-    id::String
-    label::String
-    imgpath::Union{String, Vector{String}, Nothing}  # single img, animation, or text (nothing)
-    position::Rect
-    size::Vec2f
-    angle::Float64
-    alpha::Float32
-    texture::Union{Nothing, GLuint}
-    animation::Union{Nothing, SpriteAnimation}
-    color::Vec4f
-    data::Dict{Symbol,Any}
-end
 
-function ImageActor(path::String; id=randstring(10), x=0, y=0, w=0, h=0, 
-    color=colorant"white", alpha=1.0)::Actor
-
+function ImageActor(path::String; id=randstring(10), x=Int32(1), y=Int32(1), 
+    color=colorant"white", alpha=1.0, w::Union{Nothing, Int32}=nothing, h::Union{Nothing, Int32}=nothing)::Actor
+    
     texid = load_texture(path)
-    # You may want to query the texture size here
+    
+    if w === nothing || h === nothing
+        # Query texture size if not provided
+        width = Ref{Int32}()
+        height = Ref{Int32}()
+        ModernGL.glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, width)
+        ModernGL.glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, height)
+        w = width[]
+        h = height[]
+    end
+
     Actor(
         id,
         basename(path),
         path,
         Rect(x, y, w, h),
-        Vec2f(w, h),
+        1,
         0.0,
         1.0,
         texid,
@@ -79,7 +91,7 @@ function AnimatedActor(paths::Vector{String}, frame_times::Vector{Float64}; id=r
         "anim",
         paths,
         Rect(x, y, 0, 0),
-        Vec2f(w, h),
+        1,
         0.0,
         1.0,
         nothing,

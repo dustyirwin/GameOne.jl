@@ -15,6 +15,9 @@ frame_count = length(frames)
 h, w = size(frames[1])
 frame_data = [vec(reinterpret(UInt8, permutedims(f, (2,1)))) for f in frames]
 
+
+# prepare_image() # ensures images are in HxWx4 format
+
 # --- Game State ---
 current_frame = Ref(1)
 last_time = Ref(time())
