@@ -3,11 +3,21 @@ using .GameOne: load_texture, load_animated_textures, SpriteAnimation
 
 
 # Basic 2D actor for images or sprites
+
+# New Position struct for Actor
+@kwdef mutable struct Position
+    x::Int32 = 0
+    y::Int32 = 0
+    w::Int32 = 100
+    h::Int32 = 100
+end
+
 @kwdef mutable struct Actor
     id::String = randstring(10)
     label::String = ""
     imgpath::Union{String, Vector{String}, Nothing}  # single img, animation, or text (nothing)
-    position::Rect = Rect(0, 0, 100, 100)
+    position::Position = Position()
+    scale::Vector{Float32} = [1.0, 1.0]  # scale in x and y
     z::Int32 = 0
     angle::Float64 = 0.0
     alpha::Float32 = 1.0
@@ -50,11 +60,10 @@ function release_actor!(pool::ActorPool, actor)
 end
 
 
+
 function ImageActor(path::String; id=randstring(10), x=Int32(1), y=Int32(1), 
     color=colorant"white", alpha=1.0, w::Union{Nothing, Int32}=nothing, h::Union{Nothing, Int32}=nothing)::Actor
-    
     texid = load_texture(path)
-    
     if w === nothing || h === nothing
         # Query texture size if not provided
         width = Ref{Int32}()
@@ -64,25 +73,29 @@ function ImageActor(path::String; id=randstring(10), x=Int32(1), y=Int32(1),
         w = width[]
         h = height[]
     end
-
     Actor(
         id,
         basename(path),
         path,
-        Rect(x, y, w, h),
+        Position(x=x, y=y, w=w, h=h),
+        [1.0, 1.0],  # Default scale
         1,
         0.0,
         1.0,
         texid,
         nothing,
         color_to_vec4f(color),
-        Dict(:type=>"image")
+        Dict(
+            :type=>"image", 
+            :mouse_offset => Vec2f(0, 0),
+            :anim=>false,
+            )
     )
 end
 
+
 function AnimatedActor(paths::Vector{String}, frame_times::Vector{Float64}; id=randstring(10), x=0, y=0, w=0, h=0,
     color=colorant"white", alpha=1.0)::Actor
-    
     frames = [load_texture(p) for p in paths]
     anim = SpriteAnimation(frames, frame_times)
     # You may want to query the texture size here
@@ -90,7 +103,7 @@ function AnimatedActor(paths::Vector{String}, frame_times::Vector{Float64}; id=r
         id,
         "anim",
         paths,
-        Rect(x, y, 0, 0),
+        Position(x=x, y=y, w=w, h=h),
         1,
         0.0,
         1.0,
@@ -102,9 +115,10 @@ function AnimatedActor(paths::Vector{String}, frame_times::Vector{Float64}; id=r
 end
 
 # Drawing: Use batch renderer
+
 function draw(screen::Screen, a::Actor)
     pos = Vec2f(a.position.x, a.position.y)
-    size = a.size
+    size = (a.position.w, a.position.h)
     color = a.color
     if a.texture !== nothing
         draw_textured_quad!(screen.renderer.batch_renderer, pos, size, a.texture, color)

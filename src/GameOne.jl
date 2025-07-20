@@ -44,10 +44,10 @@ using Reexport: @reexport
 # Modern exports
 export game, draw, render, flush!, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, stop_music, play_sound, line, clear, rungame, game_include,
-    window_paused, start_text_input, update_text_actor!, create_gl_context,
-    load_texture, create_shader, compile_shader, use_shader, bind_texture, imgui_preinit, renderloop,
-    begin_batch, end_batch, draw_quad, draw_sprite, draw_text, create_screen, load_animated_textures, move!
-export Game, Screen, ImGuiContext, Renderer, Shader, Texture, BatchRenderer, RGBA
+    window_paused, start_text_input, update_text_actor!, create_gl_context, load_img_for_gl,
+    load_texture, create_shader, compile_shader, use_shader, bind_texture, imgui_preinit, move!,
+    begin_batch, end_batch, draw_quad, draw_sprite, draw_text, create_screen, load_texture, load_animated_textures
+export Game, Screen, ImGuiContext, Renderer, Shader, Texture, BatchRenderer, RGBA, load_gl_img
 export Actor, ImageActor, SpriteAnimation, AnimatedActor
 export Line, Rect, Triangle, Circle
 export KeyState, MouseState, ShaderWatcher

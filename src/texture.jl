@@ -104,3 +104,14 @@ function load_animated_textures(path::String; mipmaps=true, compress=false)
         error("Unexpected image stack dimensions: $(size(imgstack))")
     end
 end
+
+
+function load_img_for_gl(img_path::String)
+    img = load(img_path)
+    img_rgba = Array(RGBA.(img))
+    height, width = size(img_rgba)
+    img_gl = permutedims(img_rgba, (2,1))
+    img_data_gl_flat = vec(reinterpret(UInt8, img_gl))
+
+    return img_data_gl_flat, Int32(width), Int32(height)
+end

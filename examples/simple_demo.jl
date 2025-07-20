@@ -1,3 +1,4 @@
+using GameOne
 using CImGui
 using FileIO, Colors
 using ImageCore: permutedims, Array
@@ -24,14 +25,16 @@ function play_sound(file_path::String)
 end
 
 # load an image
-image_path = joinpath(@__DIR__, "images", "alien.png")
+function load_gl_img(image_path::String)
+    img = load(image_path)
+    img_rgba = Array(RGBA.(img))  # Ensure it's an Array
+    h, w = size(img_rgba)  # Julia: (height, width)
+    img_gl = permutedims(img_rgba, (2, 1))  # OpenGL expects (width, height)
+    img_data_gl_flat = vec(reinterpret(UInt8, img_gl))
+    return img_data_gl_flat, w, h
+end
 
-img = load(image_path)
-img_rgba = Array(img)  # Already RGBA, just ensure Array
-
-img_h, img_w = size(img_rgba)  # Julia: (height, width)
-img_gl = permutedims(img_rgba, (2, 1))  # (width, height)
-img_data_gl_flat = vec(reinterpret(UInt8, img_gl))
+img_data_gl_flat, img_w, img_h = load_gl_img(joinpath(@__DIR__, "images", "alien.png"))
 
 image_id = Ref{Any}(nothing)
 
