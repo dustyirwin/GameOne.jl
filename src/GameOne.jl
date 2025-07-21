@@ -47,7 +47,7 @@ export game, draw, render, flush!, scheduler, schedule_once, schedule_interval, 
     window_paused, start_text_input, update_text_actor!, create_gl_context, load_img_for_gl,
     load_texture, create_shader, compile_shader, use_shader, bind_texture, imgui_preinit, move!,
     begin_batch, end_batch, draw_quad, draw_sprite, draw_text, create_screen, load_texture, load_animated_textures
-export load_gl_img, process_webp, create_sprite_animation
+export load_gl_img, process_webp, create_sprite_animation, update!
 export Game, Screen, ImGuiContext, Renderer, Shader, Texture, BatchRenderer, RGBA
 export Actor, ImageActor, SpriteAnimation, AnimatedActor
 export Line, Rect, Triangle, Circle

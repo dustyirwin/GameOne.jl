@@ -27,6 +27,9 @@ function process_webp(webp_path::String, anim_name::String, anim_dir::String)
   
     if !isdir(anim_dir)
         mkpath(anim_dir)
+    else
+        @debug "Animation directory already exists: $anim_dir"
+        return
     end
 
     webp_txt = joinpath(anim_dir, "webp_info_$anim_name.txt")

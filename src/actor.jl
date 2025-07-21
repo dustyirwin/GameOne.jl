@@ -103,11 +103,19 @@ function AnimatedActor(webp_path::String, fps=12;
     first_frame, w, h = load_gl_img(frame_paths[1])
     frame_data = [ load_gl_img(fp)[1] for fp in frame_paths ]
 
-    anim = SpriteAnimation(frame_data, frame_delays, w, h)
+    anim = SpriteAnimation(
+        frame_data, 
+        frame_delays, 
+        w, 
+        h,
+        1,
+        0.,
+        true  # Looping by default
+    )
     # You may want to query the texture size here
     Actor(
         id,
-        "anim",
+        basename(webp_path),
         webp_path,
         Position(x=x, y=y, w=w, h=h),
         [1.0, 1.0],  # Default scale
