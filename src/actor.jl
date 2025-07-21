@@ -59,8 +59,6 @@ function release_actor!(pool::ActorPool, actor)
     end
 end
 
-
-
 function ImageActor(path::String; id=randstring(10), x=Int32(1), y=Int32(1), 
     color=colorant"white", alpha=1.0, w::Union{Nothing, Int32}=nothing, h::Union{Nothing, Int32}=nothing)::Actor
     texid = load_texture(path)
@@ -94,16 +92,25 @@ function ImageActor(path::String; id=randstring(10), x=Int32(1), y=Int32(1),
 end
 
 
-function AnimatedActor(paths::Vector{String}, frame_times::Vector{Float64}; id=randstring(10), x=0, y=0, w=0, h=0,
-    color=colorant"white", alpha=1.0)::Actor
-    frames = [load_texture(p) for p in paths]
-    anim = SpriteAnimation(frames, frame_times)
+function AnimatedActor(webp_path::String, fps=12; 
+    id=randstring(10), x=0, y=0, color=colorant"white", alpha=1.0)::Actor
+    
+    tmp_anim_folder = joinpath(tempdir(), basename(webp_path))
+    process_webp(webp_path, "Camouflage_001", tmp_anim_folder)
+    frame_paths = [ fn for fn in sort(readdir(tmp_anim_folder; join=true)) if endswith(lowercase(fn), ".png") ]
+    frame_count = length(frame_paths)
+    frame_delays = fill(1/fps, frame_count)
+    first_frame, w, h = load_gl_img(frame_paths[1])
+    frame_data = [ load_gl_img(fp)[1] for fp in frame_paths ]
+
+    anim = SpriteAnimation(frame_data, frame_delays, w, h)
     # You may want to query the texture size here
     Actor(
         id,
         "anim",
-        paths,
+        webp_path,
         Position(x=x, y=y, w=w, h=h),
+        [1.0, 1.0],  # Default scale
         1,
         0.0,
         1.0,
@@ -136,14 +143,6 @@ function update!(a::Actor, dt::Float64)
         update!(a.animation, dt)
     end
 end
-
-#= TextActor: stub for now (replace with OpenGL text rendering later)
-function TextActor(text::String, font_path::String; id=randstring(10), x=0, y=0, pt_size=24, color=colorant"white")
-    # Implement OpenGL text rendering
-    
-
-end
-=#
 
 function move!(actor, dx, dy)
     org = actor.position.origin

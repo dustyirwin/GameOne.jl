@@ -36,21 +36,28 @@ frame_data = [ load_gl_img(fp)[1] for fp in frame_paths ]
 last_render_time = Ref(time())
 
 # --- Sprite Animation (defer creation until context is ready) ---
-sprite_anim = Ref{Any}(nothing)
+sprite_anim = SpriteAnimation(frame_data, frame_delays, w, h, 1, 0., true)
 
 function update!(anim::SpriteAnimation, dt::Float64)
     anim.timer += dt
-    while anim.timer > anim.frame_times[anim.current_frame]
+    if anim.current_frame > length(anim.frame_data)
+        anim.current_frame = anim.looping ? 1 : length(anim.frame_data)
+    end
+    if anim.timer > anim.frame_times[anim.current_frame]
         anim.timer -= anim.frame_times[anim.current_frame]
         anim.current_frame += 1
-        if anim.current_frame > length(anim.textures)
-            anim.current_frame = anim.looping ? 1 : length(anim.textures)
-        end
     end
-end
-
-function current_texture(anim::SpriteAnimation)
-    anim.textures[anim.current_frame]
+    # Ensure the current frame is within bounds
+    anim.current_frame = clamp(anim.current_frame, 1, length(anim.frame_data))
+    # Handle looping
+    if anim.looping && anim.current_frame == length(anim.frame_data)
+        anim.current_frame = 1
+        anim.timer = 0.0  # Reset timer for looping
+    end
+    # Ensure the timer is reset if we reach the end of the animation
+    if anim.current_frame == length(anim.frame_data) && !anim.looping
+        anim.timer = 0.0  # Reset timer to avoid overflow
+    end   
 end
 
 function update(g::GameOne.Game, delta_time::Float32)
@@ -110,13 +117,26 @@ function imgui(g::GameOne.Game)
     end
     CImGui.End()
 
-    # Sprite Animation (deferred creation)
-    if sprite_anim[] === nothing
-        sprite_anim[] = create_sprite_animation(frame_data, w, h, frame_delays)
-    end
-    update!(sprite_anim[], frame_dt[])
+    
     if CImGui.Begin("Sprite Animation")
-        CImGui.Image(current_texture(sprite_anim[]), CImGui.ImVec2(w, h))
+
+        update!(sprite_anim, frame_dt[])
+
+        sprite_text_id = Ref{Any}(nothing)
+        sprite_text_id[] = CImGui.create_image_texture(w, h)
+        
+        CImGui.update_image_texture(
+            sprite_text_id[],
+            sprite_anim.frame_data[sprite_anim.current_frame],
+            w, 
+            h
+        )
+        
+        CImGui.Image(sprite_text_id[], CImGui.ImVec2(w, h))
+        CImGui.Text("Current Frame: $(sprite_anim.current_frame)")
+        CImGui.Text("Timer: $(round(sprite_anim.timer, digits=2))")
+        CImGui.Text("Frame Times: $(sprite_anim.frame_times)")
+        CImGui.Text("Looping: $(sprite_anim.looping)")
     end
     CImGui.End()
 end
@@ -145,7 +165,7 @@ g = GameOne.Game(
     []                    # socket
 )
 
-g.render(ctx, window_title="Simple Game Copy") do
+g.render(ctx, window_title="Simple Game") do
     g.imgui(g)
 end
 
@@ -153,8 +173,7 @@ end
 
 # --- start game from terminal call the Game ---
 if PROGRAM_FILE == @__FILE__()
-    using .SimpleGame
     println("Starting Simple Game!")
-    GameOne.rungame(SimpleGame.game)
+    using .SimpleGame
 end
 

@@ -1,20 +1,15 @@
 # animation.jl
 
 
-mutable struct SpriteAnimation
-    const textures::Vector{Any}      # OpenGL texture IDs for each frame
-    frame_times::Vector{Float64} # Duration of each frame (seconds)
-    current_frame::Int
-    timer::Float64
-    looping::Bool
-end
 
-function create_sprite_animation(frame_data, w::Int, h::Int, frame_times::Vector{Float64}; looping=true)
-    textures = [CImGui.create_image_texture(w, h) for _ in frame_data]
-    for (i, tex) in enumerate(textures)
-        CImGui.update_image_texture(tex, frame_data[i], w, h)
-    end
-    SpriteAnimation(textures, frame_times, 1, 0.0, looping)
+@kwdef mutable struct SpriteAnimation
+    frame_data::Any                     # Pixel data for each frame
+    frame_times::Vector{Float64}        # Duration of each frame (seconds)
+    w::Int
+    h::Int
+    current_frame::Int=1
+    timer::Float64=0.0
+    looping::Bool=true
 end
 
 function update!(anim::SpriteAnimation, dt::Float64)
@@ -22,14 +17,10 @@ function update!(anim::SpriteAnimation, dt::Float64)
     while anim.timer > anim.frame_times[anim.current_frame]
         anim.timer -= anim.frame_times[anim.current_frame]
         anim.current_frame += 1
-        if anim.current_frame > length(anim.frames)
-            anim.current_frame = anim.looping ? 1 : length(anim.frames)
+        if anim.current_frame > length(anim.frame_data)
+            anim.current_frame = anim.looping ? 1 : length(anim.frame_data)
         end
     end
-end
-
-function current_texture(anim::SpriteAnimation)
-    anim.frames[anim.current_frame]
 end
 
 function process_webp(webp_path::String, anim_name::String, anim_dir::String)
