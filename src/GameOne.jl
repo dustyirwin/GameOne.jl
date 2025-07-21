@@ -36,7 +36,7 @@ using Reexport: @reexport
 @reexport using ImageIO
 
 # WebP support
-@reexport using WebP
+@reexport using libwebp_jll
 
 # ImageCore 
 @reexport using ImageCore: channelview, permutedims, reshape, float
@@ -47,7 +47,8 @@ export game, draw, render, flush!, scheduler, schedule_once, schedule_interval, 
     window_paused, start_text_input, update_text_actor!, create_gl_context, load_img_for_gl,
     load_texture, create_shader, compile_shader, use_shader, bind_texture, imgui_preinit, move!,
     begin_batch, end_batch, draw_quad, draw_sprite, draw_text, create_screen, load_texture, load_animated_textures
-export Game, Screen, ImGuiContext, Renderer, Shader, Texture, BatchRenderer, RGBA, load_gl_img
+export load_gl_img, process_webp, create_sprite_animation
+export Game, Screen, ImGuiContext, Renderer, Shader, Texture, BatchRenderer, RGBA
 export Actor, ImageActor, SpriteAnimation, AnimatedActor
 export Line, Rect, Triangle, Circle
 export KeyState, MouseState, ShaderWatcher
@@ -58,7 +59,7 @@ include("keyboard.jl")              # GLFW keyboard handling
 include("timer.jl")                 # Keep as-is
 include("glcontext.jl")             # GLFW window management
 include("texture.jl")               # Texture loading and management
-include("animation.jl")             # Sprite animation system
+include("sprites.jl")               # Sprite animation system
 include("shader.jl")                # Shader compilation and management
 include("renderer.jl")              # Modern OpenGL batch renderer
 include("screen.jl")                # OpenGL screen management

@@ -4,20 +4,6 @@ module SimpleGame
 using GameOne
 using CImGui
 
-
-# --- Animation Setup ---
-anim_folder = joinpath(@__DIR__, "images", "FireElem1")
-frames = let
-    files = sort(readdir(anim_folder; join=true))
-    [Array(GameOne.RGBA.(load(f))) for f in files]
-end
-frame_count = length(frames)
-h, w = size(frames[1])
-frame_data = [vec(reinterpret(UInt8, permutedims(f, (2,1)))) for f in frames]
-
-
-# prepare_image() # ensures images are in HxWx4 format
-
 # --- Game State ---
 current_frame = Ref(1)
 last_time = Ref(time())
@@ -36,7 +22,36 @@ io = CImGui.GetIO()
 io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable
 io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_ViewportsEnable
 
+# --- Webp Animation Setup ---
+webp_path = joinpath(@__DIR__,"images", "Camouflage_001.webp")
+tmp_anim_folder = joinpath(tempdir(), basename(webp_path))
+process_webp(webp_path, "Camouflage_001", tmp_anim_folder)
+frame_paths = [ fn for fn in sort(readdir(tmp_anim_folder; join=true)) if endswith(lowercase(fn), ".png") ]
+frame_count = length(frame_paths)
+frame_delays = fill(1/12, frame_count)  # Assuming 12 FPS
+
+first_frame, w, h = load_gl_img(frame_paths[1])
+frame_data = [ load_gl_img(fp)[1] for fp in frame_paths ]
+
 last_render_time = Ref(time())
+
+# --- Sprite Animation (defer creation until context is ready) ---
+sprite_anim = Ref{Any}(nothing)
+
+function update!(anim::SpriteAnimation, dt::Float64)
+    anim.timer += dt
+    while anim.timer > anim.frame_times[anim.current_frame]
+        anim.timer -= anim.frame_times[anim.current_frame]
+        anim.current_frame += 1
+        if anim.current_frame > length(anim.textures)
+            anim.current_frame = anim.looping ? 1 : length(anim.textures)
+        end
+    end
+end
+
+function current_texture(anim::SpriteAnimation)
+    anim.textures[anim.current_frame]
+end
 
 function update(g::GameOne.Game, delta_time::Float32)
     # Update game state
@@ -70,14 +85,14 @@ function imgui(g::GameOne.Game)
     if CImGui.Begin("FPS Display")
         CImGui.Text("Animation FPS: $(round(anim_fps, digits=2))")
         CImGui.Text("UI FPS: $(round(1/ui_frame_dt[], digits=2))")
-        CImGui.End()
     end
+    CImGui.End()
 
     # Animation Window
     if CImGui.Begin("Animation")
         CImGui.Image(anim_image_id[], CImGui.ImVec2(w, h))
-        CImGui.End()
     end
+    CImGui.End()
 
     # Sound Control
     if CImGui.Begin("Sound Control")
@@ -92,8 +107,18 @@ function imgui(g::GameOne.Game)
             GameOne.stop_music()
             music_playing[] = false
         end
-        CImGui.End()
     end
+    CImGui.End()
+
+    # Sprite Animation (deferred creation)
+    if sprite_anim[] === nothing
+        sprite_anim[] = create_sprite_animation(frame_data, w, h, frame_delays)
+    end
+    update!(sprite_anim[], frame_dt[])
+    if CImGui.Begin("Sprite Animation")
+        CImGui.Image(current_texture(sprite_anim[]), CImGui.ImVec2(w, h))
+    end
+    CImGui.End()
 end
 
 # --- Create Game Object ---
@@ -120,7 +145,7 @@ g = GameOne.Game(
     []                    # socket
 )
 
-g.render(ctx) do
+g.render(ctx, window_title="Simple Game Copy") do
     g.imgui(g)
 end
 
@@ -132,3 +157,4 @@ if PROGRAM_FILE == @__FILE__()
     println("Starting Simple Game!")
     GameOne.rungame(SimpleGame.game)
 end
+

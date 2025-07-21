@@ -3,7 +3,7 @@ using FileIO
 using ImageIO
 using Logging
 using ImageCore
-using WebP
+using libwebp_jll
 
 mutable struct Texture
     id::GLuint
@@ -82,8 +82,10 @@ end
 
 # Load all frames of an animated webp/gif as OpenGL textures
 function load_animated_textures(path::String; mipmaps=true, compress=false)
+    # generating webp frames
+    #process_webp(path)
+    
     imgstack = if occursin("webp",lowercase(path))
-        WebP.read_webp(path)
     else
         load(path)
     end
@@ -114,4 +116,14 @@ function load_img_for_gl(img_path::String)
     img_data_gl_flat = vec(reinterpret(UInt8, img_gl))
 
     return img_data_gl_flat, Int32(width), Int32(height)
+end
+
+# load an image into GL format
+function load_gl_img(image_path::String)
+    img = load(image_path)
+    img_rgba = Array(RGBA.(img))  # Ensure it's an Array
+    h, w = size(img_rgba)  # Julia: (height, width)
+    img_gl = permutedims(img_rgba, (2, 1))  # OpenGL expects (width, height)
+    img_data_gl_flat = vec(reinterpret(UInt8, img_gl))
+    return img_data_gl_flat, w, h
 end

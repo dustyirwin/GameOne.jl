@@ -24,7 +24,7 @@ function play_sound(file_path::String)
     close(stream)
 end
 
-# load an image
+# load an image into GL format
 function load_gl_img(image_path::String)
     img = load(image_path)
     img_rgba = Array(RGBA.(img))  # Ensure it's an Array
