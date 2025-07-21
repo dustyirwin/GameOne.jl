@@ -3,10 +3,10 @@
 
 
 @kwdef mutable struct SpriteAnimation
-    frame_data::Any                     # Pixel data for each frame
-    frame_times::Vector{Float64}        # Duration of each frame (seconds)
-    w::Int
-    h::Int
+    const frame_data::Any                     # Pixel data for each frame
+    const frame_times::Vector{Float64}        # Duration of each frame (seconds)
+    const w::Int
+    const h::Int
     current_frame::Int=1
     timer::Float64=0.0
     looping::Bool=true
@@ -17,6 +17,7 @@ function update!(anim::SpriteAnimation, dt::Float64)
     while anim.timer > anim.frame_times[anim.current_frame]
         anim.timer -= anim.frame_times[anim.current_frame]
         anim.current_frame += 1
+        
         if anim.current_frame > length(anim.frame_data)
             anim.current_frame = anim.looping ? 1 : length(anim.frame_data)
         end
@@ -60,10 +61,16 @@ function process_webp(webp_path::String, anim_name::String, anim_dir::String)
     frames[i] = d
   end
 
-  frame_delays = [Millisecond(v[:duration]) for (k, v) in sort(frames)]
+    frame_delays = [ v[:duration] for (k, v) in sort(frames) ]
+    # save frame delays to file
+    open(joinpath(anim_dir, "frame_delays.txt"), "w") do f
+        for delay in frame_delays
+            write(f, "$delay\n")
+        end
+    end
 
     # exporting each webp frame as a keyframe
-  for i in 1:n
+    for i in 1:n
         tmp_png = joinpath(anim_dir, "frame_$(lpad(i,3,"0")).png")
         tmp_webp = joinpath(anim_dir, "frame_$(lpad(i,3,"0")).webp")
 
