@@ -1,10 +1,9 @@
 # animation.jl
 
-
-
 @kwdef mutable struct SpriteAnimation
-    const frame_data::Any                     # Pixel data for each frame
-    const frame_times::Vector{Float64}        # Duration of each frame (seconds)
+    const frame_data::Any                       # Pixel data for each frame
+    const frame_times::Vector{Float64}          # Duration of each frame (seconds)
+    const frame_ids::Vector{String}             # Unique IDs for each frame
     const w::Int
     const h::Int
     current_frame::Int=1

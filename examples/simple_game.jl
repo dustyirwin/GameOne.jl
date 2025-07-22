@@ -36,7 +36,8 @@ frame_data = [ load_gl_img(fp)[1] for fp in frame_paths ]
 last_render_time = Ref(time())
 
 # --- Sprite Animation (defer creation until context is ready) ---
-sprite_anim = SpriteAnimation(frame_data, frame_delays, w, h, 1, 0., true)
+frame_ids = [ randstring(16) for _ in 1:frame_count ]
+sprite_anim = SpriteAnimation(frame_data, frame_delays, frame_ids, w, h, 1, 0., true)
 
 function update!(anim::SpriteAnimation, dt::Float64)
     anim.timer += dt
@@ -135,7 +136,7 @@ function imgui(g::GameOne.Game)
         CImGui.Image(sprite_text_id[], CImGui.ImVec2(w, h))
         CImGui.Text("Current Frame: $(sprite_anim.current_frame)")
         CImGui.Text("Timer: $(round(sprite_anim.timer, digits=2))")
-        CImGui.Text("Frame Times: $(sprite_anim.frame_times)")
+        CImGui.Text("Frame Delay: $(sprite_anim.frame_times[1])")
         CImGui.Text("Looping: $(sprite_anim.looping)")
     end
     CImGui.End()
