@@ -90,7 +90,7 @@ function ImageActor(path::String; id=randstring(8), x=Int32(1), y=Int32(1),
 end
 
 
-function AnimatedActor(webp_path::String, fps=12; 
+function AnimatedActor(webp_path::String, fps=14; 
     id=randstring(8), x=0, y=0, color=colorant"white", alpha=1.0)::Actor
     
     tmp_anim_folder = joinpath(tempdir(), basename(webp_path))

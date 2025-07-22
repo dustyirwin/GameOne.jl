@@ -3,7 +3,7 @@ module GameOne
 using Reexport: @reexport
 
 # Add Revise for hot-reloading development
-@reexport using Revise
+#@reexport using Revise
 
 # Base imports (keep these)
 @reexport using Logging: @debug, @info, @warn, @error, @logmsg
