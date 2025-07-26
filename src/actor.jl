@@ -152,9 +152,9 @@ function update!(a::Actor, dt::Float64)
     end
 end
 
-function move!(actor, dx, dy)
-    org = actor.position.origin
-    new_x = first(org) + dx
-    new_y = last(org) + dy
-    actor.position = HyperRectangle(new_x, new_y, first(org), last(org))
+function move!(a::Actor, dx::Real, dy::Real)
+    pos = a.position
+    new_x = pos.x + dx
+    new_y = pos.y + dy
+    a.position = Position(new_x, new_y, pos.w, pos.h)
 end
