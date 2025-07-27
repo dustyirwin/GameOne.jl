@@ -34,9 +34,9 @@ function load_gl_img(image_path::String)
     return img_data_gl_flat, w, h
 end
 
-function draw_background(window, image_id, img_w, img_h)
+function draw_background(window, image_id)
     # Make sure the OpenGL context is current
-    GLFW.MakeContextCurrent(window)
+    #GLFW.MakeContextCurrent(window)
     # Get framebuffer and window size
     fbw, fbh = GLFW.GetFramebufferSize(window)
     wx, wy = GLFW.GetWindowPos(window)
@@ -57,8 +57,10 @@ function draw_background(window, image_id, img_w, img_h)
 end
 
 img_data_gl_flat, img_w, img_h = load_gl_img(joinpath(@__DIR__, "images", "alien.png"))
+bkg_data_gl_flat, bkg_width, bkg_height = load_gl_img(joinpath(@__DIR__, "images", "edh_bkg.png"))
 
 image_id = Ref{Any}(nothing)
+bkgimg_id = Ref{Any}(nothing)
 
 CImGui.render(ctx) do
     window = CImGui.current_window()
@@ -66,20 +68,31 @@ CImGui.render(ctx) do
         return
     end
     GLFW.MakeContextCurrent(window)
-    draw_background(window, image_id, img_w, img_h)
     
     if image_id[] === nothing
         image_id[] = CImGui.create_image_texture(img_w, img_h)
     end
+    if bkgimg_id[] === nothing
+        bkgimg_id[] = CImGui.create_image_texture(bkg_width, bkg_height)
+    end
+
+    draw_background(window, bkgimg_id)
+    
     CImGui.update_image_texture(image_id[], img_data_gl_flat, img_w, img_h)
     if CImGui.Begin("Image Window")
         CImGui.Image(image_id[], CImGui.ImVec2(img_w, img_h))
-        CImGui.End()
     end
+    CImGui.End()
+    
+    CImGui.update_image_texture(bkgimg_id[], bkg_data_gl_flat, bkg_width, bkg_height)
+    if CImGui.Begin("Background Window")
+        CImGui.Image(bkgimg_id[], CImGui.ImVec2(bkg_width, bkg_height))
+    end
+    CImGui.End()
     if CImGui.Begin("Sound Control")
         if CImGui.Button("Play Sound")
             play_sound(joinpath(@__DIR__, "sounds", "eep.wav"))
         end
-        CImGui.End()
     end
+    CImGui.End()
 end
