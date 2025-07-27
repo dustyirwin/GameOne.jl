@@ -34,11 +34,40 @@ function load_gl_img(image_path::String)
     return img_data_gl_flat, w, h
 end
 
+function draw_background(window, image_id, img_w, img_h)
+    # Make sure the OpenGL context is current
+    GLFW.MakeContextCurrent(window)
+    # Get framebuffer and window size
+    fbw, fbh = GLFW.GetFramebufferSize(window)
+    wx, wy = GLFW.GetWindowPos(window)
+    ww, wh = GLFW.GetWindowSize(window)
+    # Draw the image to fill the window
+    draw_list = CImGui.GetBackgroundDrawList()
+    if image_id[] !== nothing
+        CImGui.ImDrawList_AddImage(
+            draw_list,
+            image_id[],
+            CImGui.ImVec2(wx, wy),
+            CImGui.ImVec2(wx + ww, wy + wh),
+            CImGui.ImVec2(0, 0),
+            CImGui.ImVec2(1, 1),
+            CImGui.ImVec4(1.0, 1.0, 1.0, 1.0)
+        )
+    end
+end
+
 img_data_gl_flat, img_w, img_h = load_gl_img(joinpath(@__DIR__, "images", "alien.png"))
 
 image_id = Ref{Any}(nothing)
 
 CImGui.render(ctx) do
+    window = CImGui.current_window()
+    if window === nothing
+        return
+    end
+    GLFW.MakeContextCurrent(window)
+    draw_background(window, image_id, img_w, img_h)
+    
     if image_id[] === nothing
         image_id[] = CImGui.create_image_texture(img_w, img_h)
     end
