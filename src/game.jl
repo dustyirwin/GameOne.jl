@@ -5,7 +5,7 @@ mutable struct Game
     name::String
     location::String
     game_module::Module
-    screen::Union{Screen, Nothing}
+    screen::Union{Any, Nothing}
     keyboard::KeyState
     mouse::MouseState
     delta_time::Float32

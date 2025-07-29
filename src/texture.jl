@@ -107,17 +107,6 @@ function load_animated_textures(path::String; mipmaps=true, compress=false)
     end
 end
 
-
-function load_img_for_gl(img_path::String)
-    img = load(img_path)
-    img_rgba = Array(RGBA.(img))
-    height, width = size(img_rgba)
-    img_gl = permutedims(img_rgba, (2,1))
-    img_data_gl_flat = vec(reinterpret(UInt8, img_gl))
-
-    return img_data_gl_flat, Int32(width), Int32(height)
-end
-
 # load an image into GL format
 function load_gl_img(image_path::String)
     img = load(image_path)
@@ -125,5 +114,30 @@ function load_gl_img(image_path::String)
     h, w = size(img_rgba)  # Julia: (height, width)
     img_gl = permutedims(img_rgba, (2, 1))  # OpenGL expects (width, height)
     img_data_gl_flat = vec(reinterpret(UInt8, img_gl))
-    return img_data_gl_flat, w, h
+    return img_data_gl_flat, Int32(w), Int32(h)
 end
+
+function draw_background(window, image_id)
+    # Make sure the OpenGL context is current
+    GLFW.MakeContextCurrent(window)
+    # Get framebuffer and window size
+    #fbw, fbh = GLFW.GetFramebufferSize(window)
+    wx, wy = GLFW.GetWindowPos(window)
+    ww, wh = GLFW.GetWindowSize(window)
+    # Draw the image to fill the window
+    draw_list = CImGui.GetBackgroundDrawList()
+    if image_id[] !== nothing
+        CImGui.ImDrawList_AddImage(
+            draw_list,
+            image_id[],
+            CImGui.ImVec2(wx, wy),
+            CImGui.ImVec2(wx + ww, wy + wh),
+            CImGui.ImVec2(0, 0),
+            CImGui.ImVec2(1, 1),
+            CImGui.ImVec4(1.0, 1.0, 1.0, 1.0)
+        )
+    end
+end
+
+export Texture, upload_texture, load_texture, load_animated_textures, load_gl_img, draw_background
+export prepare_image

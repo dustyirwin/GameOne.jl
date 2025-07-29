@@ -130,7 +130,7 @@ function AnimatedActor(webp_path::String, fps=14;
 end
 
 # Drawing: Use batch renderer
-
+#=
 function draw(screen::Screen, a::Actor)
     pos = Vec2f(a.position.x, a.position.y)
     size = (a.position.w, a.position.h)
@@ -144,6 +144,7 @@ function draw(screen::Screen, a::Actor)
         draw_colored_quad!(screen.renderer.batch_renderer, pos, size, color)
     end
 end
+=#
 
 # Animation update
 function update!(a::Actor, dt::Float64)

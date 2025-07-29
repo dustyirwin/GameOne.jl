@@ -9,10 +9,14 @@ using Reexport: @reexport
 @reexport using Logging: @debug, @info, @warn, @error, @logmsg
 @reexport using Colors: FixedPointNumbers, @colorant_str, ARGB, RGBA, Colorant, red, green, blue, alpha
 @reexport using Base.Threads: @threads, @spawn, Atomic, SpinLock
-@reexport using Dates: now, Millisecond
+@reexport using Dates: Date, Millisecond, now, today
 @reexport using Random: rand, randstring, shuffle, shuffle!
 @reexport using DataStructures: OrderedDict, counter, @enum
-@reexport using Sockets
+@reexport using Serialization: serialize, deserialize
+@reexport using DelimitedFiles: readlines, write
+@reexport using RelocatableFolders: @path, abspath
+@reexport using UUIDs: uuid4
+@reexport using Sockets: TCPSocket, listen, accept, close, connect, isopen, isconnected
 @reexport using Printf: @sprintf
 
 # Modern OpenGL/GLFW stack
@@ -30,13 +34,15 @@ using Reexport: @reexport
 
 # Audio (lightweight)
 @reexport using PortAudio
+@reexport using PortAudio: nchannels, samplerate, PortAudioStream, write, close
 @reexport using LibSndFile
 
 @reexport using FileIO
 @reexport using ImageIO
+@reexport using JSON
 
 # WebP support
-@reexport using libwebp_jll
+@reexport using libwebp_jll: webpmux, dwebp, webpinfo
 
 # ImageCore 
 @reexport using ImageCore: channelview, permutedims, reshape, float
@@ -44,11 +50,11 @@ using Reexport: @reexport
 # Modern exports
 export game, draw, render, flush!, scheduler, schedule_once, schedule_interval, schedule_unique, unschedule,
     collide, angle, distance, play_music, stop_music, play_sound, line, clear, rungame, game_include,
-    window_paused, start_text_input, update_text_actor!, create_gl_context, load_img_for_gl,
+    window_paused, start_text_input, update_text_actor!, create_gl_context, draw_background,
     load_texture, create_shader, compile_shader, use_shader, bind_texture, imgui_preinit, move!,
     begin_batch, end_batch, draw_quad, draw_sprite, draw_text, create_screen, load_texture, load_animated_textures
 export load_gl_img, process_webp, create_sprite_animation, update!
-export Game, Screen, ImGuiContext, Renderer, Shader, Texture, BatchRenderer, RGBA
+export Game, Screen, Shader, Texture, BatchRenderer, RGBA
 export Actor, ImageActor, SpriteAnimation, AnimatedActor
 export Line, Rect, Triangle, Circle
 export KeyState, MouseState, ShaderWatcher
@@ -57,14 +63,14 @@ export KeyState, MouseState, ShaderWatcher
 include("math.jl")                  # Matrix math utilities
 include("keyboard.jl")              # GLFW keyboard handling
 include("timer.jl")                 # Keep as-is
-include("glcontext.jl")             # GLFW window management
+#include("glcontext.jl")             # GLFW window management
 include("texture.jl")               # Texture loading and management
 include("sprites.jl")               # Sprite animation system
 include("shader.jl")                # Shader compilation and management
-include("renderer.jl")              # Modern OpenGL batch renderer
-include("screen.jl")                # OpenGL screen management
+#include("renderer.jl")              # Modern OpenGL batch renderer
+#include("screen.jl")                # OpenGL screen management
 include("game.jl")                  # Game main loop 
-include("event.jl")                 # GLFW event handling
+#include("event.jl")                 # GLFW event handling
 include("actor.jl")                 # Modern actor system
 include("resources.jl")             # Resource management
 include("audio.jl")                 # Audio playback system
