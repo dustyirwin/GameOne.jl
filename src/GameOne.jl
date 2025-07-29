@@ -44,6 +44,9 @@ using Reexport: @reexport
 # WebP support
 @reexport using libwebp_jll: webpmux, dwebp, webpinfo
 
+# StatsBase for statistics
+@reexport using StatsBase: mean, median, std, minimum, maximum, quantile
+
 # ImageCore 
 @reexport using ImageCore: channelview, permutedims, reshape, float
 
