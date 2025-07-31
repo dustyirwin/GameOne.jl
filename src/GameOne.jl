@@ -55,7 +55,7 @@ export game, draw, render, flush!, scheduler, schedule_once, schedule_interval, 
     collide, angle, distance, play_music, stop_music, play_sound, line, clear, rungame, game_include,
     window_paused, start_text_input, update_text_actor!, create_gl_context, draw_background,
     load_texture, create_shader, compile_shader, use_shader, bind_texture, imgui_preinit, move!,
-    begin_batch, end_batch, draw_quad, draw_sprite, draw_text, create_screen, load_texture, load_animated_textures
+    begin_batch, end_batch, draw_quad, draw_text, create_screen, load_texture, load_animated_textures
 export load_gl_img, process_webp, create_sprite_animation, update!
 export Game, Screen, Shader, Texture, BatchRenderer, RGBA
 export Actor, ImageActor, SpriteAnimation, AnimatedActor
