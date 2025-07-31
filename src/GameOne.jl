@@ -16,7 +16,7 @@ using Reexport: @reexport
 @reexport using DelimitedFiles: readlines, write
 @reexport using RelocatableFolders: @path, abspath
 @reexport using UUIDs: uuid4
-@reexport using Sockets: TCPSocket, listen, accept, close, connect, isopen, isconnected
+@reexport using Sockets: TCPSocket, listen, accept, close, connect, isopen
 @reexport using Printf: @sprintf
 
 # Modern OpenGL/GLFW stack

@@ -12,7 +12,7 @@ mutable struct Game
     frame_count::Int64
     fps::Float32
     render::Union{Function, Nothing}
-    update::Function
+    update::Union{Function, Nothing}
     onkey::Union{Function, Nothing}
     onmousedown::Union{Function, Nothing}
     onmouseup::Union{Function, Nothing}

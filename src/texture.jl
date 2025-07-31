@@ -5,6 +5,7 @@ using Logging
 using ImageCore
 using libwebp_jll
 
+#=
 mutable struct Texture
     id::GLuint
     width::Int32
@@ -16,7 +17,7 @@ mutable struct Texture
     
     Texture() = new(0, 0, 0, 0, GL_RGBA, "", false)
 end
-
+=#
 
 # Ensure img is always HxWx4 Array{UInt8,3}
 function prepare_image(img)
@@ -39,7 +40,7 @@ function upload_texture(img;
     magfilter=GL_LINEAR, 
     mipmaps=true, 
     compress=false
-)
+    )
     img_u8 = prepare_image(img)
     h, w, c = size(img_u8)
     tex = Ref{GLuint}(0)
@@ -120,8 +121,7 @@ end
 function draw_background(window, image_id)
     # Make sure the OpenGL context is current
     GLFW.MakeContextCurrent(window)
-    # Get framebuffer and window size
-    #fbw, fbh = GLFW.GetFramebufferSize(window)
+    # Get the window position and size
     wx, wy = GLFW.GetWindowPos(window)
     ww, wh = GLFW.GetWindowSize(window)
     # Draw the image to fill the window

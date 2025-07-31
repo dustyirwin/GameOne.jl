@@ -57,7 +57,7 @@ function release_actor!(pool::ActorPool, actor)
     end
 end
 
-function ImageActor(path::String; id=randstring(8), x=Int32(1), y=Int32(1), 
+function ImageActor(path::String; id=randstring(16), x=Int32(1), y=Int32(1), 
     color=colorant"white", alpha=1.0, w::Union{Nothing, Int32}=nothing, h::Union{Nothing, Int32}=nothing)::Actor
     texid = load_texture(path)
     if w === nothing || h === nothing
@@ -69,6 +69,7 @@ function ImageActor(path::String; id=randstring(8), x=Int32(1), y=Int32(1),
         w = width[]
         h = height[]
     end
+
     Actor(
         id,
         basename(path),
@@ -91,8 +92,8 @@ end
 
 
 function AnimatedActor(webp_path::String, fps=14; 
-    id=randstring(8), x=0, y=0, color=colorant"white", alpha=1.0)::Actor
-    
+    id=randstring(16), x=0, y=0, color=colorant"white", alpha=1.0)::Actor
+
     tmp_anim_folder = joinpath(tempdir(), basename(webp_path))
     process_webp(webp_path, "Camouflage_001", tmp_anim_folder)
     frame_paths = [ fn for fn in sort(readdir(tmp_anim_folder; join=true)) if endswith(lowercase(fn), ".png") ]
