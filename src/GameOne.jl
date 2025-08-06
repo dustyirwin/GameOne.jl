@@ -2,9 +2,6 @@ module GameOne
 
 using Reexport: @reexport
 
-# Add Revise for hot-reloading development
-#@reexport using Revise
-
 # Base imports (keep these)
 @reexport using Logging: @debug, @info, @warn, @error, @logmsg
 @reexport using Colors: FixedPointNumbers, @colorant_str, ARGB, RGBA, Colorant, red, green, blue, alpha

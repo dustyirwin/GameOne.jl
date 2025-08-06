@@ -5,6 +5,7 @@ using Logging
 using CImGui.lib
 using CImGui
 
+
 # Vertex structure must match your shader layout!
 struct Vertex
     position::Vec2f

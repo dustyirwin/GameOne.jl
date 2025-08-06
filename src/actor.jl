@@ -1,7 +1,6 @@
 using Colors
 using .GameOne: load_texture, load_animated_textures, SpriteAnimation
 
-
 # Basic 2D actor for images or sprites
 @kwdef mutable struct Position
     x::Int32 = 0
@@ -13,14 +12,14 @@ end
 @kwdef mutable struct Actor
     const id::String = randstring(8)
     const label::String = ""
-    const imgpath::Union{String, Vector{String}, Nothing}  # single img, animation, or text (nothing)
+    const img_paths::Union{String, Vector{String}, Nothing}  # single img, animation, or text (nothing)
     position::Position = Position()
     scale::Vector{Float32} = [1.0, 1.0]  # scale in x and y
     z::Int32 = 0
     angle::Float64 = 0.0
     alpha::Float32 = 1.0
     texture::Union{Nothing, GLuint} = nothing
-    animation::Union{Nothing, SpriteAnimation} = nothing
+    anim::Union{Nothing, SpriteAnimation} = nothing
     color::Vec4f = Vec4f(1.0, 1.0, 1.0, 1.0)
     data::Dict{Symbol,Any} = Dict()
 end
@@ -129,23 +128,6 @@ function AnimatedActor(webp_path::String, fps=14;
         Dict(:type=>"anim")
     )
 end
-
-# Drawing: Use batch renderer
-#=
-function draw(screen::Screen, a::Actor)
-    pos = Vec2f(a.position.x, a.position.y)
-    size = (a.position.w, a.position.h)
-    color = a.color
-    if a.texture !== nothing
-        draw_textured_quad!(screen.renderer.batch_renderer, pos, size, a.texture, color)
-    elseif a.animation !== nothing
-        tex = current_texture(a.animation)
-        draw_textured_quad!(screen.renderer.batch_renderer, pos, size, tex, color)
-    else
-        draw_colored_quad!(screen.renderer.batch_renderer, pos, size, color)
-    end
-end
-=#
 
 # Animation update
 function update!(a::Actor, dt::Float64)
