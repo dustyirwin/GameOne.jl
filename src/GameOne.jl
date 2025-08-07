@@ -2,17 +2,11 @@ module GameOne
 
 using Reexport: @reexport
 
-# Force Julia to use OpenBLAS instead of MKL to avoid Intel OpenMP dependencies
-ENV["JULIA_CPU_TARGET"] = "generic"
-#ENV["OPENBLAS_NUM_THREADS"] = "3"
-ENV["JULIA_EXCLUSIVE"] = "1"
-ENV["JULIA_BLAS_PROVIDER"] = "OpenBLAS"
-ENV["JULIA_LAPACK_PROVIDER"] = "OpenBLAS"
+@reexport using FFTW
+
+FFTW.set_provider!("fftw")
 
 @reexport using LinearAlgebra
-
-# Use fewer threads for a card game (or auto-detect)
-BLAS.set_num_threads(min(2, Sys.CPU_THREADS))
 
 # Base imports (keep these)
 @reexport using Logging: @debug, @info, @warn, @error, @logmsg
