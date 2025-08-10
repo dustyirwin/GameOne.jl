@@ -1,7 +1,7 @@
 using PortAudio: close
 using LibSndFile
 using SampledSignals
-
+using Base.Sys
 
 const resource_ext = Dict(
     :images=>"[png|jpg|jpeg]",
@@ -67,3 +67,10 @@ function clear_resource_cache!()
     end
     empty!(RESOURCE_CACHE)
 end
+
+# detect if OS is Microsoft Windows 10
+function is_windows_10()
+    return Sys.iswindows() && Sys.windows_version() >= v"10.0"
+end
+
+export is_windows_10

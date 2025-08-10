@@ -2,9 +2,8 @@ module GameOne
 
 using Reexport: @reexport
 
-@reexport using FFTW
-
-FFTW.set_provider!("fftw")
+# Force FFTW to use OpenBLAS instead of MKL
+using Preferences
 
 @reexport using LinearAlgebra
 
@@ -58,9 +57,9 @@ export game, draw, render, flush!, scheduler, schedule_once, schedule_interval, 
     collide, angle, distance, play_music, stop_music, play_sound, line, clear, rungame, game_include,
     window_paused, start_text_input, update_text_actor!, create_gl_context, draw_background,
     load_texture, create_shader, compile_shader, use_shader, bind_texture, imgui_preinit, move!,
-    begin_batch, end_batch, draw_quad, draw_text, create_screen, load_texture, load_animated_textures
+    draw_text, load_texture, load_animated_textures
 export load_gl_img, process_webp, create_sprite_animation, update!
-export Game, Screen, Shader, Texture, BatchRenderer, RGBA
+export Game, Shader, Texture, RGBA
 export Actor, ImageActor, SpriteAnimation, AnimatedActor
 export Line, Rect, Triangle, Circle
 export KeyState, MouseState, ShaderWatcher
@@ -69,14 +68,10 @@ export KeyState, MouseState, ShaderWatcher
 include("math.jl")                  # Matrix math utilities
 include("keyboard.jl")              # GLFW keyboard handling
 include("timer.jl")                 # Keep as-is
-#include("glcontext.jl")             # GLFW window management
 include("texture.jl")               # Texture loading and management
 include("sprites.jl")               # Sprite animation system
 include("shader.jl")                # Shader compilation and management
-#include("renderer.jl")              # Modern OpenGL batch renderer
-#include("screen.jl")                # OpenGL screen management
 include("game.jl")                  # Game main loop 
-#include("event.jl")                 # GLFW event handling
 include("actor.jl")                 # Modern actor system
 include("resources.jl")             # Resource management
 include("audio.jl")                 # Audio playback system

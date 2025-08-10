@@ -77,7 +77,10 @@ last_uploaded_frame = Ref(-1)
 last_render_time = Ref(time())
 ui_frame_dt = Ref(1/60)
 
-CImGui.render(ctx) do
+mswin_version = Ref("")
+opengl_version = is_windows_10() ? v"3.0" : v"3.2"
+
+CImGui.render(ctx, opengl_version=opengl_version) do
     now = time()
     ui_frame_dt[] = now - last_render_time[]
     last_render_time[] = now

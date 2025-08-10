@@ -1,2 +1,5 @@
 [FFTW]
 provider = "fftw"
+
+[LinearAlgebra]
+provider = "OpenBLAS"

@@ -1,7 +1,7 @@
 name = "GameOne"
 uuid = "9da27670-f782-11e9-1da1-f53579315bfe"
+version = "0.4.4"
 authors = ["Dustin Irwin"]
-version = "0.4.3"
 
 [deps]
 CImGui = "5d785b6c-b76f-510e-a07c-3070796c7e87"
@@ -37,9 +37,14 @@ TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 libwebp_jll = "c5f90fcd-3b7e-5836-afba-fc50a0988cb2"
 
+[sources]
+CImGui = {path = "../CImGui.jl"}
+FFTW = {path = "../FFTW.jl"}
+
 [compat]
 DataStructures = "0.18.22"
 FFTW = "1.9.0"
+GeometryBasics = "0.5.10"
 Preferences = "1.4.3"
 
 [extras]
