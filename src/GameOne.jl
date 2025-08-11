@@ -2,12 +2,9 @@ module GameOne
 
 using Reexport: @reexport
 
-# Force FFTW to use OpenBLAS instead of MKL
-using Preferences
-
-@reexport using LinearAlgebra
-
 # Base imports (keep these)
+@reexport using LinearAlgebra: I, cross, dot, norm, normalize
+@reexport using FixedPointNumbers
 @reexport using Logging: @debug, @info, @warn, @error, @logmsg
 @reexport using Colors: FixedPointNumbers, @colorant_str, ARGB, RGBA, Colorant, red, green, blue, alpha
 @reexport using Base.Threads: @threads, @spawn, Atomic, SpinLock
@@ -15,8 +12,12 @@ using Preferences
 @reexport using Random: rand, randstring, shuffle, shuffle!
 @reexport using DataStructures: OrderedDict, counter, @enum
 @reexport using Serialization: serialize, deserialize
+
+# File I/O
 @reexport using DelimitedFiles: readlines, write
 @reexport using RelocatableFolders: @path, abspath
+
+# 
 @reexport using UUIDs: uuid4
 @reexport using Sockets: TCPSocket, listen, accept, close, connect, isopen
 @reexport using Printf: @sprintf
