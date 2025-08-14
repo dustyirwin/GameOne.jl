@@ -34,31 +34,31 @@ function process_webp(webp_path::String, anim_name::String, anim_dir::String)
 
     webp_txt = joinpath(anim_dir, "webp_info_$anim_name.txt")
 
-    webpmux() do webpmux
-        redirect_stdio(stdout=webp_txt) do
-            run(`$webpmux -info $webp_path`)
-        end
+    # Updated: Use non-do-block form
+    webpmux_path = webpmux()
+    redirect_stdio(stdout=webp_txt) do
+        run(`$webpmux_path -info $webp_path`)
     end
 
-  webp_info = readlines(webp_txt)
+    webp_info = readlines(webp_txt)
 
-  n = [parse(Int32, split(ln)[4]) |> Int32 for ln in webp_info if occursin("frames:", ln)][1]
+    n = [parse(Int32, split(ln)[4]) |> Int32 for ln in webp_info if occursin("frames:", ln)][1]
 
-  frame_data = webp_info[6:end]
-  frames = Dict()
+    frame_data = webp_info[6:end]
+    frames = OrderedDict()
 
-  for i in 1:n
-    d = Dict(
-      :width => parse(Int32, split(frame_data[i])[2]),
-      :height => parse(Int32, split(frame_data[i])[3]),
-      :x_offset => parse(Int32, split(frame_data[i])[5]),
-      :y_offset => parse(Int32, split(frame_data[i])[6]),
-      :duration => parse(Int32, split(frame_data[i])[7]),
-      :dispose => split(frame_data[i])[8],
-    )
+    for i in 1:n
+        d = Dict(
+            :width => parse(Int32, split(frame_data[i])[2]),
+            :height => parse(Int32, split(frame_data[i])[3]),
+            :x_offset => parse(Int32, split(frame_data[i])[5]),
+            :y_offset => parse(Int32, split(frame_data[i])[6]),
+            :duration => parse(Int32, split(frame_data[i])[7]),
+            :dispose => split(frame_data[i])[8],
+        )
 
-    frames[i] = d
-  end
+        frames[i] = d
+    end
 
     frame_delays = [ v[:duration] for (k, v) in sort(frames) ]
     # save frame delays to file
@@ -68,6 +68,10 @@ function process_webp(webp_path::String, anim_name::String, anim_dir::String)
         end
     end
 
+    # Updated: Use non-do-block form for both webpmux and dwebp
+    webpmux_path = webpmux()
+    dwebp_path = dwebp()
+
     # exporting each webp frame as a keyframe
     for i in 1:n
         tmp_png = joinpath(anim_dir, "frame_$(lpad(i,3,"0")).png")
@@ -76,14 +80,10 @@ function process_webp(webp_path::String, anim_name::String, anim_dir::String)
         if !isfile(tmp_png)
 
             if !isfile(tmp_webp)
-                webpmux() do webpmux
-                run(`$webpmux -get frame $i $webp_path -o $tmp_webp`)
-                end
+                run(`$webpmux_path -get frame $i $webp_path -o $tmp_webp`)
             end
 
-            dwebp() do dwebp
-                run(`$dwebp -quiet $tmp_webp -o $tmp_png`)
-            end
+            run(`$dwebp_path -quiet $tmp_webp -o $tmp_png`)
 
         end
 
