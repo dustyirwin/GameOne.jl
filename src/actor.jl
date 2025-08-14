@@ -94,7 +94,7 @@ function AnimatedActor(webp_path::String, fps=14;
     id=randstring(16), x=0, y=0, color=colorant"white", alpha=1.0)::Actor
 
     tmp_anim_folder = joinpath(tempdir(), basename(webp_path))
-    process_webp(webp_path, "Camouflage_001", tmp_anim_folder)
+    process_webp(webp_path, id, tmp_anim_folder)
     frame_paths = [ fn for fn in sort(readdir(tmp_anim_folder; join=true)) if endswith(lowercase(fn), ".png") ]
     frame_count = length(frame_paths)
     frame_delays = fill(1/fps, frame_count)
