@@ -4,7 +4,7 @@ using Reexport: @reexport
 
 # Base imports (keep these)
 @reexport using LinearAlgebra: I, cross, dot, norm, normalize
-@reexport using FixedPointNumbers
+#@reexport using FixedPointNumbers
 @reexport using Logging: @debug, @info, @warn, @error, @logmsg
 @reexport using Colors: FixedPointNumbers, @colorant_str, ARGB, RGBA, Colorant, red, green, blue, alpha
 @reexport using Base.Threads: @threads, @spawn, Atomic, SpinLock

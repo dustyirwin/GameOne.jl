@@ -1,7 +1,7 @@
 name = "GameOne"
 uuid = "9da27670-f782-11e9-1da1-f53579315bfe"
 authors = ["Dustin Irwin"]
-version = "0.4.5"
+version = "0.4.6"
 
 [deps]
 CImGui = "5d785b6c-b76f-510e-a07c-3070796c7e87"
@@ -12,7 +12,6 @@ Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
-FixedPointNumbers = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 GLFW = "f7f18e0c-5ee9-5ccd-a5bf-e8befd85ed98"
 GeometryBasics = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
 ImageCore = "a09fc81d-aa75-5fe9-8630-4744c3626534"
@@ -42,10 +41,7 @@ CImGui = {path = "../CImGui.jl"}
 FFTW = {path = "../FFTW.jl"}
 
 [compat]
-DataStructures = "0.18.22"
 FFTW = "1.9.0"
-FixedPointNumbers = "0.8.5"
-GeometryBasics = "0.5.10"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
