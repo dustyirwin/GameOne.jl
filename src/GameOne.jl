@@ -76,5 +76,7 @@ include("game.jl")                  # Game main loop
 include("actor.jl")                 # Modern actor system
 include("resources.jl")             # Resource management
 include("audio.jl")                 # Audio playback system
+include("file_picker.jl")           # CimGui File picker dialog
 
 end # module
+    
