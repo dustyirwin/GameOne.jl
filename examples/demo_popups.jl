@@ -32,7 +32,7 @@ function ShowDemoWindowPopups()
             CImGui.SameLine()
             CImGui.TextUnformatted(selected_fish == -1 ? "<None>" : names[selected_fish])
             if CImGui.BeginPopup("my_select_popup")
-                CImGui.Text("Aquarium")
+                CImGui.ImText("Aquarium")
                 CImGui.Separator()
                 for i = 1:length(names)
                     CImGui.Selectable(names[i]) && (selected_fish = i;)
@@ -52,7 +52,7 @@ function ShowDemoWindowPopups()
                 end
 
                 CImGui.Separator()
-                CImGui.Text("Tooltip here")
+                CImGui.ImText("Tooltip here")
                 CImGui.IsItemHovered() && CImGui.SetTooltip("I am a tooltip over a popup")
 
                 CImGui.Button("Stacked Popup") && CImGui.OpenPopup("another popup")
@@ -102,7 +102,7 @@ function ShowDemoWindowPopups()
 
         # We can also use OpenPopupOnItemClick() which is the same as BeginPopupContextItem() but without the Begin call.
         # So here we will make it that clicking on the text field with the right mouse button (1) will toggle the visibility of the popup above.
-        CImGui.Text("(You can also right-click me to the same popup as above.)")
+        CImGui.ImText("(You can also right-click me to the same popup as above.)")
         CImGui.OpenPopupOnItemClick("item context menu", 1)
 
         # When used after an item that has an ID (here the Button), we can skip providing an ID to BeginPopupContextItem().
@@ -112,14 +112,14 @@ function ShowDemoWindowPopups()
             buf = @sprintf("Button: %s###Button", strip(name, '\0')) # `###` operator override ID ignoring the preceding label
             CImGui.Button(buf)
             if CImGui.BeginPopupContextItem()
-                CImGui.Text("Edit name:")
+                CImGui.ImText("Edit name:")
                 CImGui.InputText("##edit", name, length(name))
                 CImGui.Button("Close") && CImGui.CloseCurrentPopup()
                 CImGui.EndPopup()
             end
         end
         CImGui.SameLine()
-        CImGui.Text("(<-- right-click here)")
+        CImGui.ImText("(<-- right-click here)")
 
         CImGui.TreePop()
     end
@@ -130,7 +130,7 @@ function ShowDemoWindowPopups()
         CImGui.Button("Delete..") && CImGui.OpenPopup("Delete?")
 
         if CImGui.BeginPopupModal("Delete?", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
-            CImGui.Text("All those beautiful files will be deleted.\nThis operation cannot be undone!\n\n")
+            CImGui.ImText("All those beautiful files will be deleted.\nThis operation cannot be undone!\n\n")
             CImGui.Separator()
 
             # @cstatic dummy_i=Cint(0) @c CImGui.Combo("Combo", &dummy_i, "Delete\0Delete harder\0")
@@ -157,7 +157,7 @@ function ShowDemoWindowPopups()
                 end
                 CImGui.EndMenuBar()
             end
-            CImGui.Text("Hello from Stacked The First\nUsing style.Colors[ImGuiCol_ModalWindowDimBg] behind it.");
+            CImGui.ImText("Hello from Stacked The First\nUsing style.Colors[ImGuiCol_ModalWindowDimBg] behind it.");
 
             # testing behavior of widgets stacking their own regular popups over the modal.
             @cstatic item=Cint(1) color=Cfloat[0.4,0.7,0.0,0.5] begin
@@ -170,7 +170,7 @@ function ShowDemoWindowPopups()
             # Note that the visibility state of popups is owned by imgui, so the input value of the bool actually doesn't matter here.
             dummy_open = true
             if @c CImGui.BeginPopupModal("Stacked 2", &dummy_open)
-                CImGui.Text("Hello from Stacked The Second!")
+                CImGui.ImText("Hello from Stacked The Second!")
                 CImGui.Button("Close") && CImGui.CloseCurrentPopup()
                 CImGui.EndPopup()
             end

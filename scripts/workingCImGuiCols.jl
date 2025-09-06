@@ -3,9 +3,9 @@
         # --- Header ---
         CImGui.BeginChild("##header", ImVec2(0, CImGui.GetTextLineHeightWithSpacing() + unsafe_load(CImGui.GetStyle().ItemSpacing).y))
         CImGui.Columns(3, C_NULL, true)  # Enable borders for resizing
-        CImGui.Text("ID"); CImGui.NextColumn()
-        CImGui.Text("Name"); CImGui.NextColumn()
-        CImGui.Text("Path"); CImGui.NextColumn()
+        CImGui.ImText("ID"); CImGui.NextColumn()
+        CImGui.ImText("Name"); CImGui.NextColumn()
+        CImGui.ImText("Path"); CImGui.NextColumn()
         # After drawing header, record column widths
         global header_col_widths = [CImGui.GetColumnWidth(i) for i in 0:2]
         CImGui.Columns(1)
@@ -24,7 +24,7 @@
         for i = 0:9
             CImGui.Text(@sprintf("%04d", i))
             CImGui.NextColumn()
-            CImGui.Text("Foobar")
+            CImGui.ImText("Foobar")
             CImGui.NextColumn()
             CImGui.Text(@sprintf("/path/foobar/%04d/", i))
             CImGui.NextColumn()
@@ -47,7 +47,7 @@
             s = clipper.DisplayStart
             e = clipper.DisplayEnd - 1
             for i = s:e, j = 0:9
-                CImGui.Text("Line $i Column $j...")
+                CImGui.ImText("Line $i Column $j...")
                 CImGui.NextColumn()
             end
         end

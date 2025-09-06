@@ -39,8 +39,8 @@ function imgui(g::Game)
 
     # Example ImGui usage
     CImGui.Begin("Example Window")
-    CImGui.Text("Hello, GameOne!")
-    CImGui.Text("FPS: $(g.fps)")
+    CImGuiHello, GameOne!")
+    CImGuiFPS: $(g.fps)")
     CImGui.End()
 end
 

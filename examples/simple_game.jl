@@ -91,8 +91,8 @@ function imgui(g::GameOne.Game)
     # FPS Display
     anim_fps = 1 / frame_dt[]
     if CImGui.Begin("FPS Display")
-        CImGui.Text("Animation FPS: $(round(anim_fps, digits=2))")
-        CImGui.Text("UI FPS: $(round(1/ui_frame_dt[], digits=2))")
+        CImGuiAnimation FPS: $(round(anim_fps, digits=2))")
+        CImGuiUI FPS: $(round(1/ui_frame_dt[], digits=2))")
     end
     CImGui.End()
 
@@ -134,10 +134,10 @@ function imgui(g::GameOne.Game)
         )
         
         CImGui.Image(sprite_text_id[], CImGui.ImVec2(w, h))
-        CImGui.Text("Current Frame: $(sprite_anim.current_frame)")
-        CImGui.Text("Timer: $(round(sprite_anim.timer, digits=2))")
-        CImGui.Text("Frame Delay: $(sprite_anim.frame_times[1])")
-        CImGui.Text("Looping: $(sprite_anim.looping)")
+        CImGuiCurrent Frame: $(sprite_anim.current_frame)")
+        CImGuiTimer: $(round(sprite_anim.timer, digits=2))")
+        CImGuiFrame Delay: $(sprite_anim.frame_times[1])")
+        CImGuiLooping: $(sprite_anim.looping)")
     end
     CImGui.End()
 end

@@ -104,8 +104,8 @@ CImGui.render(ctx, opengl_version=opengl_version) do
     # Animation FPS (based on frame_delay)
     anim_fps = 1 / frame_dt[]
     if CImGui.Begin("FPS Display")
-        CImGui.Text("Animation FPS: $(round(anim_fps, digits=2))")
-        CImGui.Text("UI FPS: $(round(1/ui_frame_dt[], digits=2))")
+        CImGui.ImText("Animation FPS: $(round(anim_fps, digits=2))")
+        CImGui.ImText("UI FPS: $(round(1/ui_frame_dt[], digits=2))")
         CImGui.End()
     end
 
