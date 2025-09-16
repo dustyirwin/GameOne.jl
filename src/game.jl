@@ -1,27 +1,28 @@
 using .GameOne
 
 # Modern Game structure
-mutable struct Game
-    name::String
-    location::String
-    game_module::Module
-    screen::Union{Any, Nothing}
-    keyboard::KeyState
-    mouse::MouseState
-    delta_time::Float32
-    frame_count::Int64
-    fps::Float32
-    render::Union{Function, Nothing}
-    update::Union{Function, Nothing}
-    onkey::Union{Function, Nothing}
-    onmousedown::Union{Function, Nothing}
-    onmouseup::Union{Function, Nothing}
-    onmousemove::Union{Function, Nothing}
-    imgui::Union{Function, Nothing}
-    imgui_settings::Union{Dict{String,Any}, Nothing}
-    imgui_preinit::Union{Function, Nothing}
-    state::Vector{Dict{String,Any}}
-    socket::Vector{TCPSocket}
+@kwdef mutable struct Game
+    name::String="AnimatGame" * randstring(5)
+    location::String=pwd()
+    game_module::Union{Module, Nothing}=nothing
+    screen::Union{Any, Nothing}=nothing
+    keyboard::KeyState=KeyState()
+    mouse::MouseState=MouseState()
+    delta_time::Float32=0.0f0
+    frame_count::Int64=0
+    fps::Float32=0.0f0
+    render::Union{Function, Nothing}=nothing
+    update::Union{Function, Nothing}=nothing
+    draw::Union{Function, Nothing}=nothing
+    onkey::Union{Function, Nothing}=nothing
+    onmousedown::Union{Function, Nothing}=nothing
+    onmouseup::Union{Function, Nothing}=nothing
+    onmousemove::Union{Function, Nothing}=nothing
+    imgui::Union{Function, Nothing}=nothing
+    imgui_settings::Union{Dict{String,Any}, Nothing}=nothing
+    imgui_preinit::Union{Function, Nothing}=nothing
+    state::Vector{Dict{String,Any}}=Vector{Dict{String,Any}}()
+    socket::Vector{TCPSocket}=Vector{TCPSocket}()
 end
 
 # Game constants
