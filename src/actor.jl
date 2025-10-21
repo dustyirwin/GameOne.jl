@@ -1,4 +1,5 @@
 using Colors
+using SHA: sha256
 using .GameOne: load_texture, load_animated_textures, SpriteAnimation
 
 # Basic 2D actor for images or sprites
@@ -18,7 +19,7 @@ end
     z::Int32 = 0
     angle::Float64 = 0.0
     alpha::Float32 = 1.0
-    texture::Union{Nothing, GLuint} = nothing
+    texture::Union{Nothing, Ref{Any}} = nothing
     anim::Union{Nothing, SpriteAnimation} = nothing
     color::Vec4f = Vec4f(1.0, 1.0, 1.0, 1.0)
     data::Dict{Symbol,Any} = Dict()
@@ -56,17 +57,16 @@ function release_actor!(pool::ActorPool, actor)
     end
 end
 
-function ImageActor(path::String; id=randstring(16), x=Int32(1), y=Int32(1), 
-    color=colorant"white", alpha=1.0, w::Union{Nothing, Int32}=nothing, h::Union{Nothing, Int32}=nothing)::Actor
-    texid = load_texture(path)
-    if w === nothing || h === nothing
-        # Query texture size if not provided
-        width = Ref{Int32}()
-        height = Ref{Int32}()
-        ModernGL.glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, width)
-        ModernGL.glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, height)
-        w = width[]
-        h = height[]
+function ImageActor(path::String; id=randstring(16), x=Int32(1), y=Int32(1), w=Int32(150), h=Int32(210),
+    color=colorant"white", alpha=1.0)::Actor
+    texid = Ref{Any}(nothing)
+    img_u8, img_w, img_h = load_gl_img(path)
+    
+    if img_u8 !== nothing && img_w > 0 && img_h > 0
+        texid[] = CImGui.create_image_texture(img_w, img_h)
+        CImGui.update_image_texture(texid[], img_u8, img_w, img_h)
+    else
+        @warn "Failed to load image data for path: $path"
     end
 
     Actor(
@@ -91,23 +91,34 @@ end
 
 
 function AnimatedActor(webp_path::String, fps=14; 
-    id=randstring(16), x=0, y=0, color=colorant"white", alpha=1.0)::Actor
+    id=randstring(16), x=0, y=0, w=240, h=320, color=colorant"white", alpha=1.0)::Actor
 
-    tmp_anim_folder = joinpath(tempdir(), basename(webp_path))
-    process_webp(webp_path, id, tmp_anim_folder)
+    # Use SHA256 hash for consistent cache folder naming (matches draw_funcs.jl)
+    webp_hash = bytes2hex(sha256(webp_path))
+    tmp_anim_folder = joinpath(tempdir(), "card_cache_" * webp_hash)
+    anim_name = splitext(basename(webp_path))[1]
+    
+    # Only process webp if frames don't already exist
+    if !isdir(tmp_anim_folder) || isempty(readdir(tmp_anim_folder))
+        @info "Extracting frames from WebP: $(basename(webp_path))"
+        process_webp(webp_path, anim_name, tmp_anim_folder)
+    else
+        @info "Using cached frames for: $(basename(webp_path))"
+    end
+    
     frame_paths = [ fn for fn in sort(readdir(tmp_anim_folder; join=true)) if endswith(lowercase(fn), ".png") ]
     frame_count = length(frame_paths)
     frame_delays = fill(1/fps, frame_count)
     frame_ids = [ randstring(16) for _ in 1:frame_count ]
-    first_frame, w, h = load_gl_img(frame_paths[1])
+    first_frame, _w, _h = load_gl_img(frame_paths[1])
     frame_data = [ load_gl_img(fp)[1] for fp in frame_paths ]
 
     anim = SpriteAnimation(
         frame_data, 
         frame_delays,
         frame_ids,
-        w, 
-        h,
+        _w, 
+        _h,
         1,
         0.,
         true  # Looping by default
@@ -142,3 +153,5 @@ function move!(a::Actor, dx::Real, dy::Real)
     new_y = pos.y + dy
     a.position = Position(new_x, new_y, pos.w, pos.h)
 end
+
+export Position

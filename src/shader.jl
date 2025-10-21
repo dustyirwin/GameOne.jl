@@ -31,7 +31,7 @@ function compile_shader(src::String, shader_type::GLenum)
     shader = glCreateShader(shader_type)
     # Ensure null-terminated C string and correct pointer type
     cstr = Vector{UInt8}(src * '\0')
-    cstr_ptr = Ref(Ptr{UInt8}(pointer(cstr)))
+    cstr_ptr = Ref{Ptr{UInt8}}(pointer(cstr))
     glShaderSource(shader, 1, cstr_ptr, C_NULL)
     glCompileShader(shader)
 

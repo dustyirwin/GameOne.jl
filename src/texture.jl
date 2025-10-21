@@ -5,19 +5,6 @@ using Logging
 using ImageCore
 using libwebp_jll
 
-#=
-mutable struct Texture
-    id::GLuint
-    width::Int32
-    height::Int32
-    channels::Int32
-    format::GLenum
-    path::String
-    compressed::Bool
-    
-    Texture() = new(0, 0, 0, 0, GL_RGBA, "", false)
-end
-=#
 
 # Ensure img is always HxWx4 Array{UInt8,3}
 function prepare_image(img)
@@ -130,14 +117,38 @@ function draw_background(window, image_id)
         CImGui.ImDrawList_AddImage(
             draw_list,
             image_id[],
-            CImGui.ImVec2(wx, wy),
-            CImGui.ImVec2(wx + ww, wy + wh),
-            CImGui.ImVec2(0, 0),
-            CImGui.ImVec2(1, 1),
+            CImGui.ImVec2(wx, wy),              # Top-left corner of the window
+            CImGui.ImVec2(wx + ww, wy + wh),    # Bottom-right corner of the window
+            CImGui.ImVec2(0, 0),                 # Texture coordinates
+            CImGui.ImVec2(1, 1),                 # UV coords
             CImGui.ImVec4(1.0, 1.0, 1.0, 1.0)
         )
     end
 end
 
-export Texture, upload_texture, load_texture, load_animated_textures, load_gl_img, draw_background
-export prepare_image
+function draw_image(window, image_id, x, y, w, h)
+    # Make sure the OpenGL context is current
+    GLFW.MakeContextCurrent(window)
+    
+    # Get the window position and size
+    wx, wy = GLFW.GetWindowPos(window)
+
+    # Draw the image to fill the window
+    draw_list = CImGui.GetForegroundDrawList()
+    
+    if image_id !== nothing && image_id[] !== nothing
+        # draw image in window at current x, y position
+        CImGui.ImDrawList_AddImage(
+            draw_list,
+            image_id[],
+            CImGui.ImVec2(wx + x, wy + y),              # Top-left corner of the window
+            CImGui.ImVec2(wx + x + w, wy + y + h),      # Bottom-right corner of the window
+            CImGui.ImVec2(0, 0),                        # Texture coordinates
+            CImGui.ImVec2(1, 1),                        # UV coords
+            CImGui.ImVec4(1.0, 1.0, 1.0, 1.0)           # R G B A
+        )
+    end
+end
+
+export Texture, upload_texture, load_texture, load_animated_textures, load_gl_img
+export prepare_image, draw_background, draw_image
