@@ -133,8 +133,8 @@ function draw_image(window, image_id, x, y, w, h)
     # Get the window position and size
     wx, wy = GLFW.GetWindowPos(window)
 
-    # Draw the image to fill the window
-    draw_list = CImGui.GetForegroundDrawList()
+    # Draw the image on the background layer (behind ImGui windows)
+    draw_list = CImGui.GetBackgroundDrawList()
     
     if image_id !== nothing && image_id[] !== nothing
         # draw image in window at current x, y position
