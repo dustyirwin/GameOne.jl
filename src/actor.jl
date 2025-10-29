@@ -57,7 +57,7 @@ function release_actor!(pool::ActorPool, actor)
     end
 end
 
-function ImageActor(path::String; id=randstring(16), x=Int32(1), y=Int32(1), w=Int32(200), h=ceil(Int32,200*1.4),
+function ImageActor(path::String; id=randstring(16), x=Int32(1), y=Int32(1), w=Int32(240), h=ceil(Int32,240*1.4),
     color=colorant"white", alpha=1.0)::Actor
 
     texid = Ref{Any}(nothing)
@@ -92,7 +92,7 @@ end
 
 
 function AnimatedActor(webp_path::String, fps=14; 
-    id=randstring(16), x=0, y=0, w=Int32(200), h=ceil(Int32,200*1.4), color=colorant"white", alpha=1.0)::Actor
+    id=randstring(16), x=0, y=0, w=Int32(240), h=ceil(Int32,240*1.4), color=colorant"white", alpha=1.0)::Actor
 
     # Use SHA256 hash for consistent cache folder naming (matches draw_funcs.jl)
     webp_hash = bytes2hex(sha256(webp_path))

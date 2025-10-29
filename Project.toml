@@ -1,6 +1,6 @@
 name = "GameOne"
 uuid = "9da27670-f782-11e9-1da1-f53579315bfe"
-version = "0.4.6"
+version = "0.4.7"
 authors = ["Dustin Irwin"]
 
 [deps]
@@ -44,6 +44,8 @@ FFTW = {path = "../FFTW.jl"}
 [compat]
 FFTW = "1.9.0"
 SHA = "0.7.0"
+
+[apps.gameone]
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

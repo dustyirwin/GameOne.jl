@@ -78,5 +78,11 @@ include("resources.jl")             # Resource management
 include("audio.jl")                 # Audio playback system
 include("file_picker.jl")           # CimGui File picker dialog
 
+
+function (@main)(ARGS)
+    @info "Starting GameOne..."
+    #GameOne.rungame(ARGS)
+end
+
 end # module
     

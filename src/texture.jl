@@ -126,7 +126,11 @@ function draw_background(window, image_id)
     end
 end
 
-function draw_image(window, image_id, x, y, w, h)
+function draw_image(window, image_id, x, y, w, h, angle_degrees::Float32=0.0f0, alpha::Float32=1.0f0)
+    """
+    Draw an image, optionally rotated by angle_degrees (clockwise) around its center.
+    When rotating, the original w/h are used for the image texture, but positioned in the x,y,w,h box.
+    """
     # Make sure the OpenGL context is current
     GLFW.MakeContextCurrent(window)
     
@@ -137,16 +141,70 @@ function draw_image(window, image_id, x, y, w, h)
     draw_list = CImGui.GetBackgroundDrawList()
     
     if image_id !== nothing && image_id[] !== nothing
-        # draw image in window at current x, y position
-        CImGui.ImDrawList_AddImage(
-            draw_list,
-            image_id[],
-            CImGui.ImVec2(wx + x, wy + y),              # Top-left corner of the window
-            CImGui.ImVec2(wx + x + w, wy + y + h),      # Bottom-right corner of the window
-            CImGui.ImVec2(0, 0),                        # Texture coordinates
-            CImGui.ImVec2(1, 1),                        # UV coords
-            CImGui.ImVec4(1.0, 1.0, 1.0, 1.0)           # R G B A
-        )
+        if angle_degrees == 0.0f0
+            # Fast path: normal unrotated drawing
+            CImGui.ImDrawList_AddImage(
+                draw_list,
+                image_id[],
+                CImGui.ImVec2(wx + x, wy + y),              # Top-left corner
+                CImGui.ImVec2(wx + x + w, wy + y + h),      # Bottom-right corner
+                CImGui.ImVec2(0, 0),                        # Texture coordinates
+                CImGui.ImVec2(1, 1),                        # UV coords
+                CImGui.ImVec4(1.0, 1.0, 1.0, alpha)         # R G B A
+            )
+        else
+            # Rotated drawing using quad
+            # For 90-degree rotation, we need to swap w/h for the actual texture dimensions
+            # because a portrait card becomes landscape when rotated 90 degrees
+            texture_w = angle_degrees == 90.0f0 || angle_degrees == -90.0f0 ? h : w
+            texture_h = angle_degrees == 90.0f0 || angle_degrees == -90.0f0 ? w : h
+            
+            # Calculate center point of the image
+            cx = wx + x + w / 2
+            cy = wy + y + h / 2
+            
+            # Convert angle to radians
+            angle_rad = deg2rad(angle_degrees)
+            cos_a = cos(angle_rad)
+            sin_a = sin(angle_rad)
+            
+            # Calculate the four corners using TEXTURE dimensions, relative to center
+            hw = texture_w / 2
+            hh = texture_h / 2
+            
+            # Original corners (relative to center)
+            corners = [
+                (-hw, -hh),  # Top-left
+                (hw, -hh),   # Top-right
+                (hw, hh),    # Bottom-right
+                (-hw, hh)    # Bottom-left
+            ]
+            
+            # Rotate corners around center
+            rotated = map(corners) do (dx, dy)
+                rx = dx * cos_a - dy * sin_a
+                ry = dx * sin_a + dy * cos_a
+                CImGui.ImVec2(cx + rx, cy + ry)
+            end
+            
+            # UV coordinates for the four corners
+            uv0 = CImGui.ImVec2(0, 0)  # Top-left
+            uv1 = CImGui.ImVec2(1, 0)  # Top-right
+            uv2 = CImGui.ImVec2(1, 1)  # Bottom-right
+            uv3 = CImGui.ImVec2(0, 1)  # Bottom-left
+            
+            # Draw using quad
+            color = CImGui.ImVec4(1.0, 1.0, 1.0, alpha)
+            col32 = CImGui.ColorConvertFloat4ToU32(color)
+            
+            CImGui.ImDrawList_AddImageQuad(
+                draw_list,
+                image_id[],
+                rotated[1], rotated[2], rotated[3], rotated[4],  # p1, p2, p3, p4
+                uv0, uv1, uv2, uv3,                               # uv1, uv2, uv3, uv4
+                col32
+            )
+        end
     end
 end
 
