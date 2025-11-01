@@ -2,7 +2,7 @@
 
 julia_version = "1.12.1"
 manifest_format = "2.0"
-project_hash = "5801897b2b7cd303f5a5cd0d3d913233a016ec77"
+project_hash = "ac307d4f19417b60dbec28d5ecd03d85c6a5d904"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -66,17 +66,19 @@ uuid = "fa961155-64e5-5f13-b03f-caf6b980ea82"
 version = "0.5.0"
 
 [[deps.CImGui]]
-deps = ["CEnum", "CImGuiPack_jll", "CSyntax", "DocStringExtensions", "GLFW", "ModernGL", "PrecompileTools", "Printf", "Statistics"]
-path = "../CImGui.jl"
+deps = ["CEnum", "CImGuiPack_jll", "CSyntax", "DocStringExtensions", "PrecompileTools", "Printf", "Statistics"]
+git-tree-sha1 = "98122bb4c5782d77789a8f58cc0d0a7109d2eea5"
 uuid = "5d785b6c-b76f-510e-a07c-3070796c7e87"
-version = "6.1.1"
+version = "6.2.1"
 
     [deps.CImGui.extensions]
     GlfwOpenGLBackend = ["GLFW", "ModernGL"]
     MakieIntegration = ["GLFW", "ModernGL", "GLMakie"]
 
     [deps.CImGui.weakdeps]
+    GLFW = "f7f18e0c-5ee9-5ccd-a5bf-e8befd85ed98"
     GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+    ModernGL = "66fc600b-dfda-50eb-8b99-91cfa97b1301"
 
 [[deps.CImGuiPack_jll]]
 deps = ["Artifacts", "GLFW_jll", "JLLWrappers", "Libdl"]
