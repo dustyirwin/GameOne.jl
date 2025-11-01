@@ -3,6 +3,8 @@
     current_dir::String
     selected_file::String
     window_open::Bool = false
+    save_mode::Bool = false  # true for save dialog, false for open dialog
+    filename_buffer::String = ""
 end
 
 function ShowFilePicker(gs::Dict; file_extensions=String[])
@@ -89,13 +91,69 @@ function ShowFilePicker(gs::Dict; file_extensions=String[])
                     else
                         if CImGui.Selectable(f, fp.selected_file == fullpath)
                             fp.selected_file = fullpath
+                            # In save mode, populate the filename buffer when clicking a file
+                            if fp.save_mode
+                                fp.filename_buffer = f
+                            end
                         end
                     end
                 end
             end
             CImGui.EndChild()
         end
+        
+        # Add filename input for save mode
+        if fp.save_mode
+            CImGui.Separator()
+            @cstatic filename_input=""*"\0"^256 begin
+                # Sync buffer with state
+                if !isempty(fp.filename_buffer)
+                    filename_input = fp.filename_buffer * "\0"^(256 - length(fp.filename_buffer))
+                end
+                
+                CImGui.Text("Filename:")
+                CImGui.SameLine()
+                CImGui.SetNextItemWidth(300)
+                if CImGui.InputText("##filename", filename_input, length(filename_input))
+                    fp.filename_buffer = rstrip(string(filename_input), '\0')
+                end
+            end
+            
+            # Update selected_file with the full path
+            if !isempty(fp.filename_buffer)
+                fp.selected_file = joinpath(fp.current_dir, fp.filename_buffer)
+            end
+        end
     end
 end
 
-export ShowFilePicker, FilePickerState
+"""
+    ShowSaveFileDialog(gs::Dict; default_filename="", file_extensions=String[])
+
+Opens a save file dialog. Returns the selected file path when user confirms, or empty string if cancelled.
+Set gs[:ig_file_picker_state].window_open = true to activate.
+"""
+function ShowSaveFileDialog(gs::Dict; default_filename="", file_extensions=String[])
+    if !haskey(gs, :ig_file_picker_state)
+        gs[:ig_file_picker_state] = FilePickerState(
+            current_dir = abspath(homedir()),
+            selected_file = "",
+            window_open = true,
+            save_mode = true,
+            filename_buffer = default_filename
+        )
+    end
+    
+    fp = gs[:ig_file_picker_state]
+    fp.save_mode = true
+    
+    if !isempty(default_filename) && isempty(fp.filename_buffer)
+        fp.filename_buffer = default_filename
+    end
+    
+    ShowFilePicker(gs; file_extensions=file_extensions)
+    
+    return fp.selected_file
+end
+
+export ShowFilePicker, ShowSaveFileDialog, FilePickerState
