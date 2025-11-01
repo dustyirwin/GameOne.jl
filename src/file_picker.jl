@@ -16,11 +16,11 @@ function ShowFilePicker(gs::Dict; file_extensions=String[])
         end
         
         CImGui.Separator()
-        CImGui.ImText("File Browser:")
+        CImGui.Text("File Browser:")
         
         # Create a child window for the file browser
         if CImGui.BeginChild("FileBrowser", CImGui.ImVec2(0, 200), true)
-            CImGui.ImText("Current directory: " * fp.current_dir)
+            CImGui.Text("Current directory: " * fp.current_dir)
 
             # Parent directory navigation
             if CImGui.Button("..")
