@@ -22,7 +22,8 @@ using .GameOne
     imgui_settings::Union{Dict{String,Any}, Nothing}=nothing
     imgui_preinit::Union{Function, Nothing}=nothing
     state::Vector{Dict{String,Any}}=Vector{Dict{String,Any}}()
-    socket::Vector{TCPSocket}=Vector{TCPSocket}()
+    server::Union{Any, Nothing}=nothing
+    client::Union{Any, Nothing}=nothing
 end
 
 # Game constants
