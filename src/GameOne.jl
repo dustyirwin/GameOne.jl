@@ -9,7 +9,7 @@ using Reexport: @reexport
 @reexport using Colors: FixedPointNumbers, @colorant_str, ARGB, RGBA, Colorant, red, green, blue, alpha
 @reexport using Base.Threads: @threads, @spawn, Atomic, SpinLock
 @reexport using Dates: Date, Millisecond, now, today
-@reexport using Random: rand, randstring, shuffle, shuffle!
+@reexport using Random: rand, randstring, shuffle, shuffle!, seed!
 @reexport using DataStructures: OrderedDict, counter, @enum
 @reexport using Serialization: serialize, deserialize
 
@@ -17,7 +17,7 @@ using Reexport: @reexport
 @reexport using DelimitedFiles: readlines, write
 @reexport using RelocatableFolders: @path, abspath
 
-# 
+# UUID generation
 @reexport using UUIDs: uuid4
 @reexport using Sockets: TCPSocket, listen, accept, close, connect, isopen
 @reexport using Printf: @sprintf
@@ -78,11 +78,6 @@ include("resources.jl")             # Resource management
 include("audio.jl")                 # Audio playback system
 include("file_picker.jl")           # CimGui File picker dialog
 
-
-function (@main)(ARGS)
-    @info "Starting GameOne..."
-    #GameOne.rungame(ARGS)
-end
 
 end # module
     

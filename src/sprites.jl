@@ -25,11 +25,17 @@ end
 
 function process_webp(webp_path::String, anim_name::String, anim_dir::String)
   
-    if !isdir(anim_dir)
-        mkpath(anim_dir)
+    # Check if directory exists AND has valid frame files
+    if isdir(anim_dir)
+        frame_files = [fn for fn in readdir(anim_dir) if endswith(lowercase(fn), ".png")]
+        if !isempty(frame_files)
+            @debug "Animation directory already exists with $(length(frame_files)) frames: $anim_dir"
+            return
+        else
+            @debug "Animation directory exists but is empty, regenerating frames"
+        end
     else
-        @debug "Animation directory already exists: $anim_dir"
-        return
+        mkpath(anim_dir)
     end
 
     webp_txt = joinpath(anim_dir, "webp_info_$anim_name.txt")

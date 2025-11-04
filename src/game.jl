@@ -1,7 +1,9 @@
 using .GameOne
+using DataStructures
 
 # Modern Game structure
 @kwdef mutable struct Game
+    id::String=randstring(8)
     name::String="AnimatGame" * randstring(5)
     location::String=pwd()
     game_module::Union{Module, Nothing}=nothing
@@ -21,7 +23,7 @@ using .GameOne
     imgui::Union{Function, Nothing}=nothing
     imgui_settings::Union{Dict{String,Any}, Nothing}=nothing
     imgui_preinit::Union{Function, Nothing}=nothing
-    state::Vector{Dict{String,Any}}=Vector{Dict{String,Any}}()
+    state::OrderedDict{String, Dict{String,Any}}=OrderedDict{String, Dict{String,Any}}()
     server::Union{Any, Nothing}=nothing
     client::Union{Any, Nothing}=nothing
 end
