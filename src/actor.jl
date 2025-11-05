@@ -13,7 +13,7 @@ end
 @kwdef mutable struct Actor
     const id::String = randstring(8)
     const label::String = ""
-    const img_paths::Union{String, Vector{String}, Nothing}  # single img, animation, or text (nothing)
+    const img_paths::Union{String, Vector{String}, Nothing}=nothing  # single img, animation, or text (nothing)
     position::Position = Position()
     scale::Vector{Float32} = [1.0, 1.0]  # scale in x and y
     z::Int32 = 0
@@ -58,10 +58,15 @@ function release_actor!(pool::ActorPool, actor)
 end
 
 function ImageActor(path::String; id=randstring(16), x=Int32(1), y=Int32(1), w=Int32(240), h=ceil(Int32,240*1.4),
-    color=colorant"white", alpha=1.0)::Actor
+    color=colorant"white", z=1,alpha=1.0, angle=0.0, scale=[1.0, 1.0])::Actor
 
     texid = Ref{Any}(nothing)
-    img_u8, img_w, img_h = load_gl_img(path)
+    if isfile(path)
+        img_u8, img_w, img_h = load_gl_img(path)
+    else
+        @warn "Image file not found: $path"
+        img_u8, img_w, img_h = nothing, 0, 0
+    end
     
     if img_u8 !== nothing && img_w > 0 && img_h > 0
         texid[] = CImGui.create_image_texture(img_w, img_h)
@@ -71,18 +76,18 @@ function ImageActor(path::String; id=randstring(16), x=Int32(1), y=Int32(1), w=I
     end
 
     Actor(
-        id,
-        basename(path),
-        path,
-        Position(x=x, y=y, w=w, h=h),
-        [1.0, 1.0],  # Default scale
-        1,
-        0.0,
-        1.0,
-        texid,
-        nothing,
-        color_to_vec4f(color),
-        Dict(
+        id=id,
+        label=basename(path),
+        img_paths=path,
+        position=Position(x=x, y=y, w=w, h=h),
+        scale=scale,  # Default scale
+        z=z,
+        angle=angle,
+        alpha=alpha,
+        texture=texid,
+        anim=nothing,
+        color=color_to_vec4f(color),
+        data=Dict(
             :type=>"image", 
             :mouse_offset => Vec2f(0, 0),
             :anim=>false,
