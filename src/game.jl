@@ -5,6 +5,7 @@ using DataStructures
 @kwdef mutable struct Game
     id::String=randstring(8)
     name::String="AnimatGame" * randstring(5)
+    owner::Union{String, Nothing}=nothing
     location::String=pwd()
     game_module::Union{Module, Nothing}=nothing
     screen::Union{Any, Nothing}=nothing
