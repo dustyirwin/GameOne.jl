@@ -21,8 +21,8 @@ function ShowFilePicker(gs::Dict; file_extensions=String[])
         CImGui.Text("File Browser:")
         
         # Create a child window for the file browser
-        if CImGui.BeginChild("FileBrowser", CImGui.ImVec2(0, 200), true)
-            CImGui.Text("Current directory: " * fp.current_dir)
+        if CImGui.BeginChild("FileBrowser", CImGui.ImVec2(0, 300), true)
+            CImGui.TextWrapped("Current directory: " * fp.current_dir)
 
             # Parent directory navigation
             if CImGui.Button("..")
@@ -78,6 +78,7 @@ function ShowFilePicker(gs::Dict; file_extensions=String[])
                     end
                     
                     if is_directory
+
                         if CImGui.Selectable("[DIR] $f", false)
                             try
                                 # Test if we can access the directory before navigating
