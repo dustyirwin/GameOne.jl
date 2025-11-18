@@ -24,8 +24,10 @@ function ShowFilePicker(gs::Dict; file_extensions=String[])
         if CImGui.BeginChild("FileBrowser", CImGui.ImVec2(0, 300), true)
             CImGui.TextWrapped("Current directory: " * fp.current_dir)
 
+            
             # Parent directory navigation
-            if CImGui.Button("..")
+            # button width set to 150 for ".." button
+            if CImGui.Button(" Up a level .. ", CImGui.ImVec2(150, 0))
                 parent_dir = dirname(fp.current_dir)
                 # Don't navigate above the root (avoid going from C:\ to empty string)
                 if parent_dir != fp.current_dir && !isempty(parent_dir)
@@ -38,7 +40,7 @@ function ShowFilePicker(gs::Dict; file_extensions=String[])
                 # Filter to show directories and specified file types
                 if isempty(file_extensions)
                     # Default to image files if no extensions specified
-                    default_extensions = [".png", ".jpg", ".jpeg", ".webp", ".bmp", ".txt",".mox"]
+                    default_extensions = [".png", ".jpg", ".jpeg", ".webp", ".bmp", ".txt", ".mox"]
                     filter(f -> begin
                         fullpath = joinpath(fp.current_dir, f)
                         try

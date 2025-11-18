@@ -2,6 +2,7 @@ module GameOne
 
 using Reexport: @reexport
 
+
 # Base imports (keep these)
 @reexport using LinearAlgebra: I, cross, dot, norm, normalize
 #@reexport using FixedPointNumbers
@@ -64,6 +65,7 @@ export Game, Shader, Texture, RGBA
 export Actor, ImageActor, SpriteAnimation, AnimatedActor
 export Line, Rect, Triangle, Circle
 export KeyState, MouseState, ShaderWatcher
+
 
 # Core includes
 include("math.jl")                  # Matrix math utilities
