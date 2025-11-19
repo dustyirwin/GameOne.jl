@@ -49,7 +49,22 @@ end
 
 function stop_music()
     if MUSIC_STREAM[] !== nothing && MUSIC_STREAM[] isa PortAudioStream
-        close(MUSIC_STREAM[])
+        try
+            close(MUSIC_STREAM[])
+        catch e
+            @warn "Error closing music stream: $e"
+        end
         MUSIC_STREAM[] = nothing
     end
+    MUSIC_STOP_REQUESTED[] = false
+end
+
+# Ensure audio cleanup during precompilation
+function __init__()
+    atexit(() -> begin
+        # Stop any playing music during shutdown
+        stop_music()
+        # Clear sound cache to free memory
+        empty!(SOUND_CACHE)
+    end)
 end
