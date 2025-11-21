@@ -140,7 +140,7 @@ function draw_image(window, image_id, x, y, w, h, angle_degrees::Float32=0.0f0, 
     # Draw the image on the background layer (behind ImGui windows)
     draw_list = CImGui.GetBackgroundDrawList()
     
-    if image_id !== nothing && image_id[] !== nothing
+    if image_id !== nothing && image_id isa Ref && image_id[] !== nothing
         if angle_degrees == 0.0f0
             # Fast path: normal unrotated drawing
             CImGui.ImDrawList_AddImage(
