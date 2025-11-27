@@ -15,6 +15,14 @@ mutable struct Shader
 end
 
 
+# Get OpenGL version information
+function get_gl_info()
+    version = unsafe_string(glGetString(GL_VERSION))
+    glsl_version = unsafe_string(glGetString(GL_SHADING_LANGUAGE_VERSION))
+    return (version=version, glsl_version=glsl_version)
+end
+
+
 # Utility: Read a file as a string
 function read_shader_file(path::String)
     println("Reading shader file: ", abspath(path))
