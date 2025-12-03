@@ -869,9 +869,9 @@ version = "15.0.1+0"
 
 [[deps.QOI]]
 deps = ["ColorTypes", "FileIO", "FixedPointNumbers"]
-git-tree-sha1 = "8b3fc30bc0390abdce15f8822c889f669baed73d"
+git-tree-sha1 = "472daaa816895cb7aee81658d4e7aec901fa1106"
 uuid = "4b34888f-f399-49d4-9bb3-47ed5cae4e65"
-version = "1.0.1"
+version = "1.0.2"
 
 [[deps.REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets", "StyledStrings", "Unicode"]
@@ -1355,9 +1355,9 @@ version = "2.0.4+0"
 
 [[deps.libpng_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Zlib_jll"]
-git-tree-sha1 = "07b6a107d926093898e82b3b1db657ebe33134ec"
+git-tree-sha1 = "5cb3c5d039f880c0b3075803c8bf45cb95ae1e91"
 uuid = "b53b4c65-9356-5827-b1ea-8c7a1a84506f"
-version = "1.6.50+0"
+version = "1.6.51+0"
 
 [[deps.libportaudio_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "alsa_jll"]
@@ -1425,6 +1425,6 @@ version = "4.1.0+0"
 
 [[deps.xkbcommon_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libxcb_jll", "Xorg_xkeyboard_config_jll"]
-git-tree-sha1 = "fbf139bce07a534df0e699dbb5f5cc9346f95cc1"
+git-tree-sha1 = "a1fc6507a40bf504527d0d4067d718f8e179b2b8"
 uuid = "d8fb68d0-12a3-5cfd-a85a-d49703b185fd"
-version = "1.9.2+0"
+version = "1.13.0+0"
