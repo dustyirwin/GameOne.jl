@@ -25,11 +25,11 @@ end
 
 # Utility: Read a file as a string
 function read_shader_file(path::String)
-    println("Reading shader file: ", abspath(path))
+    #@info "Reading shader file: " abspath(path)
     src = open(path, "r") do io
         read(io, String)
     end
-    #println("Full shader source:\n", src)
+    #@info "Full shader source:\n" * src
     #println("Shader bytes: ", collect(codeunits(src)))
     return src
 end
@@ -44,8 +44,8 @@ function compile_shader(src::String, shader_type::GLenum)
     glCompileShader(shader)
 
     info = get_gl_info()
-    println("OpenGL version: ", info.version)
-    println("GLSL version: ", info.glsl_version)
+    #println("OpenGL version: ", info.version)
+    #println("GLSL version: ", info.glsl_version)
 
     # Check for errors (unchanged)
     status = Ref{GLint}(0)
@@ -89,7 +89,7 @@ function create_shader(vert_path::String, frag_path::String)
     prog = link_program(vs, fs)
     glDeleteShader(vs)
     glDeleteShader(fs)
-    @info "Shader compiled and linked" vert=vert_path frag=frag_path
+    #@info "Shader compiled and linked" vert=vert_path frag=frag_path
     return prog
 end
 
