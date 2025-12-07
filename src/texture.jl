@@ -97,12 +97,45 @@ end
 
 # load an image into GL format
 function load_gl_img(image_path::String)
-    img = load(image_path)
-    img_rgba = Array(RGBA.(img))  # Ensure it's an Array
-    h, w = size(img_rgba)  # Julia: (height, width)
-    img_gl = permutedims(img_rgba, (2, 1))  # OpenGL expects (width, height)
-    img_data_gl_flat = vec(reinterpret(UInt8, img_gl))
-    return img_data_gl_flat, Int32(w), Int32(h)
+    try
+        img = load(image_path)
+        
+        # Validate that we got an actual image
+        if img === nothing
+            @error "load_gl_img: load() returned nothing for: $image_path"
+            return nothing, Int32(0), Int32(0)
+        end
+        
+        # Check that it's a 2D image (not a video or other format)
+        if ndims(img) < 2
+            @error "load_gl_img: Invalid image dimensions ($(ndims(img))) for: $image_path"
+            return nothing, Int32(0), Int32(0)
+        end
+        
+        img_rgba = Array(RGBA.(img))  # Ensure it's an Array
+        h, w = size(img_rgba)  # Julia: (height, width)
+        
+        # Validate dimensions
+        if h <= 0 || w <= 0
+            @error "load_gl_img: Invalid image size ($(w)x$(h)) for: $image_path"
+            return nothing, Int32(0), Int32(0)
+        end
+        
+        img_gl = permutedims(img_rgba, (2, 1))  # OpenGL expects (width, height)
+        img_data_gl_flat = vec(reinterpret(UInt8, img_gl))
+        
+        # Validate data size (should be width * height * 4 bytes for RGBA)
+        expected_size = w * h * 4
+        if length(img_data_gl_flat) != expected_size
+            @error "load_gl_img: Unexpected data size $(length(img_data_gl_flat)) != $(expected_size) for: $image_path"
+            return nothing, Int32(0), Int32(0)
+        end
+        
+        return img_data_gl_flat, Int32(w), Int32(h)
+    catch e
+        @error "load_gl_img: Exception loading image: $image_path" exception=(e, catch_backtrace())
+        return nothing, Int32(0), Int32(0)
+    end
 end
 
 function draw_background(window, image_id)
@@ -121,7 +154,7 @@ function draw_background(window, image_id)
             CImGui.ImVec2(wx + ww, wy + wh),    # Bottom-right corner of the window
             CImGui.ImVec2(0, 0),                 # Texture coordinates
             CImGui.ImVec2(1, 1),                 # UV coords
-            CImGui.ImVec4(1.0, 1.0, 1.0, 1.0)
+            UInt32(0xFFFFFFFF)                   # White color (ABGR format)
         )
     end
 end
@@ -143,6 +176,9 @@ function draw_image(window, image_id, x, y, w, h, angle_degrees::Float32=0.0f0, 
     if image_id !== nothing && image_id isa Ref && image_id[] !== nothing
         if angle_degrees == 0.0f0
             # Fast path: normal unrotated drawing
+            # Convert RGBA float to packed UInt32 color
+            color = CImGui.ImVec4(1.0, 1.0, 1.0, alpha)
+            col32 = CImGui.ColorConvertFloat4ToU32(color)
             CImGui.ImDrawList_AddImage(
                 draw_list,
                 image_id[],
@@ -150,7 +186,7 @@ function draw_image(window, image_id, x, y, w, h, angle_degrees::Float32=0.0f0, 
                 CImGui.ImVec2(wx + x + w, wy + y + h),      # Bottom-right corner
                 CImGui.ImVec2(0, 0),                        # Texture coordinates
                 CImGui.ImVec2(1, 1),                        # UV coords
-                CImGui.ImVec4(1.0, 1.0, 1.0, alpha)         # R G B A
+                col32                                       # Packed ABGR color
             )
         else
             # Rotated drawing using quad
