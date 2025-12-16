@@ -7,101 +7,133 @@
     filename_buffer::String = ""
 end
 
-function ShowFilePicker(gs::Dict; file_extensions=String[])
-    fp = gs[:ig_file_picker_state]
+function ShowFilePicker(gs::Dict, state_key::Symbol; file_extensions=String[], as_popup::Bool=false)
+    fp = gs[state_key]
     
-    # Show as a child window instead of popup to avoid modal conflicts
     if fp.window_open
         # Initialize current directory to a reasonable default if empty
         if isempty(fp.current_dir) || !isdir(fp.current_dir)
             fp.current_dir = abspath(homedir())
         end
         
-        CImGui.Separator()
-        CImGui.Text("File Browser:")
-        
-        # Create a child window for the file browser
-        if CImGui.BeginChild("FileBrowser", CImGui.ImVec2(0, 300), true)
-            CImGui.TextWrapped("Current directory: " * fp.current_dir)
-
-            
-            # Parent directory navigation
-            # button width set to 150 for ".." button
-            if CImGui.Button(" Up a level .. ", CImGui.ImVec2(150, 0))
-                parent_dir = dirname(fp.current_dir)
-                # Don't navigate above the root (avoid going from C:\ to empty string)
-                if parent_dir != fp.current_dir && !isempty(parent_dir)
-                    fp.current_dir = parent_dir
-                end
-            end
-
-            files = try
-                all_files = sort(readdir(fp.current_dir))
-                # Filter to show directories and specified file types
-                if isempty(file_extensions)
-                    # Default to image files if no extensions specified
-                    default_extensions = [".png", ".jpg", ".jpeg", ".webp", ".bmp", ".txt", ".mox"]
-                    filter(f -> begin
-                        fullpath = joinpath(fp.current_dir, f)
-                        try
-                            isdir(fullpath) || lowercase(splitext(f)[2]) in default_extensions
-                        catch
-                            # If we can't check the file, include it anyway (might be permissions issue)
-                            true
-                        end
-                    end, all_files)
-                else
-                    filter(f -> begin
-                        fullpath = joinpath(fp.current_dir, f)
-                        try
-                            isdir(fullpath) || lowercase(splitext(f)[2]) in file_extensions
-                        catch
-                            # If we can't check the file, include it anyway (might be permissions issue)
-                            true
-                        end
-                    end, all_files)
-                end
-            catch e
-                @warn "Error reading directory $(fp.current_dir): $e"
-                String[]
-            end
-
-            if isempty(files)
-                CImGui.TextColored(ImVec4(1,1,0.5,1), "No files or folders found in this directory.")
+        if as_popup
+            CImGui.OpenPopup("File Picker")
+            CImGui.SetNextWindowSize(CImGui.ImVec2(600, 400), CImGui.ImGuiCond_Always)
+            if CImGui.BeginPopupModal("File Picker", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
+                # Content here
             else
-                for f in files
-                    fullpath = joinpath(fp.current_dir, f)
-                    is_directory = false
-                    try
-                        is_directory = isdir(fullpath)
-                    catch
-                        # If we can't determine if it's a directory, assume it's a file
-                        is_directory = false
-                    end
-                    
-                    if is_directory
+                fp.window_open = false
+                return
+            end
+        else
+            CImGui.Separator()
+            CImGui.Text("File Browser:")
+            # Create a child window for the file browser
+            if !CImGui.BeginChild("FileBrowser", CImGui.ImVec2(0, 300), true)
+                return
+            end
+        end
+        
+        CImGui.TextWrapped("Current directory: " * fp.current_dir)
 
-                        if CImGui.Selectable("[DIR] $f", false)
-                            try
-                                # Test if we can access the directory before navigating
-                                readdir(fullpath)
-                                fp.current_dir = fullpath
-                            catch e
-                                @warn "Cannot access directory $fullpath: $e"
-                            end
-                            break
+        
+        # Parent directory navigation
+        # button width set to 150 for ".." button
+        if CImGui.Button(" Up a level .. ", CImGui.ImVec2(150, 0))
+            parent_dir = dirname(fp.current_dir)
+            # Don't navigate above the root (avoid going from C:\ to empty string)
+            if parent_dir != fp.current_dir && !isempty(parent_dir)
+                fp.current_dir = parent_dir
+            end
+        end
+
+        files = try
+            all_files = sort(readdir(fp.current_dir))
+            # Filter to show directories and specified file types
+            if isempty(file_extensions)
+                # Default to image files if no extensions specified
+                default_extensions = [".png", ".jpg", ".jpeg", ".webp", ".bmp", ".txt", ".mox"]
+                filter(f -> begin
+                    fullpath = joinpath(fp.current_dir, f)
+                    try
+                        isdir(fullpath) || lowercase(splitext(f)[2]) in default_extensions
+                    catch
+                        # If we can't check the file, include it anyway (might be permissions issue)
+                        true
+                    end
+                end, all_files)
+            else
+                filter(f -> begin
+                    fullpath = joinpath(fp.current_dir, f)
+                    try
+                        isdir(fullpath) || lowercase(splitext(f)[2]) in file_extensions
+                    catch
+                        # If we can't check the file, include it anyway (might be permissions issue)
+                        true
+                    end
+                end, all_files)
+            end
+        catch e
+            @warn "Error reading directory $(fp.current_dir): $e"
+            String[]
+        end
+
+        if isempty(files)
+            CImGui.TextColored(ImVec4(1,1,0.5,1), "No files or folders found in this directory.")
+        else
+            for f in files
+                fullpath = joinpath(fp.current_dir, f)
+                is_directory = false
+                try
+                    is_directory = isdir(fullpath)
+                catch
+                    # If we can't determine if it's a directory, assume it's a file
+                    is_directory = false
+                end
+                
+                if is_directory
+
+                    if CImGui.Selectable("[DIR] $f", false)
+                        try
+                            # Test if we can access the directory before navigating
+                            readdir(fullpath)
+                            fp.current_dir = fullpath
+                        catch e
+                            @warn "Cannot access directory $fullpath: $e"
                         end
-                    else
-                        if CImGui.Selectable(f, fp.selected_file == fullpath)
-                            fp.selected_file = fullpath
-                            # In save mode, populate the filename buffer when clicking a file
-                            if fp.save_mode
-                                fp.filename_buffer = f
-                            end
+                        break
+                    end
+                else
+                    if CImGui.Selectable(f, fp.selected_file == fullpath)
+                        fp.selected_file = fullpath
+                        # In save mode, populate the filename buffer when clicking a file
+                        if fp.save_mode
+                            fp.filename_buffer = f
+                        end
+                        # For open mode, if not popup, close immediately
+                        if !fp.save_mode && !as_popup
+                            fp.window_open = false
                         end
                     end
                 end
             end
+        end
+        
+        if as_popup
+            CImGui.Separator()
+            if CImGui.Button("OK")
+                fp.window_open = false
+                CImGui.CloseCurrentPopup()
+            end
+            CImGui.SameLine()
+            if CImGui.Button("Cancel")
+                fp.selected_file = ""  # Clear any selection
+                fp.window_open = false
+                CImGui.CloseCurrentPopup()
+            end
+        end
+        
+        if !as_popup
             CImGui.EndChild()
         end
         
@@ -126,6 +158,10 @@ function ShowFilePicker(gs::Dict; file_extensions=String[])
             if !isempty(fp.filename_buffer)
                 fp.selected_file = joinpath(fp.current_dir, fp.filename_buffer)
             end
+        end
+        
+        if as_popup
+            CImGui.EndPopup()
         end
     end
 end
