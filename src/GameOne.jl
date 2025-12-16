@@ -2,6 +2,7 @@ module GameOne
 
 using Reexport: @reexport
 
+
 # Base imports (keep these)
 @reexport using LinearAlgebra: I, cross, dot, norm, normalize
 #@reexport using FixedPointNumbers
@@ -9,7 +10,7 @@ using Reexport: @reexport
 @reexport using Colors: FixedPointNumbers, @colorant_str, ARGB, RGBA, Colorant, red, green, blue, alpha
 @reexport using Base.Threads: @threads, @spawn, Atomic, SpinLock
 @reexport using Dates: Date, Millisecond, now, today
-@reexport using Random: rand, randstring, shuffle, shuffle!
+@reexport using Random: rand, randstring, shuffle, shuffle!, seed!
 @reexport using DataStructures: OrderedDict, counter, @enum
 @reexport using Serialization: serialize, deserialize
 
@@ -17,7 +18,7 @@ using Reexport: @reexport
 @reexport using DelimitedFiles: readlines, write
 @reexport using RelocatableFolders: @path, abspath
 
-# 
+# UUID generation
 @reexport using UUIDs: uuid4
 @reexport using Sockets: TCPSocket, listen, accept, close, connect, isopen
 @reexport using Printf: @sprintf
@@ -65,6 +66,7 @@ export Actor, ImageActor, SpriteAnimation, AnimatedActor
 export Line, Rect, Triangle, Circle
 export KeyState, MouseState, ShaderWatcher
 
+
 # Core includes
 include("math.jl")                  # Matrix math utilities
 include("keyboard.jl")              # GLFW keyboard handling
@@ -77,6 +79,7 @@ include("actor.jl")                 # Modern actor system
 include("resources.jl")             # Resource management
 include("audio.jl")                 # Audio playback system
 include("file_picker.jl")           # CimGui File picker dialog
+
 
 end # module
     

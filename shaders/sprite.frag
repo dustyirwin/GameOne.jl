@@ -1,4 +1,4 @@
-#version 150
+#version 330 core
 uniform mat4 u_projection;
 uniform mat4 u_view;
 out vec4 FragColor;

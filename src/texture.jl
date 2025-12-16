@@ -5,19 +5,6 @@ using Logging
 using ImageCore
 using libwebp_jll
 
-#=
-mutable struct Texture
-    id::GLuint
-    width::Int32
-    height::Int32
-    channels::Int32
-    format::GLenum
-    path::String
-    compressed::Bool
-    
-    Texture() = new(0, 0, 0, 0, GL_RGBA, "", false)
-end
-=#
 
 # Ensure img is always HxWx4 Array{UInt8,3}
 function prepare_image(img)
@@ -110,12 +97,45 @@ end
 
 # load an image into GL format
 function load_gl_img(image_path::String)
-    img = load(image_path)
-    img_rgba = Array(RGBA.(img))  # Ensure it's an Array
-    h, w = size(img_rgba)  # Julia: (height, width)
-    img_gl = permutedims(img_rgba, (2, 1))  # OpenGL expects (width, height)
-    img_data_gl_flat = vec(reinterpret(UInt8, img_gl))
-    return img_data_gl_flat, Int32(w), Int32(h)
+    try
+        img = load(image_path)
+        
+        # Validate that we got an actual image
+        if img === nothing
+            @error "load_gl_img: load() returned nothing for: $image_path"
+            return nothing, Int32(0), Int32(0)
+        end
+        
+        # Check that it's a 2D image (not a video or other format)
+        if ndims(img) < 2
+            @error "load_gl_img: Invalid image dimensions ($(ndims(img))) for: $image_path"
+            return nothing, Int32(0), Int32(0)
+        end
+        
+        img_rgba = Array(RGBA.(img))  # Ensure it's an Array
+        h, w = size(img_rgba)  # Julia: (height, width)
+        
+        # Validate dimensions
+        if h <= 0 || w <= 0
+            @error "load_gl_img: Invalid image size ($(w)x$(h)) for: $image_path"
+            return nothing, Int32(0), Int32(0)
+        end
+        
+        img_gl = permutedims(img_rgba, (2, 1))  # OpenGL expects (width, height)
+        img_data_gl_flat = vec(reinterpret(UInt8, img_gl))
+        
+        # Validate data size (should be width * height * 4 bytes for RGBA)
+        expected_size = w * h * 4
+        if length(img_data_gl_flat) != expected_size
+            @error "load_gl_img: Unexpected data size $(length(img_data_gl_flat)) != $(expected_size) for: $image_path"
+            return nothing, Int32(0), Int32(0)
+        end
+        
+        return img_data_gl_flat, Int32(w), Int32(h)
+    catch e
+        @error "load_gl_img: Exception loading image: $image_path" exception=(e, catch_backtrace())
+        return nothing, Int32(0), Int32(0)
+    end
 end
 
 function draw_background(window, image_id)
@@ -130,14 +150,99 @@ function draw_background(window, image_id)
         CImGui.ImDrawList_AddImage(
             draw_list,
             image_id[],
-            CImGui.ImVec2(wx, wy),
-            CImGui.ImVec2(wx + ww, wy + wh),
-            CImGui.ImVec2(0, 0),
-            CImGui.ImVec2(1, 1),
-            CImGui.ImVec4(1.0, 1.0, 1.0, 1.0)
+            CImGui.ImVec2(wx, wy),              # Top-left corner of the window
+            CImGui.ImVec2(wx + ww, wy + wh),    # Bottom-right corner of the window
+            CImGui.ImVec2(0, 0),                 # Texture coordinates
+            CImGui.ImVec2(1, 1),                 # UV coords
+            UInt32(0xFFFFFFFF)                   # White color (ABGR format)
         )
     end
 end
 
-export Texture, upload_texture, load_texture, load_animated_textures, load_gl_img, draw_background
-export prepare_image
+function draw_image(window, image_id, x, y, w, h, angle_degrees::Float32=0.0f0, alpha::Float32=1.0f0)
+    """
+    Draw an image, optionally rotated by angle_degrees (clockwise) around its center.
+    When rotating, the original w/h are used for the image texture, but positioned in the x,y,w,h box.
+    """
+    # Make sure the OpenGL context is current
+    GLFW.MakeContextCurrent(window)
+    
+    # Get the window position and size
+    wx, wy = GLFW.GetWindowPos(window)
+
+    # Draw the image on the background layer (behind ImGui windows)
+    draw_list = CImGui.GetBackgroundDrawList()
+    
+    if image_id !== nothing && image_id isa Ref && image_id[] !== nothing
+        if angle_degrees == 0.0f0
+            # Fast path: normal unrotated drawing
+            # Convert RGBA float to packed UInt32 color
+            color = CImGui.ImVec4(1.0, 1.0, 1.0, alpha)
+            col32 = CImGui.ColorConvertFloat4ToU32(color)
+            CImGui.ImDrawList_AddImage(
+                draw_list,
+                image_id[],
+                CImGui.ImVec2(wx + x, wy + y),              # Top-left corner
+                CImGui.ImVec2(wx + x + w, wy + y + h),      # Bottom-right corner
+                CImGui.ImVec2(0, 0),                        # Texture coordinates
+                CImGui.ImVec2(1, 1),                        # UV coords
+                col32                                       # Packed ABGR color
+            )
+        else
+            # Rotated drawing using quad
+            # For 90-degree rotation, we need to swap w/h for the actual texture dimensions
+            # because a portrait card becomes landscape when rotated 90 degrees
+            texture_w = angle_degrees == 90.0f0 || angle_degrees == -90.0f0 ? h : w
+            texture_h = angle_degrees == 90.0f0 || angle_degrees == -90.0f0 ? w : h
+            
+            # Calculate center point of the image
+            cx = wx + x + w / 2
+            cy = wy + y + h / 2
+            
+            # Convert angle to radians
+            angle_rad = deg2rad(angle_degrees)
+            cos_a = cos(angle_rad)
+            sin_a = sin(angle_rad)
+            
+            # Calculate the four corners using TEXTURE dimensions, relative to center
+            hw = texture_w / 2
+            hh = texture_h / 2
+            
+            # Original corners (relative to center)
+            corners = [
+                (-hw, -hh),  # Top-left
+                (hw, -hh),   # Top-right
+                (hw, hh),    # Bottom-right
+                (-hw, hh)    # Bottom-left
+            ]
+            
+            # Rotate corners around center
+            rotated = map(corners) do (dx, dy)
+                rx = dx * cos_a - dy * sin_a
+                ry = dx * sin_a + dy * cos_a
+                CImGui.ImVec2(cx + rx, cy + ry)
+            end
+            
+            # UV coordinates for the four corners
+            uv0 = CImGui.ImVec2(0, 0)  # Top-left
+            uv1 = CImGui.ImVec2(1, 0)  # Top-right
+            uv2 = CImGui.ImVec2(1, 1)  # Bottom-right
+            uv3 = CImGui.ImVec2(0, 1)  # Bottom-left
+            
+            # Draw using quad
+            color = CImGui.ImVec4(1.0, 1.0, 1.0, alpha)
+            col32 = CImGui.ColorConvertFloat4ToU32(color)
+            
+            CImGui.ImDrawList_AddImageQuad(
+                draw_list,
+                image_id[],
+                rotated[1], rotated[2], rotated[3], rotated[4],  # p1, p2, p3, p4
+                uv0, uv1, uv2, uv3,                               # uv1, uv2, uv3, uv4
+                col32
+            )
+        end
+    end
+end
+
+export Texture, upload_texture, load_texture, load_animated_textures, load_gl_img
+export prepare_image, draw_background, draw_image
