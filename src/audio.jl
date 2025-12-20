@@ -12,15 +12,42 @@ const MUSIC_STOP_REQUESTED = Ref(false)
 # Preload sounds at startup
 const SOUND_CACHE = Dict{String, SampleBuf}()
 
+# Preload a sound into cache (non-blocking when called in a task)
+function preload_sound(sound_path::String)
+    if !haskey(SOUND_CACHE, sound_path)
+        try
+            buf = load(sound_path)
+            SOUND_CACHE[sound_path] = buf
+        catch e
+            @warn "Failed to preload sound $sound_path: $e"
+        end
+    end
+end
+
+# Play a sound effect. Uses a cache when available to avoid blocking disk I/O.
 function play_sound(sound_path::String; loops=0, volume=1.0)
-    buf = load(sound_path)  # LibSndFile returns a SampleBuf
-    # Adjust volume
-    buf = buf * volume
-    Threads.@spawn begin
-        for _ in 0:loops
-            stream = PortAudioStream(0, nchannels(buf); samplerate=samplerate(buf))
-            write(stream, buf)
-            close(stream)
+    if haskey(SOUND_CACHE, sound_path)
+        buf = SOUND_CACHE[sound_path] * volume
+        @spawn :interactive begin
+            for _ in 0:loops
+                stream = PortAudioStream(0, nchannels(buf); samplerate=samplerate(buf))
+                write(stream, buf)
+                close(stream)
+            end
+        end
+    else
+        # Load and play asynchronously so the calling thread (UI/game loop) isn't blocked
+        @spawn :interactive try
+            buf = load(sound_path)
+            SOUND_CACHE[sound_path] = buf
+            buf = buf * volume
+            for _ in 0:loops
+                stream = PortAudioStream(0, nchannels(buf); samplerate=samplerate(buf))
+                write(stream, buf)
+                close(stream)
+            end
+        catch e
+            @warn "Failed to load/play sound $sound_path: $e"
         end
     end
 end
@@ -59,12 +86,5 @@ function stop_music()
     MUSIC_STOP_REQUESTED[] = false
 end
 
-# Ensure audio cleanup during precompilation
-function __init__()
-    atexit(() -> begin
-        # Stop any playing music during shutdown
-        stop_music()
-        # Clear sound cache to free memory
-        empty!(SOUND_CACHE)
-    end)
-end
+
+export play_music, stop_music, play_sound, preload_sound, SOUND_CACHE, MUSIC_STREAM, MUSIC_STOP_REQUESTED

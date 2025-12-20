@@ -1,6 +1,6 @@
 name = "GameOne"
 uuid = "9da27670-f782-11e9-1da1-f53579315bfe"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Dustin Irwin"]
 
 [deps]
@@ -38,9 +38,6 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 libwebp_jll = "c5f90fcd-3b7e-5836-afba-fc50a0988cb2"
-
-[sources]
-FFTW = {path = "../FFTW.jl"}
 
 [compat]
 CImGui = "6.2.1"
