@@ -19,6 +19,7 @@ function ShowFilePicker(gs::Dict, state_key::Symbol; file_extensions=String[], a
         if as_popup
             CImGui.OpenPopup("File Picker")
             CImGui.SetNextWindowSize(CImGui.ImVec2(600, 400), CImGui.ImGuiCond_Always)
+            CImGui.PushStyleVar(CImGui.ImGuiStyleVar_WindowRounding, 8.0)
             if CImGui.BeginPopupModal("File Picker", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
                 # Content here
             else
@@ -162,6 +163,7 @@ function ShowFilePicker(gs::Dict, state_key::Symbol; file_extensions=String[], a
         
         if as_popup
             CImGui.EndPopup()
+            CImGui.PopStyleVar(1)
         end
     end
 end
