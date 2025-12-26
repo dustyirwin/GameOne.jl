@@ -169,14 +169,14 @@ function ShowFilePicker(gs::Dict, state_key::Symbol; file_extensions=String[], a
 end
 
 """
-    ShowSaveFileDialog(gs::Dict; default_filename="", file_extensions=String[])
+    ShowSaveFileDialog(gs::Dict, key::Symbol; default_filename="", file_extensions=String[])
 
 Opens a save file dialog. Returns the selected file path when user confirms, or empty string if cancelled.
 Set gs[:ig_file_picker_state].window_open = true to activate.
 """
-function ShowSaveFileDialog(gs::Dict; default_filename="", file_extensions=String[])
-    if !haskey(gs, :ig_file_picker_state)
-        gs[:ig_file_picker_state] = FilePickerState(
+function ShowSaveFileDialog(gs::Dict, key::Symbol; default_filename="", file_extensions=String[])
+    if !haskey(gs, key)
+        gs[key] = FilePickerState(
             current_dir = abspath(homedir()),
             selected_file = "",
             window_open = true,
@@ -185,14 +185,14 @@ function ShowSaveFileDialog(gs::Dict; default_filename="", file_extensions=Strin
         )
     end
     
-    fp = gs[:ig_file_picker_state]
+    fp = gs[key]
     fp.save_mode = true
     
     if !isempty(default_filename) && isempty(fp.filename_buffer)
         fp.filename_buffer = default_filename
     end
     
-    ShowFilePicker(gs; file_extensions=file_extensions)
+    ShowFilePicker(gs, :ig_deck_file_picker_state, file_extensions=file_extensions)
     
     return fp.selected_file
 end
