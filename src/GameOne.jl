@@ -36,6 +36,9 @@ using Reexport: @reexport
 @reexport using CImGui.CSyntax.CStatic
 @reexport using CImGui: ImVec2, ImVec4, IM_COL32, ImS32, ImU32, ImS64, ImU64
 
+# ImPlot for plotting
+@reexport using ImPlot
+
 # Audio (lightweight)
 @reexport using PortAudio
 @reexport using PortAudio: nchannels, samplerate, PortAudioStream, write, close
@@ -43,7 +46,7 @@ using Reexport: @reexport
 
 @reexport using FileIO
 @reexport using ImageIO
-@reexport using JSON
+@reexport using JSON3
 
 # WebP support
 @reexport using libwebp_jll: webpmux, dwebp, webpinfo

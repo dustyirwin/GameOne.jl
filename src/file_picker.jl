@@ -7,7 +7,28 @@
     filename_buffer::String = ""
 end
 
+function setup_file_picker_state!(
+    gs::Dict, 
+    key::Symbol; 
+    start_dir::String=abspath(homedir()), 
+    save_mode::Bool=false
+    )
+    
+    if !haskey(gs, key)
+        gs[key] = FilePickerState(
+            current_dir = start_dir,
+            selected_file = "",
+            window_open = true,
+            save_mode = save_mode,
+            filename_buffer = ""
+        )
+    end
+end
+
 function ShowFilePicker(gs::Dict, state_key::Symbol; file_extensions=String[], as_popup::Bool=false)
+    if state_key ∉ keys(gs)
+        setup_file_picker_state!(gs, state_key)
+    end
     fp = gs[state_key]
     
     if fp.window_open
