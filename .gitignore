@@ -10,7 +10,7 @@ tmp
 /archive
 /examples/sounds
 
-/Manifest.toml
+Manifest.toml
 settings.json
 imgui.ini
 gameone.log

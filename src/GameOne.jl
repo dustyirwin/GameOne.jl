@@ -47,6 +47,7 @@ using Reexport: @reexport
 @reexport using FileIO
 @reexport using ImageIO
 @reexport using JSON3
+@reexport using CodecZlib
 
 # WebP support
 @reexport using libwebp_jll: webpmux, dwebp, webpinfo
