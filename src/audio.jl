@@ -18,6 +18,7 @@ function preload_sound(sound_path::String)
         try
             buf = load(sound_path)
             SOUND_CACHE[sound_path] = buf
+            @info "✓ Preloaded sound: $(basename(sound_path)) [$(Threads.nthreads()) threads available]"
         catch e
             @warn "Failed to preload sound $sound_path: $e"
         end
@@ -28,26 +29,34 @@ end
 function play_sound(sound_path::String; loops=0, volume=1.0)
     if haskey(SOUND_CACHE, sound_path)
         buf = SOUND_CACHE[sound_path] * volume
-        @spawn :interactive begin
-            for _ in 0:loops
-                stream = PortAudioStream(0, nchannels(buf); samplerate=samplerate(buf))
-                write(stream, buf)
-                close(stream)
+        # Use Threads.@spawn instead of @spawn :interactive for better non-blocking behavior
+        Threads.@spawn begin
+            try
+                for _ in 0:loops
+                    stream = PortAudioStream(0, nchannels(buf); samplerate=samplerate(buf))
+                    write(stream, buf)
+                    close(stream)
+                end
+            catch e
+                @warn "Error playing sound $sound_path: $e"
             end
         end
     else
+        @warn "Sound not in cache (will load async): $sound_path - Consider preloading this sound!"
         # Load and play asynchronously so the calling thread (UI/game loop) isn't blocked
-        @spawn :interactive try
-            buf = load(sound_path)
-            SOUND_CACHE[sound_path] = buf
-            buf = buf * volume
-            for _ in 0:loops
-                stream = PortAudioStream(0, nchannels(buf); samplerate=samplerate(buf))
-                write(stream, buf)
-                close(stream)
+        Threads.@spawn begin
+            try
+                buf = load(sound_path)
+                SOUND_CACHE[sound_path] = buf
+                buf = buf * volume
+                for _ in 0:loops
+                    stream = PortAudioStream(0, nchannels(buf); samplerate=samplerate(buf))
+                    write(stream, buf)
+                    close(stream)
+                end
+            catch e
+                @warn "Failed to load/play sound $sound_path: $e"
             end
-        catch e
-            @warn "Failed to load/play sound $sound_path: $e"
         end
     end
 end
