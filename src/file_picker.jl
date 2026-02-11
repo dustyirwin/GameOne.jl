@@ -71,30 +71,12 @@ function ShowFilePicker(gs::Dict, state_key::Symbol; file_extensions=String[], a
 
         files = try
             all_files = sort(readdir(fp.current_dir))
-            # Filter to show directories and specified file types
-            if isempty(file_extensions)
-                # Default to image files if no extensions specified
-                default_extensions = [".png", ".jpg", ".jpeg", ".webp", ".bmp", ".txt", ".mox"]
-                filter(f -> begin
-                    fullpath = joinpath(fp.current_dir, f)
-                    try
-                        isdir(fullpath) || lowercase(splitext(f)[2]) in default_extensions
-                    catch
-                        # If we can't check the file, include it anyway (might be permissions issue)
-                        true
-                    end
-                end, all_files)
-            else
-                filter(f -> begin
-                    fullpath = joinpath(fp.current_dir, f)
-                    try
-                        isdir(fullpath) || lowercase(splitext(f)[2]) in file_extensions
-                    catch
-                        # If we can't check the file, include it anyway (might be permissions issue)
-                        true
-                    end
-                end, all_files)
-            end
+            # Show all files and directories (no extension filtering)
+            filter(f -> begin
+                fullpath = joinpath(fp.current_dir, f)
+                # Filter out hidden files (starting with .)
+                !startswith(f, ".")
+            end, all_files)
         catch e
             @warn "Error reading directory $(fp.current_dir): $e"
             String[]

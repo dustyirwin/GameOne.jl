@@ -69,6 +69,7 @@ export Game, Shader, Texture, RGBA
 export Actor, ImageActor, SpriteAnimation, AnimatedActor
 export Line, Rect, Triangle, Circle
 export KeyState, MouseState, ShaderWatcher
+export ShowFilePicker, setup_file_picker_state!, FilePickerState
 
 
 # Core includes
