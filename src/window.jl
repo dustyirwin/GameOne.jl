@@ -5,6 +5,7 @@ const window_event_watcher_cfunc = Ref(Ptr{Nothing}(0))
 
 const window_paused = Threads.Atomic{UInt8}(0) # Whether or not the game should be running (if lost focus)
 
+#= 
 function makeWinRenderer(title = "GameOne", w=1920, h=1080; offset_x=0)
     global winWidth, winHeight, winWidth_highDPI, winHeight_highDPI
 
@@ -15,7 +16,7 @@ function makeWinRenderer(title = "GameOne", w=1920, h=1080; offset_x=0)
     );
     
     SDL_SetWindowMinimumSize(win, Int32(w), Int32(h))
-    SDL_SetWindowResizable(win, SDL2.SDL_bool(true))
+    SDL_SetWindowResizable(win, Bool(true))
     
     window_event_watcher_cfunc[] = @cfunction(windowEventWatcher, Cint, (Ptr{Nothing}, Ptr{SDL_Event}))
     renderer = SDL_CreateRenderer(win, Int32(-1), UInt32(SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC))
@@ -24,7 +25,7 @@ function makeWinRenderer(title = "GameOne", w=1920, h=1080; offset_x=0)
     return win,renderer
 end
 
-#= This function handles all window events.
+#This function handles all window events.
 # We currently do no allow window resizes
 function windowEventWatcher(data_ptr::Ptr{Cvoid}, event_ptr::Ptr{SDL_Event})::Cint
     ev = unsafe_load(event_ptr)
