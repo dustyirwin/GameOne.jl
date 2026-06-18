@@ -7,6 +7,51 @@
     filename_buffer::String = ""
 end
 
+"""
+    get_available_drives() -> Vector{String}
+
+Return a sorted list of available drive letters (e.g. ["C:\\", "D:\\"]) on Windows,
+or an empty vector on other platforms.
+"""
+function get_available_drives()::Vector{String}
+    drives = String[]
+    try
+        # On Windows, `readdir("C:\\")` works for any drive root.
+        # We enumerate letters A-Z and test if the drive exists.
+        for c in 'A':'Z'
+            drive = "$(c):\\\\"
+            try
+                if !isempty(readdir(drive)) || isdir(drive)
+                    push!(drives, drive)
+                end
+            catch
+                # Drive doesn't exist or isn't accessible (e.g. empty CD-ROM)
+                # Try isdir as fallback since readdir may throw on empty drives
+                try
+                    if isdir(drive)
+                        push!(drives, drive)
+                    end
+                catch
+                    nothing
+                end
+            end
+        end
+    catch
+        # Not on Windows or some other error — return empty
+    end
+    return sort(drives)
+end
+
+"""
+    is_drive_root(dir::String) -> Bool
+
+Check if `dir` is a drive root (e.g. "C:\\" on Windows).
+"""
+function is_drive_root(dir::String)::Bool
+    # Match patterns like "C:\\", "D:\\", etc.
+    return occursin(r"^[A-Za-z]:\\?$", dir)
+end
+
 function setup_file_picker_state!(
     gs::Dict, 
     key::Symbol; 
@@ -63,12 +108,30 @@ function ShowFilePicker(gs::Dict, state_key::Symbol; file_extensions=String[], a
         # button width set to 150 for ".." button
         if CImGui.Button(" Up a level .. ", CImGui.ImVec2(150, 0))
             parent_dir = dirname(fp.current_dir)
-            # Don't navigate above the root (avoid going from C:\ to empty string)
-            if parent_dir != fp.current_dir && !isempty(parent_dir)
+            # Check if we're at a drive root — if so, enumerate drives instead
+            if is_drive_root(fp.current_dir)
+                drives = get_available_drives()
+                if !isempty(drives)
+                    # Cycle to the next available drive
+                    idx = findfirst(d -> d == fp.current_dir, drives)
+                    if idx !== nothing && idx < length(drives)
+                        fp.current_dir = drives[idx + 1]
+                    elseif idx !== nothing
+                        # Wrap around to first drive
+                        fp.current_dir = drives[1]
+                    end
+                end
+            elseif parent_dir != fp.current_dir && !isempty(parent_dir)
                 fp.current_dir = parent_dir
             end
         end
 
+        # Show available drives when at a drive root
+        drives = String[]
+        if is_drive_root(fp.current_dir)
+            drives = get_available_drives()
+        end
+        
         files = try
             all_files = sort(readdir(fp.current_dir))
             # Show all files and directories (no extension filtering)
@@ -82,18 +145,45 @@ function ShowFilePicker(gs::Dict, state_key::Symbol; file_extensions=String[], a
             String[]
         end
 
-        if isempty(files)
+        # Separate directories and files, then sort each group alphabetically
+        dirs = String[]
+        file_list = String[]
+        for f in files
+            fullpath = joinpath(fp.current_dir, f)
+            try
+                if isdir(fullpath)
+                    push!(dirs, f)
+                else
+                    push!(file_list, f)
+                end
+            catch
+                push!(file_list, f)
+            end
+        end
+        sort!(dirs)
+        sort!(file_list)
+        
+        # Prepend drive entries if we're at a drive root and have other drives available
+        if !isempty(drives) && length(drives) > 1
+            # Show other drives as selectable items before the directory listing
+            for d in drives
+                if d != fp.current_dir
+                    label = replace(d, "\\" => "\\\\")  # Escape backslashes for display
+                    if CImGui.Selectable("[DRIVE] $label", false)
+                        fp.current_dir = d
+                        break
+                    end
+                end
+            end
+        end
+
+        if isempty(dirs) && isempty(file_list) && isempty(drives)
             CImGui.TextColored(ImVec4(1,1,0.5,1), "No files or folders found in this directory.")
         else
-            for f in files
+            # Render directories first, then files
+            for f in vcat(dirs, file_list)
                 fullpath = joinpath(fp.current_dir, f)
-                is_directory = false
-                try
-                    is_directory = isdir(fullpath)
-                catch
-                    # If we can't determine if it's a directory, assume it's a file
-                    is_directory = false
-                end
+                is_directory = f in dirs
                 
                 if is_directory
 
