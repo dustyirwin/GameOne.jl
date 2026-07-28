@@ -2,7 +2,6 @@
 module SimpleGame
 
 using GameOne
-#using CImGui
 
 # --- Game State ---
 current_frame = Ref(1)
@@ -93,12 +92,16 @@ function imgui(g::GameOne.Game)
     if CImGui.Begin("FPS Display")
         CImGui.Text("Animation FPS: $(round(anim_fps, digits=2))")
         CImGui.Text("UI FPS: $(round(1/ui_frame_dt[], digits=2))")
+        CImGui.Text("This is some new text!")
     end
     CImGui.End()
 
     # Animation Window
-    if CImGui.Begin("Animation")
+    if CImGui.Begin("My Awesome Animation") 
         CImGui.Image(anim_image_id[], CImGui.ImVec2(w, h))
+        if CImGui.Button("Click me!")
+            println("Button was clicked!")
+        end
     end
     CImGui.End()
 
@@ -144,26 +147,28 @@ end
 
 # --- Create Game Object ---
 g = GameOne.Game(
-    "Simple Game",
-    @__DIR__,
-    Main,
-    nothing,
-    GameOne.KeyState(),
-    GameOne.MouseState(),
-    0.0f0,                # delta_time
-    0,                    # frame_count
-    0.0f0,                # fps
-    CImGui.render,
-    update,
-    nothing,              # onkey_function
-    nothing,              # onmousedown_function
-    nothing,              # onmouseup_function
-    nothing,              # onmousemove_function
-    imgui,
-    nothing,              # imgui_settings
-    GameOne.imgui_preinit,
-    [Dict{String,Any}()],
-    []                    # socket
+    name="Simple Game",
+    owner = nothing,              # owner
+    location = @__DIR__,
+    game_module = Main,
+    screen = nothing,
+    keyboard = GameOne.KeyState(),
+    mouse = GameOne.MouseState(),
+    delta_time = 0.0f0,                # delta_time
+    frame_count = 0,                    # frame_count
+    fps = 0.0f0,                # fps
+    render = CImGui.render,
+    update = update,
+    draw = nothing,              # onkey_function
+    onmousedown = nothing,              # onmousedown_function
+    onmouseup = nothing,              # onmouseup_function
+    onmousemove = nothing,              # onmousemove_function
+    imgui = imgui,
+    imgui_settings = nothing,              # imgui_settings
+    imgui_preinit = GameOne.imgui_preinit,
+    state = OrderedDict{String,Any}(),
+    server = nothing,
+    client = nothing                    # socket
 )
 
 img_data_gl_flat, img_w, img_h = load_gl_img(joinpath(@__DIR__, "images", "alien.png"))
@@ -172,37 +177,24 @@ bkg_data_gl_flat, bkg_width, bkg_height = load_gl_img(joinpath(@__DIR__, "images
 image_id = Ref{Any}(nothing)
 bkgimg_id = Ref{Any}(nothing)
 
-g.render(ctx, window_title="Simple Game") do
-    window = CImGui.current_window()
-    if window === nothing
-        return
-    end
-    GLFW.MakeContextCurrent(window)
-    
-    if image_id[] === nothing
-        image_id[] = CImGui.create_image_texture(img_w, img_h)
-    end
-    if bkgimg_id[] === nothing
-        bkgimg_id[] = CImGui.create_image_texture(bkg_width, bkg_height)
-    end
+# A stable reference to our function
+const FNK_REF = Ref{Function}(g -> nothing)
 
-    draw_background(window, bkgimg_id)
-    
-    CImGui.update_image_texture(image_id[], img_data_gl_flat, img_w, img_h)
-    if CImGui.Begin("Image Window")
-        CImGui.Image(image_id[], CImGui.ImVec2(img_w, img_h))
-    end
-    CImGui.End()
-    
-    CImGui.update_image_texture(bkgimg_id[], bkg_data_gl_flat, bkg_width, bkg_height)
-    g.imgui(g)
+# A stable "trampoline" function that CImGui will call.
+# This function's definition NEVER changes.
+function trampoline(g)
+    FNK_REF[](g) # De-reference and call the function currently in the Ref
 end
 
+function main()
+    # Pass the stable trampoline to the render loop
+    g.render(ctx, window_title="Simple Game") do
+        trampoline(g)
+    end
 end
 
-# --- start game from terminal call the Game ---
-if PROGRAM_FILE == @__FILE__()
-    println("Starting Simple Game!")
-    using .SimpleGame
+function run_game_async()
+    @async main()
 end
 
+end # module SimpleGame
